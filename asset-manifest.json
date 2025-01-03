@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "/1upmedia-agent/static/css/main.216dced0.css",
+    "main.css": "/1upmedia-agent/static/css/main.81f73f16.css",
     "main.js": "/1upmedia-agent/static/js/main.cfe62a5b.js",
     "static/media/logo1.png": "/1upmedia-agent/static/media/logo1.5f49ec9498f65e0e4659.png",
     "index.html": "/1upmedia-agent/index.html",
-    "main.216dced0.css.map": "/1upmedia-agent/static/css/main.216dced0.css.map",
+    "main.81f73f16.css.map": "/1upmedia-agent/static/css/main.81f73f16.css.map",
     "main.cfe62a5b.js.map": "/1upmedia-agent/static/js/main.cfe62a5b.js.map"
   },
   "entrypoints": [
-    "static/css/main.216dced0.css",
+    "static/css/main.81f73f16.css",
     "static/js/main.cfe62a5b.js"
   ]
 }
