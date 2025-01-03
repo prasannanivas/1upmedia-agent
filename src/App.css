@@ -1,10 +1,10 @@
 :root {
-  --primary-color: #148f47; /* Primary: dark gray-blue */
+  --primary-color: #0f8723; /* Primary: dark gray-blue */
   --secondary-color: #ffffff; /* Secondary: light gray */
-  --accent-color: #118324; /* Accent: muted blue-gray */
-  --hover-color: #2f9f58; /* Hover: darker blue-gray */
+  --accent-color: #2f9f58; /* Accent: muted blue-gray */
+  --hover-color: #ffffff; /* Hover: darker blue-gray */
   --text-color: #ffffff; /* Light gray text */
-  --hover-text-color: #bfdbfe; /* Light blue hover effect */
+  --hover-text-color: #0f8723; /* Light blue hover effect */
   --header-bg: #f8fafc; /* Top header background */
   --header-text-color: #1e293b; /* Header text */
   --header-height: 7vh;
