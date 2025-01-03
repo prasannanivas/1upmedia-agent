@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/prasannanivas/1upmedia-agent/static/css/main.216dced0.css",
+    "main.js": "/prasannanivas/1upmedia-agent/static/js/main.7510a2e9.js",
+    "static/media/logo1.png": "/prasannanivas/1upmedia-agent/static/media/logo1.5f49ec9498f65e0e4659.png",
+    "index.html": "/prasannanivas/1upmedia-agent/index.html",
+    "main.216dced0.css.map": "/prasannanivas/1upmedia-agent/static/css/main.216dced0.css.map",
+    "main.7510a2e9.js.map": "/prasannanivas/1upmedia-agent/static/js/main.7510a2e9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.216dced0.css",
+    "static/js/main.7510a2e9.js"
+  ]
+}
