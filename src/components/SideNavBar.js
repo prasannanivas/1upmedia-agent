@@ -1,16 +1,23 @@
-// components/SideNavBar.js
+// SideNavBar.js
 import React, { useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-function SideNavBar({ isMenuOpen }) {
+function SideNavBar({ isMenuOpen, toggleMenu }) {
   const [dropdowns, setDropdowns] = useState({});
+
+  const { logout } = useAuth();
 
   const toggleDropdown = (menu) => {
     setDropdowns((prev) => ({
       ...prev,
       [menu]: !prev[menu],
     }));
+  };
+
+  const handleLinkClick = () => {
+    toggleMenu(); // Close the side menu
   };
 
   return (
@@ -20,12 +27,15 @@ function SideNavBar({ isMenuOpen }) {
     >
       <ul>
         <li>
-          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/dashboard" onClick={handleLinkClick}>
+            Dashboard
+          </Link>
         </li>
         <DropdownMenu
           title="Agents"
           isOpen={dropdowns.agents}
           toggle={() => toggleDropdown("agents")}
+          handleLinkClick={handleLinkClick}
           links={[
             { path: "/agents/strategy", label: "Strategy & Analysis" },
             { path: "/agents/ideation", label: "Ideation" },
@@ -39,17 +49,21 @@ function SideNavBar({ isMenuOpen }) {
           title="Boards"
           isOpen={dropdowns.boards}
           toggle={() => toggleDropdown("boards")}
+          handleLinkClick={handleLinkClick}
           links={[
             { path: "/boards/templated", label: "Templated" },
             { path: "/boards/custom", label: "Custom" },
           ]}
         />
         <li>
-          <Link to="/analytics">Analytics & Reports</Link>
+          <Link to="/analytics" onClick={handleLinkClick}>
+            Analytics & Reports
+          </Link>
         </li>
         <DropdownMenu
           title="Integrations & Connections"
           isOpen={dropdowns.integrations}
+          handleLinkClick={handleLinkClick}
           toggle={() => toggleDropdown("integrations")}
           links={[
             { path: "/integrations/setup", label: "Setup Wizard" },
@@ -60,6 +74,7 @@ function SideNavBar({ isMenuOpen }) {
           title="Settings"
           isOpen={dropdowns.settings}
           toggle={() => toggleDropdown("settings")}
+          handleLinkClick={handleLinkClick}
           links={[
             { path: "/settings/user-management", label: "User Management" },
           ]}
@@ -75,6 +90,11 @@ function SideNavBar({ isMenuOpen }) {
             ],
           }}
         />
+        <li>
+          <Link to="/logout" onClick={logout}>
+            Logout
+          </Link>
+        </li>
       </ul>
     </div>
   );

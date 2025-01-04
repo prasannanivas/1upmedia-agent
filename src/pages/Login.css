@@ -1,0 +1,132 @@
+/* Login.css */
+
+/* Page Layout */
+.Login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-family: "Roboto", sans-serif;
+  color: white;
+}
+
+/* Login Container */
+.Login-container {
+  text-align: center;
+  background: white;
+  color: #333;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 420px;
+  transition: transform 0.3s ease-in-out;
+}
+
+.Login-container:hover {
+  transform: scale(1.02);
+}
+
+.Login-logo img {
+  width: 50%;
+  margin-bottom: 1.5rem;
+}
+
+.Login-container p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  color: #666;
+}
+
+/* Buttons Container */
+.Login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Shared Button Style */
+.Login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 1rem;
+}
+
+.Login-button img {
+  width: 24px;
+  height: 24px;
+}
+
+/* Google Button */
+.Login-button.google {
+  background-color: white;
+  color: #4285f4;
+  border: 1px solid #ccc;
+}
+
+.Login-button.google:hover {
+  box-shadow: 0px 4px 8px rgba(66, 133, 244, 0.5);
+}
+
+/* Facebook Button */
+.Login-button.facebook {
+  background-color: #1877f2;
+  color: white;
+}
+
+.Login-button.facebook:hover {
+  box-shadow: 0px 4px 8px rgba(24, 119, 242, 0.5);
+}
+
+/* LinkedIn Button */
+.Login-button.linkedin {
+  background-color: #0077b5;
+  color: white;
+}
+
+.Login-button.linkedin:hover {
+  box-shadow: 0px 4px 8px rgba(0, 119, 181, 0.5);
+}
+
+.Login-button:active {
+  transform: scale(0.98);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .Login-container {
+    padding: 1.5rem;
+    max-width: 360px;
+  }
+
+  .Login-logo img {
+    width: 140px;
+  }
+
+  .Login-container p {
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .Login-buttons {
+    gap: 1rem;
+  }
+
+  .Login-button {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .Login-button img {
+    width: 20px;
+    height: 20px;
+  }
+}

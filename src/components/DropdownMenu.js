@@ -1,8 +1,15 @@
-// components/DropdownMenu.js
+// DropdownMenu.js
 import React from "react";
 import { Link } from "react-router-dom";
 
-function DropdownMenu({ title, isOpen, toggle, links, nestedDropdown }) {
+function DropdownMenu({
+  title,
+  isOpen,
+  toggle,
+  links,
+  nestedDropdown,
+  handleLinkClick,
+}) {
   return (
     <li>
       <span
@@ -18,7 +25,9 @@ function DropdownMenu({ title, isOpen, toggle, links, nestedDropdown }) {
         >
           {links.map((link, index) => (
             <li className="submenu-item" key={index}>
-              <Link to={link.path}>{link.label}</Link>
+              <Link to={link.path} onClick={handleLinkClick}>
+                {link.label}
+              </Link>
             </li>
           ))}
           {nestedDropdown && (

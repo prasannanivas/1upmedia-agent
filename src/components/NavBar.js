@@ -14,7 +14,7 @@ function NavBar() {
   return (
     <div className="NavBar-wrapper">
       <TopNavBar isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
-      <SideNavBar isMenuOpen={isMenuOpen} />
+      <SideNavBar isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
     </div>
   );
 }
