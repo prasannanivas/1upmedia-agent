@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/1upmedia-agent/static/css/main.eb916f2b.css",
-    "main.js": "/1upmedia-agent/static/js/main.8189298c.js",
+    "main.js": "/1upmedia-agent/static/js/main.8b808310.js",
     "static/media/facebook-logo.png": "/1upmedia-agent/static/media/facebook-logo.27e15bab1389dd245011.png",
     "static/media/logo1.png": "/1upmedia-agent/static/media/logo1.5f49ec9498f65e0e4659.png",
     "static/media/linkedin-logo.png": "/1upmedia-agent/static/media/linkedin-logo.68ac41e1459436bfd38f.png",
     "index.html": "/1upmedia-agent/index.html",
     "main.eb916f2b.css.map": "/1upmedia-agent/static/css/main.eb916f2b.css.map",
-    "main.8189298c.js.map": "/1upmedia-agent/static/js/main.8189298c.js.map"
+    "main.8b808310.js.map": "/1upmedia-agent/static/js/main.8b808310.js.map"
   },
   "entrypoints": [
     "static/css/main.eb916f2b.css",
-    "static/js/main.8189298c.js"
+    "static/js/main.8b808310.js"
   ]
 }
