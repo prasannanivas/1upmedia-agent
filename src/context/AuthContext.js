@@ -1,4 +1,3 @@
-// context/AuthContext.js
 import React, { createContext, useState, useEffect, useContext } from "react";
 
 const AuthContext = createContext();
@@ -10,6 +9,7 @@ export const AuthProvider = ({ children }) => {
     name: null,
     profilePicture: null,
   });
+  const [loading, setLoading] = useState(true); // Add a loading state
 
   useEffect(() => {
     // Load stored session data on app load
@@ -25,6 +25,7 @@ export const AuthProvider = ({ children }) => {
         profilePicture,
       });
     }
+    setLoading(false); // Mark loading as complete
   }, []);
 
   const login = (token, name, profilePicture) => {
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ authState, login, logout }}>
+    <AuthContext.Provider value={{ authState, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
