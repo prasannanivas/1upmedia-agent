@@ -2,20 +2,29 @@
 
 .user-management-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 80vh;
+  padding: 2rem;
+  background: linear-gradient(to bottom, #eef2f3, #dfe9eb);
   font-family: "Roboto", sans-serif;
+  min-height: 100vh;
 }
 
 .profile-card {
   background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
   text-align: center;
+  margin-bottom: 2rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
 }
 
 .profile-pic-container {
@@ -25,10 +34,12 @@
 }
 
 .profile-pic {
-  width: 120px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
   border-radius: 50%;
-  border: 3px solid #0f766e;
+  border: 5px solid #0f766e;
+  object-fit: cover;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .profile-info {
@@ -36,13 +47,155 @@
 }
 
 .user-name {
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
+  color: #1e293b;
 }
 
-.user-email {
+.authorization-section {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 700px;
+}
+
+.authorization-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  color: #1e293b;
+  text-align: center;
+}
+
+.auth-platform {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f9fafb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-platform:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.platform-logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+}
+
+.auth-status {
+  width: 28px;
+  height: 28px;
+}
+
+.auth-button {
+  padding: 0.6rem 2rem;
   font-size: 1rem;
-  color: #555;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.auth-button.linkedin {
+  background-color: #0a66c2;
+  color: white;
+}
+
+.auth-button.linkedin:hover {
+  background-color: #004182;
+}
+
+.auth-button.facebook {
+  background-color: #1877f2;
+  color: white;
+}
+
+.auth-button.facebook:hover {
+  background-color: #0e55c6;
+}
+
+.auth-button.twitter {
+  background-color: #1da1f2;
+  color: white;
+}
+
+.auth-button.twitter:hover {
+  background-color: #0d8fe6;
+}
+
+.facebook-pages-section {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 700px;
+  margin-top: 2rem;
+}
+
+.facebook-pages-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  text-align: center;
+}
+
+.facebook-pages-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.facebook-page-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
   margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f9fafb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.facebook-page-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.facebook-page-pic {
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  margin-right: 1rem;
+}
+
+.facebook-page-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.instagram-profile {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+.instagram-profile-pic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  border: 2px solid #e5e7eb;
 }
