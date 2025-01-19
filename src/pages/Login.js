@@ -1,14 +1,26 @@
 // pages/Login.js
-import React from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useNavigate, useLocation } from "react-router-dom";
 import googleLogo from "../assets/google-logo.png";
 import facebookLogo from "../assets/facebook-logo.png";
 import linkedinLogo from "../assets/linkedin-logo.png";
-import companyLogo from "../logo1.png"; // Add your company logo
+import companyLogo from "../logo1.png";
 import "./Login.css";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { authState, login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect logged-in users
+  useEffect(() => {
+    if (authState.isLoggedIn) {
+      const redirectPath =
+        new URLSearchParams(location.search).get("redirect") || "/";
+      navigate(redirectPath); // Redirect to the original page or home if no redirect is specified
+    }
+  }, [authState.isLoggedIn, navigate, location.search]);
 
   const handleAuth = (provider) => {
     let authUrl = "";
@@ -37,13 +49,37 @@ const Login = () => {
       "width=600,height=400"
     );
 
-    window.addEventListener("message", function handleAuthEvent(event) {
+    window.addEventListener("message", async function handleAuthEvent(event) {
       if (event.data.type === eventType) {
-        const { accessToken, name, profilePicture } = event.data;
-        // Login and store additional user data
-        login(accessToken, name, profilePicture);
-        authWindow.close();
-        window.removeEventListener("message", handleAuthEvent);
+        console.log(event.data);
+        const { accessToken, name, profilePicture, email } = event.data;
+        try {
+          fetch("http://localhost:3000/aiagent/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email,
+              name,
+              profile_picture: profilePicture,
+              provider, // Pass provider name to backend
+            }),
+          });
+
+          login(accessToken, name, profilePicture, email);
+
+          const redirectPath =
+            new URLSearchParams(location.search).get("redirect") || "/";
+          navigate(redirectPath);
+
+          authWindow.close();
+          window.removeEventListener("message", handleAuthEvent);
+        } catch (error) {
+          console.error("Error storing user information:", error.message);
+          authWindow.close();
+          window.removeEventListener("message", handleAuthEvent);
+        }
       }
     });
   };

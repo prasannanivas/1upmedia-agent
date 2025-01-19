@@ -1,0 +1,172 @@
+.site-analytics-container {
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: "Arial", sans-serif;
+}
+
+.site-analytics-container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
+}
+
+.site-analytics-container h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+  color: #555;
+}
+
+.table-container {
+  overflow-x: auto; /* Ensure table is scrollable on smaller screens */
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.analytics-table th {
+  background-color: #1a73e8; /* Google Blue */
+  color: white;
+  font-weight: bold;
+}
+
+.analytics-table tr:nth-child(even) {
+  background-color: #f1f1f1;
+}
+
+.analytics-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.analytics-table td {
+  border-bottom: 1px solid #ddd;
+}
+
+.analytics-table tr:hover {
+  background-color: #f3f9ff; /* Slight blue hover */
+  cursor: pointer;
+}
+
+.analytics-table .query-key {
+  font-weight: bold;
+  color: #333;
+}
+
+.analytics-table .clicks,
+.analytics-table .impressions {
+  color: #0f9d58; /* Google Green */
+  font-weight: bold;
+}
+
+.analytics-table .ctr {
+  color: #fbbc05; /* Google Yellow */
+  font-weight: bold;
+}
+
+.analytics-table .position {
+  color: #ea4335; /* Google Red */
+  font-weight: bold;
+}
+
+.no-data {
+  text-align: center;
+  color: #d9534f; /* Bootstrap danger red */
+  font-size: 1.2rem;
+  margin-top: 20px;
+}
+
+.date-range-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.date-range-buttons button {
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #1a73e8;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.date-range-buttons button:hover {
+  background-color: #0c5ec2;
+}
+
+.date-range-buttons .active-button {
+  background-color: #0f9d58; /* Highlight active button with green */
+}
+
+.custom-date-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.custom-date-form label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+}
+
+.custom-date-form input {
+  padding: 8px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.custom-date-form button {
+  padding: 10px 15px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #fff;
+  background-color: #1a73e8;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.custom-date-form button:hover {
+  background-color: #0c5ec2;
+}
+
+.error-message {
+  background-color: #ffe5e5;
+  color: #d9534f;
+  border: 1px solid #d9534f;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.error-message h3 {
+  margin: 0 0 10px;
+}
+
+.error-message ul {
+  padding-left: 20px;
+}
+
+.error-message li {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}

@@ -1,24 +1,92 @@
-// UserManagement.js
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useSocialMedia } from "../context/SocialMediaContext";
 import "./UserManagement.css";
 import linkedinLogo from "../assets/linkedin-logo.png";
 import facebookLogo from "../assets/facebook-logo.png";
 import twitterLogo from "../assets/twitter-logo.png";
-import checkIcon from "../assets/check-icon.png";
+import googleLogo from "../assets/google-logo.png";
+import wordpressLogo from "../assets/wordpress-logo.png";
+import instagramLogo from "../assets/instagram-logo.png";
 
 const UserManagement = () => {
   const { authState } = useAuth();
-  const { name, profilePicture } = authState;
+  const { name, profilePicture, email } = authState;
+  const {
+    socialMediaProfiles,
+    fetchSocialMediaProfiles,
+    setInstagramProfiles,
+    setLoadingPages,
+    loadingPages,
+  } = useSocialMedia();
 
-  const [platformTokens, setPlatformTokens] = useState({
-    linkedin: null,
-    facebook: null,
-    twitter: null,
-  });
-  const [facebookPages, setFacebookPages] = useState([]);
-  const [instagramProfiles, setInstagramProfiles] = useState({});
-  const [loadingFacebookPages, setLoadingFacebookPages] = useState(false);
+  useEffect(() => {
+    if (email) {
+      fetchSocialMediaProfiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email]); // Only run when `email` changes
+
+  const handleRemoveAccount = async (
+    socialMediaName,
+    accountName,
+    accessToken
+  ) => {
+    // setLoadingPages(true);
+    try {
+      const response = await fetch(
+        "http://ai.1upmedia.com:3000/aiagent/remove-connected-account",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: authState.email,
+            social_media_name: socialMediaName,
+            account_name: accountName,
+            access_token: accessToken,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove connected account");
+      }
+
+      console.log(
+        `Account ${accountName} (${socialMediaName}) removed successfully.`
+      );
+    } catch (error) {
+      console.error("Error removing connected account:", error.message);
+    }
+    await fetchSocialMediaProfiles(); // Refresh state
+    //setLoadingPages(false);
+  };
+
+  const storeSocialMediaToken = async (data) => {
+    try {
+      const response = await fetch(
+        "http://ai.1upmedia.com:3000/aiagent/store-social-media",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to store social media details");
+      }
+
+      console.log("Social media details stored successfully");
+      await fetchSocialMediaProfiles(); // Refresh state
+    } catch (error) {
+      console.error("Error storing social media details:", error.message);
+    }
+  };
 
   const handleAuthorize = (platform) => {
     let authUrl = "";
@@ -37,6 +105,10 @@ const UserManagement = () => {
         authUrl = "https://ai.1upmedia.com:443/twitter/auth";
         eventType = "twitterAuthSuccess";
         break;
+      case "google":
+        authUrl = "https://ai.1upmedia.com:443/google/auth";
+        eventType = "googleAuthSuccess";
+        break;
       default:
         return;
     }
@@ -47,13 +119,21 @@ const UserManagement = () => {
       "width=600,height=400"
     );
 
-    window.addEventListener("message", function handleAuthEvent(event) {
+    window.addEventListener("message", async function handleAuthEvent(event) {
       if (event.data.type === eventType) {
-        const { accessToken } = event.data;
-        setPlatformTokens((prev) => ({
-          ...prev,
-          [platform]: accessToken,
-        }));
+        console.log(event.data);
+        const { accessToken, profilePicture, name } = event.data;
+
+        await storeSocialMediaToken({
+          email,
+          social_media: {
+            social_media_name: platform,
+            account_name: name,
+            profile_picture: profilePicture || "",
+            access_token: accessToken,
+          },
+        });
+
         authWindow.close();
         window.removeEventListener("message", handleAuthEvent);
         if (platform === "facebook") {
@@ -64,7 +144,7 @@ const UserManagement = () => {
   };
 
   const fetchFacebookPages = async (accessToken) => {
-    setLoadingFacebookPages(true);
+    // setLoadingPages(true);
     try {
       const response = await fetch(
         "https://ai.1upmedia.com:443/facebook/getFacebookPages",
@@ -79,10 +159,22 @@ const UserManagement = () => {
 
       const data = await response.json();
       const pages = data.pages || [];
-      setFacebookPages(pages);
+      // setFacebookPages(pages);
 
-      // Fetch Instagram profiles if available
       for (const page of pages) {
+        await storeSocialMediaToken({
+          email,
+          social_media: {
+            social_media_name: "Facebook - Connected",
+            profile_picture: page.pagePicture,
+            access_token: page.pageAccessToken,
+            account_name: page.pageName,
+            dynamic_fields: {
+              page_id: page.pageId,
+              connected_instagram: page.pageInstaAccount || null,
+            },
+          },
+        });
         if (page.pageInstaAccount) {
           fetchInstagramProfile(page.pageInstaAccount.id, page.pageAccessToken);
         }
@@ -90,7 +182,7 @@ const UserManagement = () => {
     } catch (error) {
       console.error("Error fetching Facebook pages:", error);
     } finally {
-      setLoadingFacebookPages(false);
+      setLoadingPages(false);
     }
   };
 
@@ -112,6 +204,18 @@ const UserManagement = () => {
         ...prev,
         [instagramAccountId]: data.profileInfo,
       }));
+      await storeSocialMediaToken({
+        email,
+        social_media: {
+          social_media_name: "Instagram",
+          profile_picture: data.profileInfo.profile_picture_url,
+          access_token: accessToken,
+          account_name: data.profileInfo.name,
+          dynamic_fields: {
+            page_id: data.profileInfo.id,
+          },
+        },
+      });
     } catch (error) {
       console.error("Error fetching Instagram profile:", error);
     }
@@ -132,92 +236,111 @@ const UserManagement = () => {
         </div>
       </div>
 
-      <div className="authorization-section">
-        <h2>Authorize Platforms</h2>
-        <div className="auth-platform">
-          <img src={linkedinLogo} alt="LinkedIn" className="platform-logo" />
-          {platformTokens.linkedin ? (
-            <img src={checkIcon} alt="Authorized" className="auth-status" />
-          ) : (
-            <button
-              className="auth-button linkedin"
-              onClick={() => handleAuthorize("linkedin")}
-            >
-              Authorize
-            </button>
-          )}
-        </div>
-
-        <div className="auth-platform">
-          <img src={facebookLogo} alt="Facebook" className="platform-logo" />
-          {platformTokens.facebook ? (
-            <img src={checkIcon} alt="Authorized" className="auth-status" />
-          ) : (
-            <button
-              className="auth-button facebook"
-              onClick={() => handleAuthorize("facebook")}
-            >
-              Authorize
-            </button>
-          )}
-        </div>
-
-        <div className="auth-platform">
-          <img src={twitterLogo} alt="Twitter" className="platform-logo" />
-          {platformTokens.twitter ? (
-            <img src={checkIcon} alt="Authorized" className="auth-status" />
-          ) : (
-            <button
-              className="auth-button twitter"
-              onClick={() => handleAuthorize("twitter")}
-            >
-              Authorize
-            </button>
-          )}
-        </div>
-      </div>
-
-      {loadingFacebookPages ? (
-        <div className="loading">Loading Facebook pages...</div>
+      {loadingPages ? (
+        <div className="loading">Loading Connected Accounts...</div>
       ) : (
-        facebookPages.length > 0 && (
-          <div className="facebook-pages-section">
-            <h2>Facebook Pages</h2>
-            <ul className="facebook-pages-list">
-              {facebookPages.map((page) => (
-                <li key={page.pageId} className="facebook-page-item">
+        socialMediaProfiles.length > 0 && (
+          <div className="connected-accounts-section">
+            <h2>Connected Accounts</h2>
+            <ul className="connected-accounts-list">
+              {socialMediaProfiles.map((account) => (
+                <li
+                  key={account.access_token + account.social_media_name}
+                  className="connected-account-item"
+                >
                   <img
-                    src={page.pagePicture}
-                    alt={page.pageName}
-                    className="facebook-page-pic"
+                    src={
+                      account.social_media_name === "facebook" ||
+                      account.social_media_name === "Facebook - Connected"
+                        ? facebookLogo
+                        : account.social_media_name === "linkedin"
+                        ? linkedinLogo
+                        : account.social_media_name === "google"
+                        ? googleLogo
+                        : account.social_media_name === "Instagram"
+                        ? instagramLogo
+                        : account.social_media_name === "WordPress"
+                        ? wordpressLogo
+                        : "https://via.placeholder.com/50" // Default for unknown platforms
+                    }
+                    alt={account.social_media_name}
+                    className="connected-platform-logo"
                   />
-                  <div className="facebook-page-info">
-                    <h3>{page.pageName}</h3>
-                    {page.pageInstaAccount &&
-                      instagramProfiles[page.pageInstaAccount.id] && (
-                        <div className="instagram-profile">
-                          <img
-                            src={
-                              instagramProfiles[page.pageInstaAccount.id]
-                                .profile_picture_url
-                            }
-                            alt={
-                              instagramProfiles[page.pageInstaAccount.id].name
-                            }
-                            className="instagram-profile-pic"
-                          />
-                          <p>
-                            {instagramProfiles[page.pageInstaAccount.id].name}
-                          </p>
-                        </div>
-                      )}
+                  <img
+                    src={
+                      account.profile_picture ||
+                      "https://via.placeholder.com/50"
+                    }
+                    alt={account.account_name}
+                    className="connected-profile-pic"
+                  />
+                  <div className="connected-account-info">
+                    <h3>{account.account_name}</h3>
+                    <p>{account.social_media_name}</p>
                   </div>
+                  <button
+                    className="remove-button"
+                    onClick={() =>
+                      handleRemoveAccount(
+                        account.social_media_name,
+                        account.account_name,
+                        account.access_token
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
                 </li>
               ))}
             </ul>
           </div>
         )
       )}
+
+      <div className="authorization-section">
+        <h2>Authorize Platforms</h2>
+        <div className="auth-platform">
+          <img src={linkedinLogo} alt="LinkedIn" className="platform-logo" />
+
+          <button
+            className="auth-button linkedin"
+            onClick={() => handleAuthorize("linkedin")}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={facebookLogo} alt="Facebook" className="platform-logo" />
+          <button
+            className="auth-button facebook"
+            onClick={() => handleAuthorize("facebook")}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={googleLogo} alt="Google" className="platform-logo" />
+          <button
+            className="auth-button google"
+            onClick={() => handleAuthorize("google")}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={twitterLogo} alt="Twitter" className="platform-logo" />
+
+          <button
+            className="auth-button twitter"
+            onClick={() => handleAuthorize("twitter")}
+          >
+            Add
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

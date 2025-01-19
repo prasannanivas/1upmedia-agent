@@ -7,7 +7,9 @@ import NavBar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import Agents from "./pages/Agents";
 import Boards from "./pages/Boards";
-import Analytics from "./pages/Analytics";
+import Analytics from "./pages/Analytics/Analytics";
+import SiteDetails from "./pages/Analytics/SiteDetails";
+import SiteStats from "./pages/Analytics/SiteStats";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import StrategyAnalysis from "./pages/StrategyAnalysis";
@@ -22,6 +24,7 @@ import SetupWizard from "./pages/SetupWizard";
 import ActiveIntegrations from "./pages/ActiveIntegrations";
 import UserManagement from "./pages/UserManagement";
 import Security from "./pages/Security";
+import { SocialMediaProvider } from "./context/SocialMediaContext";
 import "./App.css";
 
 const AppWrapper = () => {
@@ -56,6 +59,8 @@ const AppWrapper = () => {
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/site-details" element={<SiteDetails />} />
+          <Route path="/site-stats" element={<SiteStats />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/agents/strategy" element={<StrategyAnalysis />} />
@@ -91,7 +96,9 @@ const AppWrapper = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppWrapper />
+      <SocialMediaProvider>
+        <AppWrapper />
+      </SocialMediaProvider>
     </AuthProvider>
   );
 }

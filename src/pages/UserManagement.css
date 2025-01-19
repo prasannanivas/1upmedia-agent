@@ -1,30 +1,29 @@
-/* UserManagement.css */
-
 .user-management-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 2rem;
-  background: linear-gradient(to bottom, #eef2f3, #dfe9eb);
-  font-family: "Roboto", sans-serif;
+  background: linear-gradient(to bottom, #f3f8fc, #e2edf5);
+  font-family: "Poppins", sans-serif;
   min-height: 100vh;
+  color: #333;
 }
 
 .profile-card {
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  padding: 2.5rem;
+  padding: 2rem;
   width: 100%;
-  max-width: 450px;
+  max-width: 400px;
   text-align: center;
   margin-bottom: 2rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .profile-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0px 14px 28px rgba(0, 0, 0, 0.15);
 }
 
 .profile-pic-container {
@@ -34,47 +33,49 @@
 }
 
 .profile-pic {
-  width: 140px;
-  height: 140px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
-  border: 5px solid #0f766e;
+  border: 4px solid #0f766e;
   object-fit: cover;
   box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
 }
 
 .profile-info {
-  color: #333;
+  color: #1f2937;
 }
 
 .user-name {
-  font-size: 2rem;
-  font-weight: bold;
+  font-size: 1.8rem;
+  font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #1e293b;
+  color: #0f172a;
 }
 
 .authorization-section {
   background: #ffffff;
   border-radius: 16px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 1.5rem;
   width: 100%;
-  max-width: 700px;
+  max-width: 650px;
+  margin-bottom: 2rem;
 }
 
 .authorization-section h2 {
-  font-size: 1.8rem;
-  margin-bottom: 2rem;
+  font-size: 1.6rem;
+  margin-bottom: 1.5rem;
   color: #1e293b;
   text-align: center;
+  font-weight: 600;
 }
 
 .auth-platform {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem;
-  margin-bottom: 1.5rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background-color: #f9fafb;
@@ -83,24 +84,24 @@
 
 .auth-platform:hover {
   transform: translateY(-3px);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.12);
 }
 
 .platform-logo {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
 }
 
 .auth-status {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 
 .auth-button {
-  padding: 0.6rem 2rem;
-  font-size: 1rem;
-  font-weight: bold;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -114,6 +115,7 @@
 
 .auth-button.linkedin:hover {
   background-color: #004182;
+  transform: translateY(-3px);
 }
 
 .auth-button.facebook {
@@ -123,15 +125,27 @@
 
 .auth-button.facebook:hover {
   background-color: #0e55c6;
+  transform: translateY(-3px);
 }
 
 .auth-button.twitter {
-  background-color: #1da1f2;
+  background-color: #19191a;
   color: white;
 }
 
 .auth-button.twitter:hover {
-  background-color: #0d8fe6;
+  background-color: #667575;
+  transform: translateY(-3px);
+}
+
+.auth-button.google {
+  background-color: #ffffff;
+  color: rgb(75, 9, 9);
+}
+
+.auth-button.google:hover {
+  background-color: #e88858;
+  transform: translateY(-3px);
 }
 
 .facebook-pages-section {
@@ -145,10 +159,11 @@
 }
 
 .facebook-pages-section h2 {
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   margin-bottom: 1.5rem;
   color: #1e293b;
   text-align: center;
+  font-weight: 600;
 }
 
 .facebook-pages-list {
@@ -160,7 +175,7 @@
 .facebook-page-item {
   display: flex;
   align-items: center;
-  padding: 1rem;
+  padding: 0.8rem;
   margin-bottom: 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
@@ -170,12 +185,12 @@
 
 .facebook-page-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.12);
 }
 
 .facebook-page-pic {
-  width: 60px;
-  height: 60px;
+  width: 55px;
+  height: 55px;
   border-radius: 10px;
   margin-right: 1rem;
 }
@@ -189,13 +204,104 @@
 .instagram-profile {
   display: flex;
   align-items: center;
-  margin-top: 1rem;
+  margin-top: 0.8rem;
 }
 
 .instagram-profile-pic {
-  width: 40px;
-  height: 40px;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   margin-right: 0.5rem;
   border: 2px solid #e5e7eb;
+}
+
+.loading {
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin-top: 1.5rem;
+}
+
+.connected-accounts-section {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 750px;
+  margin-top: 2rem;
+}
+
+.connected-accounts-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  text-align: center;
+  font-weight: 600;
+}
+
+.connected-accounts-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.connected-account-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f9fafb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.connected-account-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.connected-platform-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  margin-right: 1rem;
+}
+
+.connected-profile-pic {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 1rem;
+  border: 2px solid #e5e7eb;
+}
+
+.connected-account-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #1e293b;
+}
+
+.connected-account-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.remove-button {
+  margin-left: auto;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: white;
+  background-color: #ef4444;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.remove-button:hover {
+  background-color: #dc2626;
+  transform: translateY(-2px);
 }
