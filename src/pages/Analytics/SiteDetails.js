@@ -49,6 +49,7 @@ function SiteDetails() {
       }
 
       const data = await response.json();
+      console.log(data);
       setAnalyticsData(data);
     } catch (error) {
       console.error("Error fetching site analytics:", error.message);
@@ -182,6 +183,9 @@ function SiteDetails() {
             <thead>
               <tr>
                 <th>Query Key</th>
+                <th>URL</th>
+                <th>Device</th>
+                <th>Country</th>
                 <th>Clicks</th>
                 <th>Impressions</th>
                 <th>CTR (%)</th>
@@ -191,7 +195,10 @@ function SiteDetails() {
             <tbody>
               {analyticsData.map((item, index) => (
                 <tr key={index}>
-                  <td className="query-key">{item.keys.join(" - ")}</td>
+                  <td className="query-key">{item.keys[0]}</td>
+                  <td className="query-key">{item.keys[1]}</td>
+                  <td className="query-key">{item.keys[2]}</td>
+                  <td className="query-key">{item.keys[3]?.toUpperCase()}</td>
                   <td className="clicks">{item.clicks}</td>
                   <td className="impressions">{item.impressions}</td>
                   <td className="ctr">{(item.ctr * 100).toFixed(2)}%</td>

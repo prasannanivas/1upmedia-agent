@@ -18,6 +18,7 @@ import ContentCreation from "./pages/ContentCreation";
 import ContentReview from "./pages/ContentReview";
 import Publishing from "./pages/Publishing";
 import SocialMedia from "./pages/SocialMedia";
+import SiteAnalyser from "./pages/SiteAnalyser";
 import TemplatedBoards from "./pages/TemplatedBoards";
 import { ToastProvider } from "./context/ToastProvider";
 import CustomBoards from "./pages/CustomBoards";
@@ -61,6 +62,7 @@ const AppWrapper = () => {
           <Route path="/boards" element={<Boards />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/site-details" element={<SiteDetails />} />
+          <Route path="/site-analyser" element={<SiteAnalyser />} />
           <Route path="/site-stats" element={<SiteStats />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/settings" element={<Settings />} />
