@@ -72,7 +72,7 @@ function Analytics() {
               );
               try {
                 const refreshResponse = await fetch(
-                  "http://localhost:3000/google/fetch-new-access-token",
+                  "http://ai.1upmedia.com:3000/google/fetch-new-access-token",
                   {
                     method: "POST",
                     headers: {
