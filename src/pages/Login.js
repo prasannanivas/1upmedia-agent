@@ -54,7 +54,7 @@ const Login = () => {
         console.log(event.data);
         const { accessToken, name, profilePicture, email } = event.data;
         try {
-          fetch("http://localhost:3000/aiagent/login", {
+          fetch("http://ai.1upmedia.com:3000/aiagent/login", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -1,0 +1,34 @@
+/* Container for centering the loader */
+.logo-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
+  padding: 20px;
+}
+
+/* Rotating logo */
+.logo-loader {
+  width: 60px; /* Adjust logo size */
+  height: 60px;
+  animation: spin 1.5s linear infinite; /* Smooth rotation animation */
+}
+
+/* Spinning animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Text below the loader */
+.loader-text {
+  margin-top: 10px;
+  font-size: 16px;
+  color: #555;
+  font-weight: bold;
+}

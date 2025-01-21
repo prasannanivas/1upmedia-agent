@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
+import { useToast } from "./ToastProvider";
 // Create Context
 const SocialMediaContext = createContext();
 
@@ -11,6 +12,7 @@ export const SocialMediaProvider = ({ children }) => {
   const [facebookPages, setFacebookPages] = useState([]);
   const [instagramProfiles, setInstagramProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
+  const { PositiveToast, NegativeToast } = useToast();
 
   const fetchSocialMediaProfiles = async () => {
     setLoadingPages(true); // Show loading indicator
@@ -66,6 +68,34 @@ export const SocialMediaProvider = ({ children }) => {
     }
   };
 
+  const storeSocialMediaToken = async (data) => {
+    try {
+      const response = await fetch(
+        "http://ai.1upmedia.com:3000/aiagent/store-social-media",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      console.log("Social media details stored successfully");
+      PositiveToast("Social media details stored successfully");
+
+      if (!response.ok) {
+        NegativeToast("Failed to store social media details");
+        throw new Error("Failed to store social media details");
+      }
+
+      await fetchSocialMediaProfiles(); // Refresh state
+    } catch (error) {
+      console.error("Error storing social media details:", error.message);
+      NegativeToast("Error storing social media details:", error.message);
+    }
+  };
+
   return (
     <SocialMediaContext.Provider
       value={{
@@ -75,6 +105,7 @@ export const SocialMediaProvider = ({ children }) => {
         facebookPages,
         instagramProfiles,
         loadingPages,
+        storeSocialMediaToken,
         setLoadingPages,
         setFacebookPages,
         setInstagramProfiles,

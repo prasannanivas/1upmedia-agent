@@ -9,6 +9,7 @@ import twitterLogo from "../assets/twitter-logo.png";
 import googleLogo from "../assets/google-logo.png";
 import wordpressLogo from "../assets/wordpress-logo.png";
 import instagramLogo from "../assets/instagram-logo.png";
+import Loader from "../components/Loader";
 
 const UserManagement = () => {
   const { authState } = useAuth();
@@ -20,6 +21,7 @@ const UserManagement = () => {
     setInstagramProfiles,
     setLoadingPages,
     loadingPages,
+    storeSocialMediaToken,
   } = useSocialMedia();
 
   useEffect(() => {
@@ -69,33 +71,6 @@ const UserManagement = () => {
     //setLoadingPages(false);
   };
 
-  const storeSocialMediaToken = async (data) => {
-    try {
-      const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/store-social-media",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!response.ok) {
-        NegativeToast("Failed to store social media details");
-        throw new Error("Failed to store social media details");
-      }
-
-      console.log("Social media details stored successfully");
-      PositiveToast("Social media details stored successfully");
-      await fetchSocialMediaProfiles(); // Refresh state
-    } catch (error) {
-      console.error("Error storing social media details:", error.message);
-      NegativeToast("Error storing social media details:", error.message);
-    }
-  };
-
   const handleAuthorize = (platform) => {
     let authUrl = "";
     let eventType = "";
@@ -130,7 +105,7 @@ const UserManagement = () => {
     window.addEventListener("message", async function handleAuthEvent(event) {
       if (event.data.type === eventType) {
         console.log(event.data);
-        const { accessToken, profilePicture, name } = event.data;
+        const { accessToken, profilePicture, name, refreshToken } = event.data;
 
         await storeSocialMediaToken({
           email,
@@ -139,6 +114,7 @@ const UserManagement = () => {
             account_name: name,
             profile_picture: profilePicture || "",
             access_token: accessToken,
+            ...(refreshToken && { dynamic_fields: { refreshToken } }), // Add dynamic_fields only if refreshToken exists
           },
         });
 
@@ -245,7 +221,7 @@ const UserManagement = () => {
       </div>
 
       {loadingPages ? (
-        <div className="loading">Loading Connected Accounts...</div>
+        <Loader />
       ) : (
         socialMediaProfiles.length > 0 && (
           <div className="connected-accounts-section">

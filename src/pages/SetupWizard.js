@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown"; // For Markdown parsing
 import { useToast } from "../context/ToastProvider";
 import "./SetupWizard.css";
+import Loader from "../components/Loader";
 
 const SetupWizard = () => {
   const [siteURL, setSiteURL] = useState("");
@@ -174,9 +175,7 @@ const SetupWizard = () => {
       </form>
 
       {/* Loading Message */}
-      {isLoading && (
-        <p className="loading-message">Fetching details, please wait...</p>
-      )}
+      {isLoading && <Loader />}
 
       {/* Editable Business Details */}
       {!isLoading && businessDetails && (

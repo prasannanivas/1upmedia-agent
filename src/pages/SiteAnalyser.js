@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Loader from "../components/Loader"; // Import the new logo loader
 import "./SetupWizard.css";
 
 const SetupWizard = () => {
@@ -51,9 +52,7 @@ const SetupWizard = () => {
         </button>
       </div>
 
-      {isLoading && (
-        <p className="loading-message">Analyzing site, please wait...</p>
-      )}
+      {isLoading && <Loader />}
 
       {siteAnalysis && (
         <div className="result-section">

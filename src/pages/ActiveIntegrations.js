@@ -4,7 +4,7 @@ import { useToast } from "../context/ToastProvider";
 
 function Integrations() {
   const { authState } = useAuth();
-  const { name, profilePicture, email } = authState;
+  const { email } = authState;
   const { PositiveToast, NegativeToast } = useToast();
 
   const [wordpressDetails, setWordpressDetails] = useState({

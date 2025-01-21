@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import "./SiteDetails.css";
+import Loader from "../../components/Loader";
 
 function SiteDetails() {
   const { state } = useLocation();
@@ -103,6 +104,7 @@ function SiteDetails() {
   useEffect(() => {
     // Default: Fetch last 1 month analytics on load
     handleDateRange("1M");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -176,7 +178,9 @@ function SiteDetails() {
 
       {/* Analytics Table */}
       {loading ? (
-        <p className="no-data">Loading Analytics...</p>
+        <p className="no-data">
+          <Loader />
+        </p>
       ) : analyticsData.length > 0 ? (
         <div className="table-container">
           <table className="analytics-table">

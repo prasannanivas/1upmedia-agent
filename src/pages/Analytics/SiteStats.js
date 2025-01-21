@@ -4,6 +4,7 @@ import { Bar, Line, HorizontalBar } from "react-chartjs-2";
 import "chart.js/auto"; // Automatically registers required chart.js components
 
 import "./SiteStats.css";
+import Loader from "../../components/Loader";
 
 function SiteStats() {
   const { state } = useLocation();
@@ -92,7 +93,7 @@ function SiteStats() {
       <h1>Site Stats</h1>
       <h2>Site: {siteDetails.siteUrl}</h2>
       {loading ? (
-        <p>Loading Stats...</p>
+        <Loader />
       ) : error ? (
         <p style={{ color: "red" }}>Error: {error}</p>
       ) : stats ? (

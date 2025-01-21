@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSocialMedia } from "../../context/SocialMediaContext";
+import { useAuth } from "../../context/AuthContext";
+import Loader from "../../components/Loader";
 
 function Analytics() {
-  const { socialMediaProfiles, fetchSocialMediaProfiles, setLoadingPages } =
-    useSocialMedia();
+  const {
+    socialMediaProfiles,
+    fetchSocialMediaProfiles,
+    setLoadingPages,
+    loadingPages,
+    storeSocialMediaToken,
+  } = useSocialMedia();
   const [googleSites, setGoogleSites] = useState([]);
   const navigate = useNavigate();
+  const { getUserLoginDetails } = useAuth();
+  const { email } = getUserLoginDetails();
 
   useEffect(() => {
     fetchSocialMediaProfiles();
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -30,32 +38,94 @@ function Analytics() {
         const allSites = [];
 
         const siteFetchPromises = googleProfiles.map(async (profile) => {
-          const response = await fetch(
-            `http://ai.1upmedia.com:3000/google/sites?accessToken=${profile.access_token}`
-          );
+          let accessToken = profile.access_token;
 
-          if (!response.ok) {
-            throw new Error(
-              `Failed to fetch sites for ${profile.account_name}`
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const response = await fetch(
+              `http://ai.1upmedia.com:3000/google/sites?accessToken=${accessToken}`
             );
-          }
 
-          let data;
-          try {
-            data = await response.json();
-          } catch (error) {
-            data = [];
-          }
+            if (response.ok) {
+              // Successfully fetched sites
+              let data;
+              try {
+                data = await response.json();
+              } catch (error) {
+                data = [];
+              }
 
-          allSites.push(
-            ...data.map((site) => ({
-              accountName: profile.account_name,
-              profilePicture: profile.profile_picture,
-              siteUrl: site.siteUrl,
-              permissionLevel: site.permissionLevel,
-              accessToken: profile.access_token,
-            }))
-          );
+              allSites.push(
+                // eslint-disable-next-line no-loop-func
+                ...data.map((site) => ({
+                  accountName: profile.account_name,
+                  profilePicture: profile.profile_picture,
+                  siteUrl: site.siteUrl,
+                  permissionLevel: site.permissionLevel,
+                  accessToken,
+                }))
+              );
+              break; // Exit retry loop on success
+            } else if (response.status === 401 && attempt === 0) {
+              // Unauthorized, try refreshing the token
+              console.log(
+                `Access token expired for ${profile.account_name}. Refreshing...`
+              );
+              try {
+                const refreshResponse = await fetch(
+                  "http://localhost:3000/google/fetch-new-access-token",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      refreshToken: profile.dynamic_fields?.refreshToken,
+                    }),
+                  }
+                );
+
+                if (refreshResponse.ok) {
+                  const { access_token: newAccessToken } =
+                    await refreshResponse.json();
+                  accessToken = newAccessToken; // Update the token
+                  console.log(
+                    `Access token refreshed for ${profile.account_name}`
+                  );
+
+                  // Call storeSocialMediaToken to update the token in storage
+                  console.log("saving", profile.account_name);
+                  await storeSocialMediaToken({
+                    email,
+                    social_media: {
+                      social_media_name: profile.social_media_name,
+                      account_name: profile.account_name,
+                      profile_picture: profile.profile_picture,
+                      access_token: newAccessToken,
+                      ...(profile.dynamic_fields?.refreshToken && {
+                        dynamic_fields: {
+                          refreshToken: profile.dynamic_fields.refreshToken,
+                        },
+                      }),
+                    },
+                  });
+                } else {
+                  throw new Error("Failed to refresh access token");
+                }
+              } catch (error) {
+                console.error(
+                  `Error refreshing access token for ${profile.account_name}:`,
+                  error.message
+                );
+                break; // Stop retrying for this profile
+              }
+            } else {
+              // Non-401 error or failed refresh, stop retrying
+              console.error(
+                `Failed to fetch sites for ${profile.account_name}`
+              );
+              break;
+            }
+          }
         });
 
         await Promise.all(siteFetchPromises);
@@ -73,7 +143,9 @@ function Analytics() {
   return (
     <div style={{ padding: "20px", maxWidth: "800px", margin: "0 auto" }}>
       <h1 style={{ textAlign: "center", marginBottom: "20px" }}>Analytics</h1>
-      {googleSites.length > 0 ? (
+      {loadingPages ? (
+        <Loader />
+      ) : googleSites.length > 0 ? (
         <ul style={{ listStyle: "none", padding: 0 }}>
           {googleSites.map((site, index) => (
             <li
