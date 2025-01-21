@@ -42,7 +42,7 @@ function Analytics() {
 
           for (let attempt = 0; attempt < 2; attempt++) {
             const response = await fetch(
-              `http://ai.1upmedia.com:3000/google/sites?accessToken=${accessToken}`
+              `https://ai.1upmedia.com:443/google/sites?accessToken=${accessToken}`
             );
 
             if (response.ok) {
@@ -72,7 +72,7 @@ function Analytics() {
               );
               try {
                 const refreshResponse = await fetch(
-                  "http://ai.1upmedia.com:3000/google/fetch-new-access-token",
+                  "https://ai.1upmedia.com:443/google/fetch-new-access-token",
                   {
                     method: "POST",
                     headers: {

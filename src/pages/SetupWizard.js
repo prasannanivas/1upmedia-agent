@@ -16,7 +16,7 @@ const SetupWizard = () => {
   const postToBackend = async (data) => {
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/updateBusinessdetails",
+        "https://ai.1upmedia.com:443/aiagent/updateBusinessdetails",
         {
           method: "POST",
           headers: {

@@ -19,7 +19,7 @@ function SiteStats() {
       setError(null);
       try {
         const response = await fetch(
-          `http://ai.1upmedia.com:3000/google/compare-analytics`,
+          `https://ai.1upmedia.com:443/google/compare-analytics`,
           {
             method: "POST",
             headers: {

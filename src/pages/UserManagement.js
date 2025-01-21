@@ -39,7 +39,7 @@ const UserManagement = () => {
     // setLoadingPages(true);
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/remove-connected-account",
+        "https://ai.1upmedia.com:443/aiagent/remove-connected-account",
         {
           method: "POST",
           headers: {

@@ -18,7 +18,7 @@ export const SocialMediaProvider = ({ children }) => {
     setLoadingPages(true); // Show loading indicator
     try {
       const response = await fetch(
-        `http://ai.1upmedia.com:3000/aiagent/getSocialMediaCreds?email=${email}`
+        `https://ai.1upmedia.com:443/aiagent/getSocialMediaCreds?email=${email}`
       );
 
       if (!response.ok) {
@@ -71,7 +71,7 @@ export const SocialMediaProvider = ({ children }) => {
   const storeSocialMediaToken = async (data) => {
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/store-social-media",
+        "https://ai.1upmedia.com:443/aiagent/store-social-media",
         {
           method: "POST",
           headers: {

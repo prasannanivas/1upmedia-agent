@@ -20,7 +20,7 @@ function SiteDetails() {
     setAnalyticsData([]); // Clear previous data
     try {
       const response = await fetch(
-        `http://ai.1upmedia.com:3000/google/sites/${encodeURIComponent(
+        `https://ai.1upmedia.com:443/google/sites/${encodeURIComponent(
           siteUrl
         )}/analytics`,
         {

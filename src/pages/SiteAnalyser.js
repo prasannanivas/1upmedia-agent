@@ -11,7 +11,7 @@ const SetupWizard = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/analyze-site",
+        "https://ai.1upmedia.com:443/aiagent/analyze-site",
         {
           method: "POST",
           headers: {
