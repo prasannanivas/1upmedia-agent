@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastProvider";
 
 function Integrations() {
   const { authState } = useAuth();
   const { name, profilePicture, email } = authState;
+  const { PositiveToast, NegativeToast } = useToast();
 
   const [wordpressDetails, setWordpressDetails] = useState({
     url: "",
@@ -34,6 +36,7 @@ function Integrations() {
     // Validate form input
     if (!url || !username || !applicationPassword) {
       setError("All fields are required.");
+      NegativeToast("All fields are required.");
       return;
     }
 
@@ -53,6 +56,10 @@ function Integrations() {
           errorData?.message ||
             "Authentication failed. Please check your credentials or ensure the Basic Auth plugin is installed."
         );
+        NegativeToast(
+          errorData?.message ||
+            "Authentication failed. Please check your credentials or ensure the Basic Auth plugin is installed."
+        );
         setShowPluginMessage(true);
 
         return;
@@ -62,7 +69,7 @@ function Integrations() {
 
       // Send data to backend
       const backendResponse = await fetch(
-        "http://localhost:3000/aiagent/store-social-media",
+        "https://ai.1upmedia.com:443/aiagent/store-social-media",
         {
           method: "POST",
           headers: {
@@ -89,18 +96,32 @@ function Integrations() {
               errorData.message ||
               "Failed to save WordPress details."
           );
+          NegativeToast(
+            errorData.error ||
+              errorData.message ||
+              "Failed to save WordPress details."
+          );
         } else {
           setMessage(backendResponse.message);
+          PositiveToast(backendResponse.message);
         }
 
         return;
       }
 
       const backendResult = await backendResponse.json();
+
       setMessage(backendResult.message);
+      PositiveToast(backendResult.message);
     } catch (err) {
       console.error("Error:", err);
-      setError("Failed to connect to the WordPress site.");
+      setError(
+        "Failed to connect to the WordPress site. Authentication failed. Please check your credentials"
+      );
+      NegativeToast(
+        err +
+          " Failed to connect to the WordPress site. Authentication failed. Please check your credentials"
+      );
     }
   };
 

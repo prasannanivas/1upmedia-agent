@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastProvider";
 import { useSocialMedia } from "../context/SocialMediaContext";
 import "./UserManagement.css";
 import linkedinLogo from "../assets/linkedin-logo.png";
@@ -11,6 +12,7 @@ import instagramLogo from "../assets/instagram-logo.png";
 
 const UserManagement = () => {
   const { authState } = useAuth();
+  const { PositiveToast, NegativeToast } = useToast();
   const { name, profilePicture, email } = authState;
   const {
     socialMediaProfiles,
@@ -57,6 +59,9 @@ const UserManagement = () => {
       console.log(
         `Account ${accountName} (${socialMediaName}) removed successfully.`
       );
+      PositiveToast(
+        `Account ${accountName} (${socialMediaName}) removed successfully.`
+      );
     } catch (error) {
       console.error("Error removing connected account:", error.message);
     }
@@ -78,13 +83,16 @@ const UserManagement = () => {
       );
 
       if (!response.ok) {
+        NegativeToast("Failed to store social media details");
         throw new Error("Failed to store social media details");
       }
 
       console.log("Social media details stored successfully");
+      PositiveToast("Social media details stored successfully");
       await fetchSocialMediaProfiles(); // Refresh state
     } catch (error) {
       console.error("Error storing social media details:", error.message);
+      NegativeToast("Error storing social media details:", error.message);
     }
   };
 

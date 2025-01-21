@@ -19,6 +19,7 @@ import ContentReview from "./pages/ContentReview";
 import Publishing from "./pages/Publishing";
 import SocialMedia from "./pages/SocialMedia";
 import TemplatedBoards from "./pages/TemplatedBoards";
+import { ToastProvider } from "./context/ToastProvider";
 import CustomBoards from "./pages/CustomBoards";
 import SetupWizard from "./pages/SetupWizard";
 import ActiveIntegrations from "./pages/ActiveIntegrations";
@@ -96,9 +97,11 @@ const AppWrapper = () => {
 function App() {
   return (
     <AuthProvider>
-      <SocialMediaProvider>
-        <AppWrapper />
-      </SocialMediaProvider>
+      <ToastProvider>
+        <SocialMediaProvider>
+          <AppWrapper />
+        </SocialMediaProvider>
+      </ToastProvider>
     </AuthProvider>
   );
 }
