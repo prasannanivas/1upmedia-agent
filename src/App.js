@@ -28,6 +28,9 @@ import UserManagement from "./pages/UserManagement";
 import Security from "./pages/Security";
 import { SocialMediaProvider } from "./context/SocialMediaContext";
 import "./App.css";
+import { PollProvider } from "./context/PollContext";
+import PostDetails from "./pages/PostDetails";
+import EditPost from "./pages/Editpost";
 
 const AppWrapper = () => {
   const { authState, loading } = useAuth();
@@ -64,6 +67,8 @@ const AppWrapper = () => {
           <Route path="/site-details" element={<SiteDetails />} />
           <Route path="/site-analyser" element={<SiteAnalyser />} />
           <Route path="/site-stats" element={<SiteStats />} />
+          <Route path="/post-details/:postId" element={<PostDetails />} />
+          <Route path="/edit-post/:postId" element={<EditPost />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/agents/strategy" element={<StrategyAnalysis />} />
@@ -100,9 +105,11 @@ function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <SocialMediaProvider>
-          <AppWrapper />
-        </SocialMediaProvider>
+        <PollProvider>
+          <SocialMediaProvider>
+            <AppWrapper />
+          </SocialMediaProvider>
+        </PollProvider>
       </ToastProvider>
     </AuthProvider>
   );

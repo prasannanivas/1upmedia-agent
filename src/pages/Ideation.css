@@ -1,0 +1,190 @@
+/* Container Styling */
+.template-manager-container {
+  max-width: 80vw;
+  margin: 0 auto;
+  padding: 40px;
+  background: linear-gradient(135deg, #ffffff, #f7f8fa);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 1s ease-in-out;
+}
+
+/* Smooth fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Title Styling */
+.template-title {
+  font-size: 32px;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 30px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Section and Card Styling */
+.template-card {
+  border: none;
+  border-radius: 16px;
+  margin-bottom: 30px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.template-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+}
+
+.template-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  cursor: pointer;
+  background: #007bff;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  transition: background 0.3s ease;
+}
+
+.template-card-header:hover {
+  background: #0056b3;
+}
+
+.template-card-body {
+  padding: 20px;
+  animation: slideDown 0.4s ease-in-out;
+}
+
+/* Slide Down Animation */
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    max-height: 500px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Item Styling */
+.template-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.template-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.template-input:focus {
+  border: 1px solid #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+  outline: none;
+}
+
+/* Content Types */
+.content-type-item .content-key-input {
+  flex: 0.2;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.content-type-item .content-value-textarea {
+  flex: 1.8;
+  padding: 12px 16px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Button Styling */
+.add-button,
+.remove-button,
+.save-button {
+  background: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.add-button:hover,
+.remove-button:hover,
+.save-button:hover {
+  background: #0056b3;
+  transform: scale(1.05);
+}
+
+.remove-button {
+  background: #ff4d4f;
+}
+
+.remove-button:hover {
+  background: #d93a3d;
+}
+
+/* Save Button */
+.save-button {
+  width: 100%;
+  font-size: 18px;
+  padding: 14px;
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+/* Transition for Save Button Hover */
+.save-button:hover {
+  background: linear-gradient(90deg, #0056b3, #003d80);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .template-manager-container {
+    padding: 20px;
+  }
+
+  .template-input,
+  .content-type-item .content-key-input,
+  .content-type-item .content-value-textarea {
+    font-size: 14px;
+  }
+
+  .add-button,
+  .remove-button,
+  .save-button {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+}

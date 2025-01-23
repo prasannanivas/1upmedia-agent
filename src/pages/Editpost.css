@@ -1,0 +1,56 @@
+/* Form Container */
+.edit-post-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 30px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.edit-post-container h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+/* Form Elements */
+label {
+  display: block;
+  margin-bottom: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #555;
+}
+
+input[type="text"],
+textarea,
+input[type="date"] {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  margin-top: 5px;
+  transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus,
+textarea:focus,
+input[type="date"]:focus {
+  border-color: #0073aa;
+  outline: none;
+  box-shadow: 0 0 5px rgba(0, 115, 170, 0.5);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.save-button {
+  width: 100%;
+  margin-top: 20px;
+}

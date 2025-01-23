@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getUserLoginDetails = () => {
-    if (authState.isLoggedIn) {
+    if (authState.isLoggedIn && authState.email) {
       return {
         email: authState.email,
         name: authState.name,
