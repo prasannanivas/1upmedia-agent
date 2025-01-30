@@ -14,7 +14,7 @@ function PostsList() {
     const fetchPosts = async () => {
       try {
         const response = await fetch(
-          `http://localhost:3000/aiagent/posts/${email}`
+          `http://ai.1upmedia.com:3000/aiagent/posts/${email}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -37,7 +37,7 @@ function PostsList() {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/aiagent/posts/${email}/${postId}`,
+        `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${postId}`,
         { method: "DELETE" }
       );
 

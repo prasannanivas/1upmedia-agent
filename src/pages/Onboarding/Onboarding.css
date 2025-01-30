@@ -1,0 +1,28 @@
+.Onboarding {
+  max-width: 80vw;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.Onboarding h1 {
+  margin-bottom: 20px;
+}
+
+.Onboarding button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #13ab5c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.Onboarding button:hover {
+  background-color: #0056b3;
+}

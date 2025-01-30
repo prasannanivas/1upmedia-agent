@@ -1,5 +1,5 @@
 // pages/Login.js
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, useLocation } from "react-router-dom";
 import googleLogo from "../assets/google-logo.png";
@@ -13,15 +13,20 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   // Redirect logged-in users
   useEffect(() => {
     if (authState.isLoggedIn) {
       const redirectPath =
         new URLSearchParams(location.search).get("redirect") || "/";
-      navigate(redirectPath); // Redirect to the original page or home if no redirect is specified
+      navigate(redirectPath);
     }
   }, [authState.isLoggedIn, navigate, location.search]);
 
+  // OAuth Login Handling
   const handleAuth = (provider) => {
     let authUrl = "";
     let eventType = "";
@@ -63,7 +68,7 @@ const Login = () => {
               email,
               name,
               profile_picture: profilePicture,
-              provider, // Pass provider name to backend
+              provider,
             }),
           });
 
@@ -84,6 +89,27 @@ const Login = () => {
     });
   };
 
+  // Handle Email & Password Login
+  const handleEmailLogin = () => {
+    if (email !== "test@1upmedia.com") {
+      setErrorMessage("Invalid email. Only 'test@1upmedia.com' is allowed.");
+      return;
+    }
+
+    // Call login with hardcoded credentials
+    login(
+      "acesss",
+      "test",
+      "https://cdn.pixabay.com/photo/2019/08/11/18/59/icon-4399701_1280.png",
+      email
+    );
+
+    // Redirect after login
+    const redirectPath =
+      new URLSearchParams(location.search).get("redirect") || "/";
+    navigate(redirectPath);
+  };
+
   return (
     <div className="Login">
       <div className="Login-container">
@@ -91,6 +117,30 @@ const Login = () => {
           <img src={companyLogo} alt="Company Logo" />
         </div>
         <p>Please log in to continue</p>
+
+        {/* Email & Password Login */}
+        <div className="Login-form">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="Login-input"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="Login-input"
+          />
+          {errorMessage && <p className="Login-error">{errorMessage}</p>}
+          <button onClick={handleEmailLogin} className="Login-button email">
+            Login with Email
+          </button>
+        </div>
+
+        {/* OAuth Login Buttons */}
         <div className="Login-buttons">
           <button
             className="Login-button google"

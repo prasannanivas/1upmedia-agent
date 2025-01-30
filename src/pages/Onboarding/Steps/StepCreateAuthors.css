@@ -1,0 +1,147 @@
+.step-create-authors-container {
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.step-create-authors-title {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+}
+
+.step-create-authors-expand-card {
+  margin-bottom: 10px;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.step-create-authors-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.step-create-authors-card-body {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.step-create-authors-persona-card {
+  background: white;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.step-create-authors-persona-card.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+.step-create-authors-add-btn,
+.step-create-authors-next-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.step-create-authors-add-btn {
+  background-color: #28a745;
+}
+
+.step-create-authors-next-btn {
+  background-color: #007bff;
+}
+
+.step-create-authors-add-btn.disabled,
+.step-create-authors-next-btn.disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+
+.step-create-authors-selected-persona {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #e6f7e9;
+  border: 1px solid #28a745;
+  border-radius: 5px;
+}
+
+.step-create-authors-check-icon {
+  color: #28a745;
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+.scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.step-create-authors-persona-container {
+  margin-bottom: 10px;
+}
+
+.step-create-authors-persona-card {
+  background: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.step-create-authors-persona-card.selected {
+  background-color: #007bff;
+  color: white;
+}
+
+.step-create-authors-persona-details {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  margin-top: 5px;
+  transition: all 0.3s ease-in-out;
+}
+
+.step-create-authors-choose-btn {
+  width: 100%;
+  padding: 8px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.step-create-authors-item {
+  padding: 10px;
+  background: #f4f4f4;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}

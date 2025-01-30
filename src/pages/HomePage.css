@@ -1,0 +1,135 @@
+/* Scoped Styles for HomePage */
+
+.homepage-container {
+  text-align: center;
+  position: relative;
+}
+
+/* Hero Section */
+.homepage-hero {
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  
+  align-items: center;
+}
+
+.homepage-hero-title {
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(to right, rgb(32, 102, 4), rgb(7, 138, 20));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.homepage-hero-subtitle {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  color: var(--header-text-color);
+  max-width: 600px;
+}
+
+
+/* Rotating Feature Text */
+.homepage-rotating-text {
+  margin-top: 15vh;
+  font-size: 4rem;
+  font-weight: 500;
+  color: linear-gradient(to right, rgb(14, 145, 35), rgb(16, 164, 41));
+  min-height: 50px; /* Keeps space while animating */
+}
+
+/* Call to Action Button */
+.homepage-cta-button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  background: var(--secondary-color);
+  color: var(--hover-text-color);
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.homepage-cta-button:hover {
+  transform: scale(1.1);
+  background: var(--hover-color);
+  color: var(--primary-color);
+}
+
+/* About Video Section */
+.homepage-video-section {
+  padding: 60px 20px;
+  background: var(--header-bg);
+}
+
+.homepage-video-section h2 {
+  font-size: 2.2rem;
+  margin-bottom: 20px;
+  color: var(--header-text-color);
+}
+
+/* Responsive YouTube Video */
+.video-wrapper {
+  position: relative;
+  width: 80%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+}
+
+.video-wrapper iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+/* Overview Section */
+.homepage-overview {
+  padding: 80px 20px;
+  max-width: 800px;
+  margin: auto;
+}
+
+.homepage-overview h2 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: black;
+}
+
+.homepage-overview p {
+  color: black;
+  font-size: 1.2rem;
+}
+
+/* Quick Links */
+.homepage-quick-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 50px 0;
+}
+
+.homepage-quick-link {
+  background: var(--accent-color);
+  padding: 20px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--hover-color);
+  font-size: 1.2rem;
+  transition: all 0.3s ease;
+  width: 180px;
+  text-align: center;
+}
+
+.homepage-quick-link:hover {
+  background: var(--hover-text-color);
+  transform: scale(1.05);
+  color: var(--secondary-color);
+}

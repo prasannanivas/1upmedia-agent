@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState, useRef } from "react";
 import { useToast } from "./ToastProvider";
 import { useAuth } from "./AuthContext";
 
@@ -6,47 +6,76 @@ const PollContext = createContext();
 
 export const PollProvider = ({ children }) => {
   const { PositiveToast, NegativeToast } = useToast();
-
   const { authState } = useAuth();
   const { email } = authState;
+
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [showProgressBar, setShowProgressBar] = useState(false);
+  const pollingInterval = useRef(null); // To manage setInterval
 
   const handleToast = (status, message) => {
     if (status === "positive") {
       PositiveToast(message);
-    } else if (status === "negative") {
+    } else {
       NegativeToast(message);
     }
   };
 
   const pollProgress = async () => {
-    console.log("polling started");
     try {
       const response = await fetch(
-        `http://localhost:3000/aiagent/progress/${email}`
+        `http://ai.1upmedia.com:3000/aiagent/progress/${email}`
       );
       if (response.ok) {
         const data = await response.json();
+        const { percentage, messages, status } = data.progress;
 
-        console.log(data.progress);
-        // Handle toast for every progress update
-        handleToast(
-          "positive",
-          `Progress Update: ${data.progress.messages.slice(-1)[0]}`
-        );
+        setProgressPercentage(percentage);
+        setShowProgressBar(true);
 
-        // Continue polling if status is not completed or failed
+        handleToast("positive", `Progress Update: ${messages.slice(-1)[0]}`);
 
-        pollProgress();
+        if (status === "completed") {
+          stopPolling(); // Stop polling when complete
+          setShowProgressBar(false);
+        } else {
+          pollProgress();
+        }
       }
     } catch (error) {
       console.error("Error polling progress:", error);
-      // handleToast("negative", "Error polling progress. Retrying...");
-      setTimeout(pollProgress, 3000); // Retry after 5 seconds
     }
   };
 
+  const startPolling = () => {
+    if (pollingInterval.current) return; // Avoid duplicate intervals
+    pollProgress(); // Initial call
+    pollingInterval.current = setInterval(pollProgress, 3000); // Poll every 3 seconds
+  };
+
+  const stopPolling = () => {
+    if (pollingInterval.current) {
+      clearInterval(pollingInterval.current);
+      pollingInterval.current = null;
+    }
+  };
+
+  const closeProgressBar = () => {
+    setShowProgressBar(false);
+    stopPolling(); // Stop polling when the user closes the bar
+  };
+
   return (
-    <PollContext.Provider value={{ pollProgress }}>
+    <PollContext.Provider
+      value={{
+        pollProgress,
+        startPolling,
+        stopPolling,
+        progressPercentage,
+        showProgressBar,
+        closeProgressBar,
+      }}
+    >
       {children}
     </PollContext.Provider>
   );

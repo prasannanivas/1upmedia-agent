@@ -11,9 +11,9 @@ import {
 } from "../Constants";
 
 import "./ContentCreation.css";
+import { usePoll } from "../context/PollContext";
 
 function ContentGenerator() {
-  const [progress, setProgress] = useState(null);
   const [loading, setLoading] = useState(false);
   const { getUserLoginDetails } = useAuth();
   const { email } = getUserLoginDetails();
@@ -73,27 +73,7 @@ function ContentGenerator() {
     setLinks((prevLinks) => prevLinks.filter((_, i) => i !== index));
   };
 
-  const pollProgress = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/aiagent/progress/${email}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setProgress(data.progress);
-
-        handleToast(
-          "positive",
-          `Progress Update: ${data.progress.messages.slice(-1)[0]}`
-        );
-
-        pollProgress();
-      }
-    } catch (error) {
-      console.error("Error polling progress:", error);
-      setTimeout(pollProgress, 3000); // Retry after 3 seconds
-    }
-  };
+  const { pollProgress, startPolling, stopPolling } = usePoll();
 
   useEffect(() => {
     pollProgress();
@@ -101,20 +81,22 @@ function ContentGenerator() {
 
   const generateContent = async () => {
     setLoading(true);
-    pollProgress();
+
     try {
+      // Start polling immediately
+      startPolling();
+
       const response = await fetch(
-        "http://localhost:3000/aiagent/generate-content",
+        "http://ai.1upmedia.com:3000/aiagent/generate-content",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email,
             num_articles: numArticles,
-            api_key: "1a615c1c-3020-4797-8f06-a4a2ee7b0959",
-            schedule_start_date: scheduleStartDate,
+            schedule_start_date: scheduleStartDate || Date.now(),
             schedule_frequency: scheduleFrequency,
-            links: links.join(", "), // Format links as comma-separated
+            links: links.join(", "),
             ...formData,
             title: formData.topic,
             word_count: formData.word_count.value,
@@ -129,16 +111,19 @@ function ContentGenerator() {
           }),
         }
       );
-      const data = await response.json();
-      setProgress(data.progress);
-      pollProgress(); // Start long-polling after initiating content generation
+
+      if (!response.ok) {
+        handleToast("negative", "Failed to initiate content generation.");
+        stopPolling(); // Stop polling if request fails
+      }
     } catch (error) {
       console.error("Error generating content:", error);
       handleToast("negative", "Error generating content.");
+      stopPolling(); // Stop polling on error
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
-
   return (
     <div className="content-generator-container">
       <h2 className="title">Content Generator</h2>

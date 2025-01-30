@@ -1,0 +1,13 @@
+.step-main-domain-input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.step-main-domain-input:focus {
+  border-color: #007bff;
+  outline: none;
+}

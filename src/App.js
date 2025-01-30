@@ -31,6 +31,12 @@ import "./App.css";
 import { PollProvider } from "./context/PollContext";
 import PostDetails from "./pages/PostDetails";
 import EditPost from "./pages/Editpost";
+import { ProgressBar } from "./components/ProgressBar";
+import Onboarding from "./pages/Onboarding/Onboarding";
+import Loader from "./components/Loader";
+import { OnboardingProvider } from "./context/OnboardingContext";
+import StepCreateAuthors from "./pages/Onboarding/Steps/StepCreateAuthors";
+import Home from "./pages/Home";
 
 const AppWrapper = () => {
   const { authState, loading } = useAuth();
@@ -38,7 +44,7 @@ const AppWrapper = () => {
 
   // Show a loading indicator while loading session data
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loader />;
   }
 
   if (!authState.isLoggedIn) {
@@ -60,6 +66,7 @@ const AppWrapper = () => {
       <NavBar />
       <div className="MainContent">
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />
@@ -73,6 +80,8 @@ const AppWrapper = () => {
           <Route path="/settings" element={<Settings />} />
           <Route path="/agents/strategy" element={<StrategyAnalysis />} />
           <Route path="/agents/ideation" element={<Ideation />} />
+          <Route path="/onboarding/*" element={<Onboarding />} />
+
           <Route
             path="/agents/content-creation"
             element={<ContentCreation />}
@@ -106,8 +115,11 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <PollProvider>
+          <ProgressBar />
           <SocialMediaProvider>
-            <AppWrapper />
+            <OnboardingProvider>
+              <AppWrapper />
+            </OnboardingProvider>
           </SocialMediaProvider>
         </PollProvider>
       </ToastProvider>

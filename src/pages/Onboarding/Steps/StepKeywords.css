@@ -1,0 +1,131 @@
+.step-keywords-container {
+  max-width: 600px;
+  margin: auto;
+  text-align: center;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.step-keywords-title {
+  font-size: 22px;
+  margin-bottom: 15px;
+}
+
+.step-keywords-input-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.step-keywords-input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.step-keywords-add-btn {
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.step-keywords-add-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.step-keywords-related-btn {
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.step-keywords-list,
+.step-keywords-related {
+  text-align: left;
+  margin-top: 15px;
+}
+
+.step-keywords-list h3,
+.step-keywords-related h3 {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.step-keywords-list ul,
+.step-keywords-related ul {
+  list-style: none;
+  padding: 0;
+}
+
+.step-keywords-item {
+  display: flex;
+  justify-content: space-between;
+  background: white;
+  padding: 8px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 5px;
+  align-items: center;
+}
+
+.step-keywords-remove {
+  color: red;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.step-keywords-remove:hover {
+  color: darkred;
+}
+
+.step-keywords-related-item {
+  display: flex;
+  justify-content: space-between;
+  background: #e3f2fd;
+  padding: 8px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 5px;
+  align-items: center;
+}
+
+.step-keywords-add-related {
+  padding: 5px 8px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.step-keywords-add-related:hover {
+  background-color: #0056b3;
+}
+
+.step-keywords-next-btn {
+  margin-top: 20px;
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.step-keywords-next-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

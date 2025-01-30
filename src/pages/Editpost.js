@@ -27,7 +27,7 @@ function EditPost() {
       if (!post) {
         try {
           const response = await fetch(
-            `http://localhost:3000/aiagent/posts/${email}/${postId}`
+            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${postId}`
           );
           if (response.ok) {
             const data = await response.json();
@@ -61,7 +61,7 @@ function EditPost() {
   const saveChanges = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3000/aiagent/posts/${email}/${postId}`,
+        `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${postId}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

@@ -31,6 +31,11 @@ function SideNavBar({ isMenuOpen, toggleMenu }) {
             Dashboard
           </Link>
         </li>
+        <li>
+          <Link to="/onboarding" onClick={handleLinkClick}>
+            Onboarding
+          </Link>
+        </li>
         <DropdownMenu
           title="Agents"
           isOpen={dropdowns.agents}
