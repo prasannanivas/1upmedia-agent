@@ -83,7 +83,7 @@ export const AuthProvider = ({ children }) => {
       setRedirectPath(currentPath); // Save the current path in state or context
 
       // Redirect to login page
-      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      navigate("/");
     }
   };
 

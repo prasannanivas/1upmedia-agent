@@ -67,6 +67,8 @@ const AppWrapper = () => {
       <div className="MainContent">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          {/* <Route path="/login" element={<Home />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />
@@ -101,7 +103,7 @@ const AppWrapper = () => {
             path="/settings/advanced-config/security"
             element={<Security />}
           />
-          <Route path="*" element={<Navigate to={location.pathname} />} />
+          <Route path="*" element={<Home />} />
         </Routes>
       </div>
     </div>
