@@ -133,6 +133,21 @@
   color: white;
 }
 
+.auth-button.reddit {
+  background-color: #c15a15;
+  color: white;
+}
+
+.auth-button.shopify {
+  background-color: #1faf3c;
+  color: white;
+}
+
+.auth-button.webflow {
+  background-color: #5555db;
+  color: white;
+}
+
 .auth-button.twitter:hover {
   background-color: #667575;
   transform: translateY(-3px);

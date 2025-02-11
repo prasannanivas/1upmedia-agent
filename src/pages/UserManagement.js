@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastProvider";
 import { useSocialMedia } from "../context/SocialMediaContext";
@@ -9,201 +9,24 @@ import twitterLogo from "../assets/twitter-logo.png";
 import googleLogo from "../assets/google-logo.png";
 import wordpressLogo from "../assets/wordpress-logo.png";
 import instagramLogo from "../assets/instagram-logo.png";
+import shopifyLogo from "../assets/shopify-logo.png";
+import webflowLogo from "../assets/webflow-logo.png";
+import redditLogo from "../assets/reddit-logo.png";
 import Loader from "../components/Loader";
 
 const UserManagement = () => {
-  const { authState } = useAuth();
-  const { PositiveToast, NegativeToast } = useToast();
+  const { authState, handleRemoveAccount, handleAuthorize } = useAuth();
   const { name, profilePicture, email } = authState;
-  const {
-    socialMediaProfiles,
-    fetchSocialMediaProfiles,
-    setInstagramProfiles,
-    setLoadingPages,
-    loadingPages,
-    storeSocialMediaToken,
-  } = useSocialMedia();
+  const { socialMediaProfiles, fetchSocialMediaProfiles, loadingPages } =
+    useSocialMedia();
+  const [shopifyShop, setShopifyShop] = useState("");
 
   useEffect(() => {
     if (email) {
-      fetchSocialMediaProfiles();
+      fetchSocialMediaProfiles(email);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [email]); // Only run when `email` changes
-
-  const handleRemoveAccount = async (
-    socialMediaName,
-    accountName,
-    accessToken
-  ) => {
-    // setLoadingPages(true);
-    try {
-      const response = await fetch(
-        "https://ai.1upmedia.com:443/aiagent/remove-connected-account",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email: authState.email,
-            social_media_name: socialMediaName,
-            account_name: accountName,
-            access_token: accessToken,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to remove connected account");
-      }
-
-      console.log(
-        `Account ${accountName} (${socialMediaName}) removed successfully.`
-      );
-      PositiveToast(
-        `Account ${accountName} (${socialMediaName}) removed successfully.`
-      );
-    } catch (error) {
-      console.error("Error removing connected account:", error.message);
-    }
-    await fetchSocialMediaProfiles(); // Refresh state
-    //setLoadingPages(false);
-  };
-
-  const handleAuthorize = (platform) => {
-    let authUrl = "";
-    let eventType = "";
-
-    switch (platform) {
-      case "linkedin":
-        authUrl = "https://ai.1upmedia.com:443/linkedin/auth";
-        eventType = "linkedinAuthSuccess";
-        break;
-      case "facebook":
-        authUrl = "https://ai.1upmedia.com:443/facebook/auth";
-        eventType = "facebookAuthSuccess";
-        break;
-      case "twitter":
-        authUrl = "https://ai.1upmedia.com:443/twitter/auth";
-        eventType = "twitterAuthSuccess";
-        break;
-      case "google":
-        authUrl = "https://ai.1upmedia.com:443/google/auth";
-        eventType = "googleAuthSuccess";
-        break;
-      default:
-        return;
-    }
-
-    const authWindow = window.open(
-      authUrl,
-      `${platform} Auth`,
-      "width=600,height=400"
-    );
-
-    window.addEventListener("message", async function handleAuthEvent(event) {
-      if (event.data.type === eventType) {
-        console.log(event.data);
-        const { accessToken, profilePicture, name, refreshToken } = event.data;
-
-        await storeSocialMediaToken({
-          email,
-          social_media: {
-            social_media_name: platform,
-            account_name: name,
-            profile_picture: profilePicture || "",
-            access_token: accessToken,
-            ...(refreshToken && { dynamic_fields: { refreshToken } }), // Add dynamic_fields only if refreshToken exists
-          },
-        });
-
-        authWindow.close();
-        window.removeEventListener("message", handleAuthEvent);
-        if (platform === "facebook") {
-          fetchFacebookPages(accessToken);
-        }
-      }
-    });
-  };
-
-  const fetchFacebookPages = async (accessToken) => {
-    // setLoadingPages(true);
-    try {
-      const response = await fetch(
-        "https://ai.1upmedia.com:443/facebook/getFacebookPages",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ access_token: accessToken }),
-        }
-      );
-
-      const data = await response.json();
-      const pages = data.pages || [];
-      // setFacebookPages(pages);
-
-      for (const page of pages) {
-        await storeSocialMediaToken({
-          email,
-          social_media: {
-            social_media_name: "Facebook - Connected",
-            profile_picture: page.pagePicture,
-            access_token: page.pageAccessToken,
-            account_name: page.pageName,
-            dynamic_fields: {
-              page_id: page.pageId,
-              connected_instagram: page.pageInstaAccount || null,
-            },
-          },
-        });
-        if (page.pageInstaAccount) {
-          fetchInstagramProfile(page.pageInstaAccount.id, page.pageAccessToken);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching Facebook pages:", error);
-    } finally {
-      setLoadingPages(false);
-    }
-  };
-
-  const fetchInstagramProfile = async (instagramAccountId, accessToken) => {
-    try {
-      const response = await fetch(
-        "https://ai.1upmedia.com:443/facebook/getInstagramProfileInfo",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ instagramAccountId, accessToken }),
-        }
-      );
-
-      const data = await response.json();
-      setInstagramProfiles((prev) => ({
-        ...prev,
-        [instagramAccountId]: data.profileInfo,
-      }));
-      await storeSocialMediaToken({
-        email,
-        social_media: {
-          social_media_name: "Instagram",
-          profile_picture: data.profileInfo.profile_picture_url,
-          access_token: accessToken,
-          account_name: data.profileInfo.name,
-          dynamic_fields: {
-            page_id: data.profileInfo.id,
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching Instagram profile:", error);
-    }
-  };
 
   return (
     <div className="user-management-container">
@@ -245,6 +68,10 @@ const UserManagement = () => {
                         ? instagramLogo
                         : account.social_media_name === "WordPress"
                         ? wordpressLogo
+                        : account.social_media_name === "reddit"
+                        ? redditLogo
+                        : account.social_media_name === "twitter"
+                        ? twitterLogo
                         : "https://via.placeholder.com/50" // Default for unknown platforms
                     }
                     alt={account.social_media_name}
@@ -320,6 +147,46 @@ const UserManagement = () => {
           <button
             className="auth-button twitter"
             onClick={() => handleAuthorize("twitter")}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={redditLogo} alt="Reddit" className="platform-logo" />
+
+          <button
+            className="auth-button reddit"
+            onClick={() => handleAuthorize("reddit")}
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={shopifyLogo} alt="shopify" className="platform-logo" />
+
+          <input
+            type="text"
+            className="shopify-shop-name"
+            placeholder="shopify shop name"
+            onChange={(e) => setShopifyShop(e.target.value)}
+            value={shopifyShop}
+          />
+          <button
+            className="auth-button shopify"
+            onClick={() => handleAuthorize("shopify", shopifyShop)}
+          >
+            {shopifyShop && "Add"}
+          </button>
+        </div>
+
+        <div className="auth-platform">
+          <img src={webflowLogo} alt="webflow" className="platform-logo" />
+
+          <button
+            className="auth-button webflow"
+            onClick={() => handleAuthorize("webflow")}
           >
             Add
           </button>

@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useState } from "react";
-import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastProvider";
 // Create Context
 const SocialMediaContext = createContext();
 
 // Provider Component
 export const SocialMediaProvider = ({ children }) => {
-  const { authState } = useAuth();
-  const { email } = authState;
   const [socialMediaProfiles, setSocialMediaProfiles] = useState([]);
   const [facebookPages, setFacebookPages] = useState([]);
   const [instagramProfiles, setInstagramProfiles] = useState([]);
+  const [redditProfiles, setRedditProfiles] = useState([]);
+  const [twitterProfiles, setTwitterProfiles] = useState([]);
+  const [googleProfiles, setGoogleProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
 
-  const fetchSocialMediaProfiles = async () => {
+  const fetchSocialMediaProfiles = async (email) => {
     setLoadingPages(true); // Show loading indicator
     try {
       const response = await fetch(
@@ -41,10 +41,21 @@ export const SocialMediaProvider = ({ children }) => {
           )
         ) {
           // Add to main accounts
-        } else if (profile.social_media_name === "Facebook - Connected") {
+        }
+        if (profile.social_media_name === "Facebook - Connected") {
           connectedFacebookPages.push(profile);
-        } else if (profile.social_media_name === "Instagram") {
+        }
+        if (profile.social_media_name === "Instagram") {
           connectedInstagramProfiles.push(profile);
+        }
+        if (profile.social_media_name === "reddit") {
+          redditProfiles.push(profile);
+        }
+        if (profile.social_media_name === "twitter") {
+          twitterProfiles.push(profile);
+        }
+        if (profile.social_media_name === "google") {
+          googleProfiles.push(profile);
         }
       });
 
@@ -89,7 +100,7 @@ export const SocialMediaProvider = ({ children }) => {
         throw new Error("Failed to store social media details");
       }
 
-      await fetchSocialMediaProfiles(); // Refresh state
+      await fetchSocialMediaProfiles(data.email); // Refresh state
     } catch (error) {
       console.error("Error storing social media details:", error.message);
       NegativeToast("Error storing social media details:", error.message);
@@ -104,6 +115,10 @@ export const SocialMediaProvider = ({ children }) => {
         fetchSocialMediaProfiles,
         facebookPages,
         instagramProfiles,
+        redditProfiles,
+        twitterProfiles,
+        googleProfiles,
+        setGoogleProfiles,
         loadingPages,
         storeSocialMediaToken,
         setLoadingPages,

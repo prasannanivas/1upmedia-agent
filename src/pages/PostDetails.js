@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import "./ContentCreation.css";
+//import "./ContentCreation.css";
 
 function PostDetails() {
   const { state } = useLocation();

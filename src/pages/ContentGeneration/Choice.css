@@ -1,0 +1,64 @@
+/* Page Container */
+.content-creation-container {
+  width: 100vw;
+  color: rgb(8, 118, 44);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Page Title */
+.content-creation-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 40px;
+  color: rgb(12, 120, 21);
+}
+
+/* Grid Layout */
+.content-creation-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Navigation Cards */
+.content-creation-card {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  height: 150px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 10px 30px rgba(33, 31, 31, 0.15);
+}
+
+
+
+.content-creation-card-h2{
+  color: #0f8723;
+}
+
+.content-creation-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0px 15px 40px rgba(0, 0, 0, 0.3);
+  background: #0f8723; /* Accent Color */
+  color: white;
+}
+
+.content-creation-card:hover .content-creation-card-h2{
+  color: white;
+}
+
+
+

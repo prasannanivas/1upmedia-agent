@@ -14,7 +14,7 @@ import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import StrategyAnalysis from "./pages/StrategyAnalysis";
 import Ideation from "./pages/Ideation";
-import ContentCreation from "./pages/ContentCreation";
+import ContentCreation from "./pages/ContentGeneration/ContentCreationNavigator";
 import ContentReview from "./pages/ContentReview";
 import Publishing from "./pages/Publishing";
 import SocialMedia from "./pages/SocialMedia";
@@ -85,7 +85,7 @@ const AppWrapper = () => {
           <Route path="/onboarding/*" element={<Onboarding />} />
 
           <Route
-            path="/agents/content-creation"
+            path="/agents/content-creation/*"
             element={<ContentCreation />}
           />
           <Route path="/agents/content-review" element={<ContentReview />} />
@@ -114,18 +114,18 @@ const AppWrapper = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <PollProvider>
-          <ProgressBar />
-          <SocialMediaProvider>
+    <ToastProvider>
+      <SocialMediaProvider>
+        <AuthProvider>
+          <PollProvider>
+            <ProgressBar />
             <OnboardingProvider>
               <AppWrapper />
             </OnboardingProvider>
-          </SocialMediaProvider>
-        </PollProvider>
-      </ToastProvider>
-    </AuthProvider>
+          </PollProvider>
+        </AuthProvider>
+      </SocialMediaProvider>
+    </ToastProvider>
   );
 }
 

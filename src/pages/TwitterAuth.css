@@ -1,0 +1,74 @@
+.container {
+  max-width: 500px;
+  margin: auto;
+  padding: 20px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.heading {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.button {
+  background-color: #1DA1F2;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.post-container {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f5f8fa;
+}
+
+.text-area {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.input-box {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.tweets-container {
+  margin-top: 20px;
+}
+
+.tweet-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.tweet-item {
+  padding: 10px;
+  border-bottom: 1px solid #e1e8ed;
+}
+
+.tweet-image {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.tweet-link {
+  color: #1DA1F2;
+  text-decoration: none;
+}

@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "./ToastProvider";
+import { useSocialMedia } from "./SocialMediaContext";
 
 const AuthContext = createContext();
 
@@ -15,8 +17,21 @@ export const AuthProvider = ({ children }) => {
   const [redirectPath, setRedirectPath] = useState(null); // To store redirect path
   const navigate = useNavigate();
 
+  const {
+    fetchSocialMediaProfiles,
+    storeSocialMediaToken,
+    setLoadingPages,
+    setInstagramProfiles,
+  } = useSocialMedia();
+
+  useEffect(() => {
+    if (authState.email) fetchSocialMediaProfiles(authState.email);
+  }, [authState.email]);
+
+  const { PositiveToast } = useToast();
   useEffect(() => {
     // Load stored session data on app load
+    setLoading(true);
     const token = sessionStorage.getItem("accessToken");
     const name = sessionStorage.getItem("name");
     const profilePicture = sessionStorage.getItem("profilePicture");
@@ -87,9 +102,259 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const handleRemoveAccount = async (
+    socialMediaName,
+    accountName,
+    accessToken
+  ) => {
+    // setLoadingPages(true);
+    try {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/aiagent/remove-connected-account",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: authState.email,
+            social_media_name: socialMediaName,
+            account_name: accountName,
+            access_token: accessToken,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove connected account");
+      }
+
+      console.log(
+        `Account ${accountName} (${socialMediaName}) removed successfully.`
+      );
+      PositiveToast(
+        `Account ${accountName} (${socialMediaName}) removed successfully.`
+      );
+    } catch (error) {
+      console.error("Error removing connected account:", error.message);
+    }
+    await fetchSocialMediaProfiles(authState.email); // Refresh state
+    //setLoadingPages(false);
+  };
+
+  const handleAuthorize = (platform, shop = null) => {
+    let authUrl = "";
+    let eventType = "";
+
+    switch (platform) {
+      case "linkedin":
+        authUrl = "https://ai.1upmedia.com:443/linkedin/auth";
+        eventType = "linkedinAuthSuccess";
+        break;
+      case "facebook":
+        authUrl = "https://ai.1upmedia.com:443/facebook/auth";
+        eventType = "facebookAuthSuccess";
+        break;
+      case "twitter":
+        authUrl = "https://ai.1upmedia.com:443/twitter/auth";
+        eventType = "twitterAuthSuccess";
+        break;
+      case "google":
+        authUrl = "https://ai.1upmedia.com:443/google/auth";
+        eventType = "googleAuthSuccess";
+        break;
+      case "reddit":
+        authUrl = "https://ai.1upmedia.com:443/reddit/auth";
+        eventType = "redditAuthSuccess";
+        break;
+      case "shopify":
+        authUrl = `https://ai.1upmedia.com:443/shopify/auth?shop=${shop}.myshopify.com`;
+        eventType = "shopifyAuthSuccess";
+        break;
+      case "webflow":
+        authUrl = "https://ai.1upmedia.com:443/webflow/auth";
+        eventType = "webflowAuthSuccess";
+        break;
+      default:
+        return;
+    }
+
+    const authWindow = window.open(
+      authUrl,
+      `${platform} Auth`,
+      "width=600,height=400"
+    );
+
+    window.addEventListener("message", async function handleAuthEvent(event) {
+      if (event.data.type === "twitterAuthSuccess") {
+        const { accessToken, userProfile } = event.data;
+
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: platform,
+            account_name: userProfile?.data?.name,
+            profile_picture: userProfile?.data?.profile_image_url || "",
+            access_token: accessToken,
+            dynamic_fields: {
+              id: userProfile.data.id,
+              username: userProfile.data.username,
+            }, // Add dynamic_fields only if refreshToken exists
+          },
+        });
+      } else if (event.data.type === "webflowAuthSuccess") {
+        const { accessToken } = event.data;
+
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: platform,
+            access_token: accessToken,
+          },
+        });
+      } else if (event.data.type === "redditAuthSuccess") {
+        const { accessToken, userProfile } = event.data;
+
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: platform,
+            account_name: userProfile?.name,
+            profile_picture: userProfile?.icon_img || "",
+            access_token: accessToken,
+            dynamic_fields: { subreddit: userProfile?.subreddit }, // Add dynamic_fields only if refreshToken exists
+          },
+        });
+      } else if (event.data.type === "shopifyAuthSuccess") {
+        console.log(event.data);
+        const { accessToken, shopInfo } = event.data;
+
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: platform,
+            account_name: shopInfo?.name,
+            access_token: accessToken,
+            dynamic_fields: {
+              shopInfo,
+            }, // Add dynamic_fields only if refreshToken exists
+          },
+        });
+      } else if (event.data.type === eventType) {
+        console.log(event.data);
+        const { accessToken, profilePicture, name, refreshToken } = event.data;
+
+        console.log(event.data);
+
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: platform,
+            account_name: name,
+            profile_picture: profilePicture || "",
+            access_token: accessToken,
+            ...(refreshToken && { dynamic_fields: { refreshToken } }), // Add dynamic_fields only if refreshToken exists
+          },
+        });
+
+        authWindow.close();
+        window.removeEventListener("message", handleAuthEvent);
+        if (platform === "facebook") {
+          fetchFacebookPages(accessToken);
+        }
+      }
+    });
+  };
+
+  const fetchFacebookPages = async (accessToken) => {
+    // setLoadingPages(true);
+    try {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/facebook/getFacebookPages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ access_token: accessToken }),
+        }
+      );
+
+      const data = await response.json();
+      const pages = data.pages || [];
+      // setFacebookPages(pages);
+
+      for (const page of pages) {
+        await storeSocialMediaToken({
+          email: authState.email,
+          social_media: {
+            social_media_name: "Facebook - Connected",
+            profile_picture: page.pagePicture,
+            access_token: page.pageAccessToken,
+            account_name: page.pageName,
+            dynamic_fields: {
+              page_id: page.pageId,
+              connected_instagram: page.pageInstaAccount || null,
+            },
+          },
+        });
+        if (page.pageInstaAccount) {
+          fetchInstagramProfile(page.pageInstaAccount.id, page.pageAccessToken);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching Facebook pages:", error);
+    } finally {
+      setLoadingPages(false);
+    }
+  };
+
+  const fetchInstagramProfile = async (instagramAccountId, accessToken) => {
+    try {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/facebook/getInstagramProfileInfo",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ instagramAccountId, accessToken }),
+        }
+      );
+
+      const data = await response.json();
+      setInstagramProfiles((prev) => ({
+        ...prev,
+        [instagramAccountId]: data.profileInfo,
+      }));
+      await storeSocialMediaToken({
+        email: authState.email,
+        social_media: {
+          social_media_name: "Instagram",
+          profile_picture: data.profileInfo.profile_picture_url,
+          access_token: accessToken,
+          account_name: data.profileInfo.name,
+          dynamic_fields: {
+            page_id: data.profileInfo.id,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching Instagram profile:", error);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ authState, login, logout, loading, getUserLoginDetails }}
+      value={{
+        authState,
+        login,
+        logout,
+        loading,
+        getUserLoginDetails,
+        handleRemoveAccount,
+        handleAuthorize,
+      }}
     >
       {children}
     </AuthContext.Provider>

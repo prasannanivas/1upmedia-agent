@@ -24,7 +24,6 @@ const WebflowIntegration = () => {
     const popup = window.open(authUrl, "Webflow Login", "width=600,height=700");
 
     const receiveMessage = (event) => {
-      console.log(event.data);
       if (event.data.accessToken) {
         setAccessToken(event.data.accessToken);
         console.log("User Profile:", event.data.userProfile);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useToast } from "../context/ToastProvider";
-import { useAuth } from "../context/AuthContext";
+import { useToast } from "../../context/ToastProvider";
+import { useAuth } from "../../context/AuthContext";
 import Select from "react-select"; // Import React-Select
 import {
   goals,
@@ -8,10 +8,10 @@ import {
   contentTypes,
   contentStrategies,
   languages,
-} from "../Constants";
+} from "../../Constants";
 
 import "./ContentCreation.css";
-import { usePoll } from "../context/PollContext";
+import { usePoll } from "../../context/PollContext";
 
 function ContentGenerator() {
   const [loading, setLoading] = useState(false);

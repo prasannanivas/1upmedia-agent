@@ -18,7 +18,7 @@ function Analytics() {
   const { email } = getUserLoginDetails();
 
   useEffect(() => {
-    fetchSocialMediaProfiles();
+    fetchSocialMediaProfiles(email);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
