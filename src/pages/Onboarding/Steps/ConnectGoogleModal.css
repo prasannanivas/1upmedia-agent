@@ -1,0 +1,90 @@
+/* ✨ Modal Width */
+.modal-content {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ✨ Google Sites List */
+.google-sites-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* ✨ Individual Site Item */
+.google-site-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9f9f9;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+}
+
+.google-site-item:hover {
+  background: #ececec;
+  transform: scale(1.02);
+}
+
+/* ✨ Selected Keywords */
+.selected-keywords {
+  margin-top: 20px;
+}
+
+.keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.keyword-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f1f1f1;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+.keyword-item.selected {
+  background: #007aff;
+  color: white;
+}
+
+/* ✨ Buttons */
+.modal-submit-btn {
+  background: #007aff;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  margin-top: 15px;
+}
+
+.modal-close-btn {
+  background: #ccc;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.modal-submit-btn:hover {
+  background: #005ecb;
+}
+
+.modal-close-btn:hover {
+  background: #b5b5b5;
+}

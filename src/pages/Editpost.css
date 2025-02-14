@@ -1,56 +1,231 @@
-/* Form Container */
-.edit-post-container {
-  max-width: 800px;
+/* ✨ Full-width Container */
+.edit-post__container {
+
   margin: 40px auto;
-  padding: 30px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 40px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease-in-out;
 }
 
-.edit-post-container h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
+/* ✨ Title Styling */
+.edit-post__title {
+  font-size: 32px;
+  font-weight: 600;
+  text-align: center;
+  color: #1d1d1f;
+  margin-bottom: 30px;
+}
+
+/* ✨ Form Layout */
+.edit-post__form {
+  display: flex;
+  gap: 60px;
+}
+
+/* ✨ Main Editor */
+.edit-post__main {
+  flex: 3 2;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ✨ Sidebar (Tags, Categories, Image) */
+.edit-post__sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ✨ Labels */
+.edit-post__label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1d1d1f;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ✨ Inputs & Textareas */
+.edit-post__input,
+.edit-post__textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font-size: 16px;
   color: #333;
+  background: #f9f9f9;
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.edit-post__input:focus,
+.edit-post__textarea:focus {
+  border-color: #007aff;
+  outline: none;
+  box-shadow: 0 0 12px rgba(0, 122, 255, 0.3);
+}
+
+/* ✨ Large Textarea for HTML Mode */
+.edit-post__textarea.expanded {
+  min-height: 1000px; /* Larger for better HTML readability */
+
+  white-space: pre-wrap;
+  line-height: 1.6;
+  padding: 15px;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: auto;
+  word-wrap: break-word;
+}
+
+/* ✨ Better Formatting for HTML Text */
+.edit-post__textarea.expanded::-webkit-scrollbar {
+  width: 6px;
+}
+.edit-post__textarea.expanded::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+/* ✨ Toggle Buttons */
+.edit-post__toggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.edit-post__toggle button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.edit-post__toggle button.active {
+  background: #007aff;
+  color: #fff;
+}
+
+.edit-post__toggle button:not(.active) {
+  background: #e5e5ea;
+  color: #1d1d1f;
+}
+
+.edit-post__toggle button:hover {
+  background: #005ecb;
+  color: #fff;
+}
+
+/* ✨ WYSIWYG Editor */
+.edit-post__wysiwyg {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+}
+
+/* ✨ Image Box */
+.edit-post__image-container {
+  width: 100%;
   text-align: center;
 }
 
-/* Form Elements */
-label {
-  display: block;
-  margin-bottom: 15px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #555;
+.edit-post__image {
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
 }
 
-input[type="text"],
-textarea,
-input[type="date"] {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 14px;
+.edit-post__image:hover {
+  transform: scale(1.02);
+}
+
+/* ✨ Tags & Categories */
+.edit-post__chip-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.edit-post__chip {
+  background-color: #e5e5ea;
   color: #333;
-  margin-top: 5px;
-  transition: border-color 0.3s ease;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.3s ease-in-out;
 }
 
-input[type="text"]:focus,
-textarea:focus,
-input[type="date"]:focus {
-  border-color: #0073aa;
-  outline: none;
-  box-shadow: 0 0 5px rgba(0, 115, 170, 0.5);
+.edit-post__chip:hover {
+  background-color: #d1d1d6;
 }
 
-textarea {
-  min-height: 120px;
-  resize: vertical;
+/* ✨ X Button for Tags & Categories */
+.edit-post__chip-close {
+  background: #ff3b30;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
 }
 
-.save-button {
+.edit-post__chip-close:hover {
+  background: #d0021b;
+}
+
+/* ✨ Add Tag & Category Inputs */
+.edit-post__chip-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  font-size: 14px;
+  background: #f9f9f9;
+}
+
+/* ✨ Schedule Date */
+.edit-post__input[type="date"] {
   width: 100%;
+  text-align: center;
+}
+
+/* ✨ Save Button */
+.edit-post__save-button {
+  width: 100%;
+  padding: 14px;
+  background: #007aff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  text-align: center;
   margin-top: 20px;
 }
+
+.edit-post__save-button:hover {
+  background: #005ecb;
+}
+
+

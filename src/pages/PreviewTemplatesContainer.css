@@ -1,0 +1,12 @@
+/* Container for the integrated preview/templates view */
+.preview-templates-container {
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Optional: add some spacing between the preview titles and the template selection */
+.template-selection-wrapper {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}

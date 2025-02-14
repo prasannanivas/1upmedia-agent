@@ -1,0 +1,265 @@
+/* Main Container: full width, spacious layout */
+.preview-template-board-container {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: #fff;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* --------- Section 1: Draggable Templates Container --------- */
+.draggable-templates-container {
+  width: 100%;
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  box-sizing: border-box;
+}
+
+.draggable-templates-heading {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.draggable-templates-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+.draggable-added-template {
+  background: #f1f1f1;
+  border: 1px solid #ddd;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: grab;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  font-size: 16px;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.draggable-added-template:active {
+  cursor: grabbing;
+  background: #e0e0e0;
+  transform: scale(0.98);
+}
+
+/* --------- Section 2: Available Templates (Template Selection) --------- */
+.template-selection-available {
+  width: 100%;
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  box-sizing: border-box;
+}
+
+.available-templates-heading {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+/* Template Selection Container */
+.template-selection-container {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.template-selection-dropdown-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 10px;
+}
+
+.template-selection-dropdown-container label {
+  font-size: 16px;
+  color: #444;
+}
+
+.template-selection-dropdown-container select {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.template-selection-action-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.template-selection-add-button {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  flex: 1;
+  margin-right: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.template-selection-add-button:hover {
+  background-color: #218838;
+}
+
+.template-selection-toggle-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  flex: 1;
+  margin-left: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.template-selection-toggle-button:hover {
+  background-color: #0056b3;
+}
+
+.template-selection-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.template-selection-nav-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.template-selection-card-wrapper {
+  flex: 1;
+  margin: 0 10px;
+  overflow: hidden;
+}
+
+.template-selection-card {
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.template-selection-card h3 {
+  margin-bottom: 10px;
+  font-size: 20px;
+  color: #333;
+}
+
+.template-selection-content {
+  font-size: 16px;
+  color: #555;
+}
+
+/* --------- Section 3: Preview Titles Table --------- */
+.preview-titles-table {
+  width: 100%;
+  margin-top: 30px;
+}
+
+.table-heading {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.preview-table th,
+.preview-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: left;
+  font-size: 16px;
+}
+
+.preview-title-column {
+  width: 80%;
+}
+
+.template-column {
+  width: 20%;
+  text-align: center;
+}
+
+.preview-title-cell {
+  word-break: break-word;
+}
+
+.template-cell {
+  text-align: center;
+}
+
+/* Drop Zone in Template Cell */
+.template-drop-zone {
+  border: 1px dashed #bbb;
+  background: #fafafa;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: bold;
+  color: #666;
+  transition: background-color 0.3s ease;
+}
+
+.template-drop-zone.hover {
+  background-color: #e0f7fa;
+}
+
+/* Table Actions Buttons */
+.table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.action-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+/* Custom Drag Preview */
+.custom-drag-preview {
+  background: #f1f1f1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

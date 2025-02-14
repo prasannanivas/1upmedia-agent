@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../../context/OnboardingContext";
+import { useSocialMedia } from "../../../context/SocialMediaContext"; // Import social media context
 import { FaTimes } from "react-icons/fa"; // Import X icon
+import ConnectGoogleModal from "./ConnectGoogleModal"; // Import modal
 import "./StepKeywords.css"; // Import CSS
 
 const StepKeywords = () => {
   const { onboardingData, setOnboardingData } = useOnboarding();
+  const { googleProfiles } = useSocialMedia(); // Fetch Google accounts
   const [keyword, setKeyword] = useState("");
   const [keywordList, setKeywordList] = useState(onboardingData.keywords || []);
   const [relatedKeywords, setRelatedKeywords] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
   const navigate = useNavigate();
 
   const handleAddKeyword = () => {
@@ -38,7 +42,6 @@ const StepKeywords = () => {
       );
       if (!response.ok) throw new Error("Failed to fetch related keywords");
       const data = await response.json();
-      console.log(data);
       setRelatedKeywords(data.result.keywords.split(", ") || []);
     } catch (error) {
       console.error("Error fetching related keywords:", error);
@@ -118,6 +121,21 @@ const StepKeywords = () => {
           </ul>
         </div>
       )}
+
+      {/* Connect Google Search Console Button */}
+      <button
+        className="step-keywords-google-btn"
+        onClick={() => setIsModalOpen(true)}
+      >
+        Connect Google Search Console
+      </button>
+
+      {/* Google Accounts Modal */}
+      <ConnectGoogleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onKeywordsSelected={setKeywordList}
+      />
 
       <button
         onClick={handleNext}

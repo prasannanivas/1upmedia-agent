@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./RedditAuth.css";
 import { useSocialMedia } from "../../../context/SocialMediaContext";
+import DisplayPreviewTitles from "../../../components/DisplayPreviewTitles";
 
 const FromReddit = () => {
   // Get the Reddit profiles from your SocialMediaContext
@@ -237,12 +238,7 @@ const FromReddit = () => {
 
       {groupPreviewTitles.length > 0 && (
         <div className="from-reddit-group-previews">
-          <h3>Group Preview Titles:</h3>
-          <ul>
-            {groupPreviewTitles.map((title, idx) => (
-              <li key={idx}>{title}</li>
-            ))}
-          </ul>
+          <DisplayPreviewTitles previewTitles={groupPreviewTitles} />
         </div>
       )}
     </div>

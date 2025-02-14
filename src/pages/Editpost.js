@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import "./Editpost.css";
 import { useAuth } from "../context/AuthContext";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import beautify from "js-beautify";
+import "./Editpost.css";
+import ChangeImageModal from "../components/ChangeImageModal"; // Import the new component
+import { image } from "framer-motion/client";
 
 function EditPost() {
   const { state } = useLocation();
   const { post } = state || {};
-  const { postId } = useParams(); // Get postId from the route
+  const { postId } = useParams();
   const { authState } = useAuth();
   const { email } = authState;
   const navigate = useNavigate();
@@ -14,14 +19,29 @@ function EditPost() {
   const [formData, setFormData] = useState({
     title: post?.title || "",
     content: post?.content || "",
-    tags: post?.tags?.join(", ") || "",
-    categories: post?.categories?.join(", ") || "",
     schedule_time: post?.schedule_time || "",
   });
+  const [tags, setTags] = useState(post?.tags || []);
+  const [categories, setCategories] = useState(post?.categories || []);
+  const [imageUrl, setImageUrl] = useState(post?.image_data?.url || "");
 
+  const [tagInput, setTagInput] = useState("");
+  const [categoryInput, setCategoryInput] = useState("");
+  const [editingMode, setEditingMode] = useState("post"); // "post" or "html"
   const [loading, setLoading] = useState(!post);
+  const [imageAlt, setImageAlt] = useState(""); // Stores alt text for image
+  const [isModalOpen, setIsModalOpen] = useState(false); // Controls the modal visibility
 
-  // Fetch post details if state is lost
+  // Open modal
+  const openImageModal = () => {
+    setIsModalOpen(true);
+  };
+
+  // Handle image update
+  const handleImageSave = (newImageUrl, newAltText, uploadedFile) => {
+    setImageUrl(newImageUrl);
+    setImageAlt(newAltText);
+  };
   useEffect(() => {
     const fetchPost = async () => {
       if (!post) {
@@ -34,10 +54,12 @@ function EditPost() {
             setFormData({
               title: data.title,
               content: data.content,
-              tags: data.tags.join(", "),
-              categories: data.categories.join(", "),
               schedule_time: data.schedule_time,
             });
+            setTags(data.tags);
+            setCategories(data.categories);
+            setImageUrl(data.image_data?.url || "");
+            setImageAlt(data.image_data?.alt || "");
           } else {
             alert("Failed to fetch post details.");
           }
@@ -58,6 +80,53 @@ function EditPost() {
     setFormData((prevData) => ({ ...prevData, [name]: value }));
   };
 
+  const handleEditorChange = (value) => {
+    setFormData((prevData) => ({ ...prevData, content: value }));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === "Enter" && tagInput.trim() !== "") {
+      e.preventDefault();
+      if (!tags.includes(tagInput.trim())) {
+        setTags([...tags, tagInput.trim()]);
+      }
+      setTagInput("");
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter((t) => t !== tagToRemove));
+  };
+
+  const handleCategoryKeyDown = (e) => {
+    if (e.key === "Enter" && categoryInput.trim() !== "") {
+      e.preventDefault();
+      if (!categories.includes(categoryInput.trim())) {
+        setCategories([...categories, categoryInput.trim()]);
+      }
+      setCategoryInput("");
+    }
+  };
+
+  const handleRemoveCategory = (catToRemove) => {
+    setCategories(categories.filter((c) => c !== catToRemove));
+  };
+
+  // Format HTML before switching to Edit as HTML mode
+  const toggleEditingMode = (mode) => {
+    if (mode === "html") {
+      setFormData((prevData) => ({
+        ...prevData,
+        content: beautify.html(prevData.content, {
+          indent_size: 2,
+          wrap_line_length: 80,
+          preserve_newlines: true,
+        }),
+      }));
+    }
+    setEditingMode(mode);
+  };
+
   const saveChanges = async () => {
     try {
       const response = await fetch(
@@ -68,8 +137,12 @@ function EditPost() {
           body: JSON.stringify({
             title: formData.title,
             content: formData.content,
-            tags: formData.tags,
-            categories: formData.categories,
+            tags: tags,
+            categories: categories,
+            image_data: {
+              alt: imageAlt,
+              url: imageUrl,
+            },
             schedule_time: formData.schedule_time,
           }),
         }
@@ -92,53 +165,153 @@ function EditPost() {
   }
 
   return (
-    <div className="edit-post-container">
-      <h2>Edit Post</h2>
-      <label>
-        Title:
-        <input
-          type="text"
-          name="title"
-          value={formData.title}
-          onChange={handleInputChange}
-        />
-      </label>
-      <label>
-        Content:
-        <textarea
-          name="content"
-          value={formData.content}
-          onChange={handleInputChange}
-        />
-      </label>
-      <label>
-        Tags (comma-separated):
-        <input
-          type="text"
-          name="tags"
-          value={formData.tags}
-          onChange={handleInputChange}
-        />
-      </label>
-      <label>
-        Categories (comma-separated):
-        <input
-          type="text"
-          name="categories"
-          value={formData.categories}
-          onChange={handleInputChange}
-        />
-      </label>
-      <label>
-        Schedule Date:
-        <input
-          type="date"
-          name="schedule_time"
-          value={formData.schedule_time.split("T")[0]} // Format date for input
-          onChange={handleInputChange}
-        />
-      </label>
-      <button onClick={saveChanges}>Save Changes</button>
+    <div className="edit-post__container">
+      <h2 className="edit-post__title">Edit Post</h2>
+      <div className="edit-post__form">
+        <div className="edit-post__main">
+          <label className="edit-post__label">
+            Title:
+            <input
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              className="edit-post__input"
+            />
+          </label>
+
+          {/* Toggle Buttons */}
+          <div className="edit-post__toggle">
+            <button
+              className={editingMode === "post" ? "active" : ""}
+              onClick={() => toggleEditingMode("post")}
+            >
+              Edit as POST
+            </button>
+            <button
+              className={editingMode === "html" ? "active" : ""}
+              onClick={() => toggleEditingMode("html")}
+            >
+              Edit as HTML
+            </button>
+          </div>
+
+          {editingMode === "post" ? (
+            <ReactQuill
+              value={formData.content}
+              onChange={handleEditorChange}
+              className="edit-post__wysiwyg"
+            />
+          ) : (
+            <textarea
+              name="content"
+              value={formData.content}
+              onChange={handleInputChange}
+              className="edit-post__textarea expanded"
+            />
+          )}
+        </div>
+
+        {/* Sidebar for Image, Tags, Categories, and Schedule Date */}
+        <div className="edit-post__sidebar">
+          {/* Show image preview only if an image exists */}
+          {imageUrl ? (
+            <div className="edit-post__image-container">
+              <img
+                src={imageUrl}
+                alt={imageAlt || "Post Image"}
+                className="edit-post__image"
+              />
+            </div>
+          ) : (
+            <div className="edit-post__image-placeholder">
+              No Image Selected
+            </div>
+          )}
+
+          {/* Always show "Change Image" button */}
+          <button
+            className="edit-post__change-image-btn"
+            onClick={openImageModal}
+          >
+            {imageUrl ? "Change Image" : "Add Image"}
+          </button>
+
+          {/* Image Upload Modal */}
+          <ChangeImageModal
+            email={email}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleImageSave}
+            existingImageUrl={imageUrl}
+            defaultAltText={imageAlt || formData.title}
+          />
+
+          <div className="edit-post__tags">
+            <strong>Tags:</strong>
+            <div className="edit-post__chip-container">
+              {tags.map((tag, index) => (
+                <div key={index} className="edit-post__chip">
+                  {tag}
+                  <span
+                    className="edit-post__chip-close"
+                    onClick={() => handleRemoveTag(tag)}
+                  >
+                    &times;
+                  </span>
+                </div>
+              ))}
+              <input
+                type="text"
+                placeholder="Add tag..."
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                className="edit-post__chip-input"
+              />
+            </div>
+          </div>
+
+          <div className="edit-post__categories">
+            <strong>Categories:</strong>
+            <div className="edit-post__chip-container">
+              {categories.map((cat, index) => (
+                <div key={index} className="edit-post__chip">
+                  {cat}
+                  <span
+                    className="edit-post__chip-close"
+                    onClick={() => handleRemoveCategory(cat)}
+                  >
+                    &times;
+                  </span>
+                </div>
+              ))}
+              <input
+                type="text"
+                placeholder="Add category..."
+                value={categoryInput}
+                onChange={(e) => setCategoryInput(e.target.value)}
+                onKeyDown={handleCategoryKeyDown}
+                className="edit-post__chip-input"
+              />
+            </div>
+          </div>
+
+          <label className="edit-post__label">
+            Schedule Date:
+            <input
+              type="date"
+              name="schedule_time"
+              value={formData.schedule_time.split("T")[0]}
+              onChange={handleInputChange}
+              className="edit-post__input"
+            />
+          </label>
+        </div>
+      </div>
+      <button className="edit-post__save-button" onClick={saveChanges}>
+        Save Changes
+      </button>
     </div>
   );
 }
