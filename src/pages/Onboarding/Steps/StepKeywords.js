@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../../context/OnboardingContext";
 import { useSocialMedia } from "../../../context/SocialMediaContext"; // Import social media context
@@ -13,6 +13,9 @@ const StepKeywords = () => {
   const [keywordList, setKeywordList] = useState(onboardingData.keywords || []);
   const [relatedKeywords, setRelatedKeywords] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [GSCdata, setGSCdata] = useState(
+    onboardingData.searchConsoleData || {}
+  );
   const navigate = useNavigate();
 
   const handleAddKeyword = () => {
@@ -47,6 +50,13 @@ const StepKeywords = () => {
       console.error("Error fetching related keywords:", error);
     }
   };
+
+  useEffect(() => {
+    setOnboardingData((prev) => ({
+      ...prev,
+      searchConsoleData: GSCdata,
+    }));
+  }, [GSCdata]);
 
   const handleNext = () => {
     setOnboardingData((prev) => ({
@@ -135,6 +145,7 @@ const StepKeywords = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onKeywordsSelected={setKeywordList}
+        onGSCreceived={setGSCdata}
       />
 
       <button

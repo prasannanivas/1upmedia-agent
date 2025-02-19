@@ -138,34 +138,35 @@ const ByKeyword = () => {
   };
 
   return (
-    <div className="by-keyword-container">
-      <h1>Generate Titles by Keywords</h1>
+    <div className="by-keyword">
+      <h1 className="by-keyword__header">Generate Titles by Keywords</h1>
 
       {/* Main Keyword Input */}
-      <div className="input-group">
-        <label>Enter a Keyword</label>
+      <div className="by-keyword__input-group">
+        <label className="by-keyword__label">Enter a Keyword</label>
         <input
           type="text"
+          className="by-keyword__input"
           value={manualKeyword}
           onChange={(e) => setManualKeyword(e.target.value)}
           placeholder="Type a keyword..."
         />
-        <button className="add-button" onClick={addManualKeyword}>
+        <button className="by-keyword__add-button" onClick={addManualKeyword}>
           Add
         </button>
       </div>
 
       {/* Suggested Keywords */}
-      <div className="suggested-keywords">
-        <h3>Suggested Keywords</h3>
-        <button className="add-all-button" onClick={addAllKeywords}>
+      <div className="by-keyword__suggested-keywords">
+        <h3 className="by-keyword__subheader">Suggested Keywords</h3>
+        <button className="by-keyword__add-all-button" onClick={addAllKeywords}>
           Add All
         </button>
-        <div className="keyword-list">
+        <div className="by-keyword__keyword-list">
           {onboardingData.keywords.map((keyword, index) => (
             <button
               key={index}
-              className="keyword-button"
+              className="by-keyword__keyword-button"
               onClick={() => addSuggestedKeyword(keyword)}
             >
               {keyword}
@@ -176,14 +177,14 @@ const ByKeyword = () => {
 
       {/* Display Selected Keywords */}
       {selectedKeywords.length > 0 && (
-        <div className="selected-keywords">
-          <h3>Selected Keywords</h3>
-          <div className="keyword-list">
+        <div className="by-keyword__selected-keywords">
+          <h3 className="by-keyword__subheader">Selected Keywords</h3>
+          <div className="by-keyword__keyword-list">
             {selectedKeywords.map((keyword, index) => (
-              <span key={index} className="selected-keyword">
+              <span key={index} className="by-keyword__selected-keyword">
                 {keyword}{" "}
                 <button
-                  className="remove-keyword"
+                  className="by-keyword__remove-keyword"
                   onClick={() => removeKeyword(keyword)}
                 >
                   ✖
@@ -194,19 +195,21 @@ const ByKeyword = () => {
         </div>
       )}
 
-      {/* Same Advanced Fields as in ByIdea */}
+      {/* Advanced Fields Toggle */}
       <button
-        className="advanced-button"
+        className="by-keyword__advanced-button"
         onClick={() => setShowAdvanced(!showAdvanced)}
       >
         {showAdvanced ? "Hide Advanced Fields" : "Show Advanced Fields"}
       </button>
 
+      {/* Advanced Fields */}
       {showAdvanced && (
-        <div className="advanced-fields">
-          <div className="input-group">
-            <label>Content Strategy</label>
+        <div className="by-keyword__advanced-fields">
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Content Strategy</label>
             <select
+              className="by-keyword__select"
               value={contentStrategy}
               onChange={(e) => setContentStrategy(e.target.value)}
             >
@@ -218,9 +221,10 @@ const ByKeyword = () => {
               ))}
             </select>
           </div>
-          <div className="input-group">
-            <label>Goal</label>
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Goal</label>
             <select
+              className="by-keyword__select"
               value={selectedGoal}
               onChange={(e) => setSelectedGoal(e.target.value)}
             >
@@ -232,18 +236,20 @@ const ByKeyword = () => {
               ))}
             </select>
           </div>
-          <div className="input-group">
-            <label>Target Audience</label>
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Target Audience</label>
             <input
               type="text"
+              className="by-keyword__input"
               value={targetAudience}
               onChange={(e) => setTargetAudience(e.target.value)}
               placeholder="Type your target audience..."
             />
           </div>
-          <div className="input-group">
-            <label>Search Intent</label>
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Search Intent</label>
             <select
+              className="by-keyword__select"
               value={selectedSearchIntent}
               onChange={(e) => setSelectedSearchIntent(e.target.value)}
             >
@@ -255,9 +261,13 @@ const ByKeyword = () => {
               ))}
             </select>
           </div>
-          <div className="input-group">
-            <label>Tone</label>
-            <select value={tone} onChange={(e) => setTone(e.target.value)}>
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Tone</label>
+            <select
+              className="by-keyword__select"
+              value={tone}
+              onChange={(e) => setTone(e.target.value)}
+            >
               <option value="">Select Tone</option>
               {[
                 "Informative",
@@ -274,9 +284,10 @@ const ByKeyword = () => {
               ))}
             </select>
           </div>
-          <div className="input-group">
-            <label>Content Type</label>
+          <div className="by-keyword__input-group">
+            <label className="by-keyword__label">Content Type</label>
             <select
+              className="by-keyword__select"
               value={selectedContentType}
               onChange={(e) => setSelectedContentType(e.target.value)}
             >
@@ -292,17 +303,20 @@ const ByKeyword = () => {
       )}
 
       {/* Generate Button */}
-      <button className="generate-button" onClick={handleGenerateTitles}>
+      <button
+        className="by-keyword__generate-button"
+        onClick={handleGenerateTitles}
+      >
         Generate Titles
       </button>
 
       {/* Error Message */}
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="by-keyword__error-message">{error}</div>}
 
       {/* Generated Titles */}
       {generatedTitles.length > 0 && (
-        <div className="generated-titles">
-          <h2>Generated Titles:</h2>
+        <div className="by-keyword__generated-titles">
+          <h2 className="by-keyword__subheader">Generated Titles:</h2>
           <ul>
             {generatedTitles.map((title, index) => (
               <li key={index}>{title}</li>

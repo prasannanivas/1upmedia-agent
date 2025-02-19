@@ -3,7 +3,12 @@ import { useSocialMedia } from "../../../context/SocialMediaContext";
 import "./ConnectGoogleModal.css";
 import { useAuth } from "../../../context/AuthContext";
 
-const ConnectGoogleModal = ({ isOpen, onClose, onKeywordsSelected }) => {
+const ConnectGoogleModal = ({
+  isOpen,
+  onClose,
+  onKeywordsSelected,
+  onGSCreceived,
+}) => {
   const { googleProfiles, storeSocialMediaToken } = useSocialMedia();
   const [googleSites, setGoogleSites] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
@@ -148,6 +153,7 @@ const ConnectGoogleModal = ({ isOpen, onClose, onKeywordsSelected }) => {
             startDate,
             endDate,
             accessToken,
+            set_minimum: true,
           }),
         }
       );
@@ -167,6 +173,7 @@ const ConnectGoogleModal = ({ isOpen, onClose, onKeywordsSelected }) => {
 
       if (data.length > 0) {
         // ✅ Extract only `keys[0]` from each object
+        onGSCreceived(data);
         const allKeywords = data
           .map((item) => item.keys?.[0]) // Get only first keyword
           .filter(Boolean); // Remove undefined values

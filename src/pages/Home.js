@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, User, Settings } from "lucide-react";
+import { Globe, User, Settings, CheckCircle, AlertCircle } from "lucide-react";
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
 
@@ -20,6 +20,41 @@ const featureTexts = [
   "Smart SEO Insights",
 ];
 
+// Section Configuration
+const sectionConfig = {
+  basicInfo: {
+    name: "Basic Information",
+    path: "/onboarding/step-main-domain",
+    fields: ["Domain URL", "Location", "businessDetails"],
+  },
+  domainAnalysis: {
+    name: "Domain Analysis",
+    path: "/onboarding/step-main-domain",
+    fields: [
+      "Domain Authority",
+      "Page Authority",
+      "Trust Flow",
+      "Citation Flow",
+    ],
+  },
+  analytics: {
+    name: "Keywords",
+    path: "/onboarding/step-keywords",
+    fields: ["Search Console Data", "Keywords"],
+  },
+
+  contentStrategy: {
+    name: "Content Strategy",
+    path: "/onboarding/step-suggestions",
+    fields: ["Content Strategies", "Content Types", "Topic Clusters"],
+  },
+  team: {
+    name: "Team Setup",
+    path: "/onboarding/step-create-authors",
+    fields: ["Authors"],
+  },
+};
+
 const HomePage = () => {
   const [index, setIndex] = useState(0);
   const { getPercentageProfileCompletion } = useOnboarding();
@@ -28,14 +63,14 @@ const HomePage = () => {
   const completionPercentage = getPercentageProfileCompletion(); // Fetch completion percentage
 
   // Change text every 1.5 seconds
-  const intervalRef = useRef(null); // ✅ Use ref to store interval
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % featureTexts.length);
     }, 1500);
 
-    return () => clearInterval(intervalRef.current); // ✅ Cleanup interval
+    return () => clearInterval(intervalRef.current);
   }, []);
 
   return (
@@ -67,29 +102,95 @@ const HomePage = () => {
           strategy in one place.
         </p>
 
-        {/* Display Different Buttons Based on Completion Percentage */}
-        {completionPercentage === 0 ? (
-          <motion.button
-            onClick={() => navigate("/onboarding")}
-            whileHover={{ scale: 1.1 }}
-            className="homepage-cta-button"
-          >
-            Get Started
-          </motion.button>
-        ) : (
-          <div className="homepage-progress-container">
+        {/* Progress Section */}
+        <div className="homepage-progress-container">
+          <div className="progress-header">
             <p className="homepage-progress-text">
-              <strong>{completionPercentage}%</strong> completed
+              <strong>{completionPercentage.total}%</strong> Profile Completed
             </p>
-            <motion.button
-              onClick={() => navigate("/onboarding")}
-              whileHover={{ scale: 1.1 }}
-              className="homepage-complete-onboarding-button"
-            >
-              Complete Onboarding to Generate Content
-            </motion.button>
+            {completionPercentage.total < 100 && (
+              <motion.button
+                onClick={() => navigate("/onboarding")}
+                whileHover={{ scale: 1.05 }}
+                className="homepage-complete-onboarding-button"
+              >
+                Complete Setup
+              </motion.button>
+            )}
           </div>
-        )}
+
+          <div className="onboarding-steps-grid">
+            {completionPercentage.details.map((section) => {
+              const sectionName = section.name;
+              const config = sectionConfig[sectionName] || {
+                name: "Unknown Section",
+                path: "/onboarding",
+              };
+              const completedFields = section.completedFields || 0;
+              const totalFields = section.totalFields || 0;
+
+              return (
+                <motion.div
+                  key={sectionName}
+                  className="onboarding-step-card"
+                  whileHover={{ scale: 1.02 }}
+                  onClick={() => navigate(config.path)}
+                >
+                  <div className="step-header">
+                    <h3>{config.name || "Unknown Section"}</h3>
+                    {section.percentage === 100 ? (
+                      <CheckCircle
+                        className="check-icon"
+                        size={20}
+                        color="#28a745"
+                      />
+                    ) : (
+                      <AlertCircle
+                        className="alert-icon"
+                        size={20}
+                        color="#ffc107"
+                      />
+                    )}
+                  </div>
+                  <div className="step-progress">
+                    <div
+                      className="progress-bar"
+                      style={{ width: `${section.percentage}%` }}
+                    />
+                  </div>
+                  <div className="step-content">
+                    <p className="step-details">
+                      {completedFields}/{totalFields} fields completed
+                    </p>
+                    <div className="step-fields">
+                      {config.fields.map((field, idx) => {
+                        const isCompleted = idx < completedFields;
+                        const stepPath = config.path;
+                        return (
+                          <div
+                            key={idx}
+                            className={`field-item ${
+                              isCompleted ? "completed" : ""
+                            }`}
+                          >
+                            <span>{field}</span>
+                            {isCompleted ? (
+                              <CheckCircle size={14} color="#28a745" />
+                            ) : (
+                              <Link to={stepPath}>
+                                <AlertCircle size={14} color="#ffc107" />
+                              </Link>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
       </motion.section>
 
       {/* About Video Section */}

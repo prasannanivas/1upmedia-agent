@@ -9,6 +9,7 @@ import StepPersonas from "./Steps/StepPersonas";
 import StepContentStrategy from "./Steps/StepContentStrategy";
 import "./Onboarding.css";
 import StepCreateAuthors from "./Steps/StepCreateAuthors";
+import SuggestionStep from "./Steps/SuggestionStep";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ const Onboarding = () => {
           element={<StepSocialIntegrations />}
         />
         <Route path="step-personas" element={<StepPersonas />} />
+        <Route path="step-suggestions" element={<SuggestionStep />} />
         <Route path="step-create-authors" element={<StepCreateAuthors />} />
         <Route path="step-content-strategy" element={<StepContentStrategy />} />
       </Routes>

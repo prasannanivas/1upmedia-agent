@@ -14,6 +14,8 @@ const ContentCreationChoice = () => {
     { title: "From Business", route: "/agents/content-creation/from-business" },
     { title: "From Social", route: "/agents/content-creation/from-social" },
     { title: "Full Manual", route: "/agents/content-creation/fully-manual" },
+    { title: "SEO Ideas", route: "/agents/content-creation/by-seo-ideas" },
+    { title: "Calendar", route: "/agents/content-creation/by-calendar" },
   ];
 
   return (

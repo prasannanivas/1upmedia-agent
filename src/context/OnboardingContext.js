@@ -16,13 +16,23 @@ export const OnboardingProvider = ({ children }) => {
     integrations: [],
     keywords: [],
     businessDetails: "",
+    domain_authority: "",
+    page_authority: "",
+    initialAnalysisState: {
+      domainAuthority: "",
+      pageAuthority: "",
+      trustFlow: "",
+      citationFlow: "",
+    },
     socialIntegrations: [],
-    contentStrategy: {},
+    suggestionsFromAi: {},
     authors: [],
+    searchConsoleData: {},
   });
 
   useEffect(() => {
     const fetchOnboardingData = async () => {
+      setLoading(true);
       try {
         if (!email) return;
 
@@ -41,6 +51,21 @@ export const OnboardingProvider = ({ children }) => {
             location: firstSite.location || "",
             keywords: firstSite.keywords || [],
             businessDetails: firstSite.business_details || "",
+            initialAnalysisState: {
+              domainAuthority: firstSite?.dynamic_fields?.domainAuthority || "",
+              pageAuthority: firstSite.dynamic_fields?.pageAuthority || "",
+              trustFlow: firstSite.dynamic_fields?.trustFlow || "",
+              citationFlow: firstSite.dynamic_fields?.citationFlow || "",
+            },
+            searchConsoleData: firstSite.search_analytics || {},
+            suggestionsFromAi: {
+              content_strategies:
+                firstSite.dynamic_fields?.suggestions?.content_strategies || [],
+              content_types:
+                firstSite.dynamic_fields?.suggestions?.content_types || [],
+              topic_clusters:
+                firstSite.dynamic_fields?.suggestions?.topic_clusters || [],
+            },
           }));
         }
 
@@ -67,22 +92,121 @@ export const OnboardingProvider = ({ children }) => {
     }
   }, [email]);
 
-  // ✅ Function to Calculate Profile Completion Percentage
+  // Calculate Profile Completion Percentage with weighted sections
   const getPercentageProfileCompletion = () => {
-    const totalFields = 6; // Total expected fields for full completion
-    let completedFields = 0;
+    const sections = {
+      basicInfo: {
+        weight: 20,
+        fields: [
+          { name: "domain", check: (data) => data.domain.trim() !== "" },
+          { name: "location", check: (data) => data.location.trim() !== "" },
+          {
+            name: "businessDetails",
+            path: "/onboarding/step-business-details",
+            check: (data) => data.businessDetails?.trim() !== "",
+          },
+        ],
+      },
+      domainAnalysis: {
+        weight: 20,
+        fields: [
+          {
+            name: "domainAuthority",
+            check: (data) => data.initialAnalysisState?.domainAuthority !== "",
+          },
+          {
+            name: "pageAuthority",
+            check: (data) => data.initialAnalysisState?.pageAuthority !== "",
+          },
+          {
+            name: "trustFlow",
+            check: (data) => data.initialAnalysisState?.trustFlow !== "",
+          },
+          {
+            name: "citationFlow",
+            check: (data) => data.initialAnalysisState?.citationFlow !== "",
+          },
+        ],
+      },
+      contentStrategy: {
+        weight: 25,
+        fields: [
+          {
+            name: "contentStrategies",
+            path: "/onboarding/step-strategy",
+            check: (data) =>
+              data.suggestionsFromAi?.content_strategies?.length > 0,
+          },
+          {
+            name: "contentTypes",
+            path: "/onboarding/step-strategy",
+            check: (data) => data.suggestionsFromAi?.content_types?.length > 0,
+          },
+          {
+            name: "topicClusters",
+            path: "/onboarding/step-strategy",
+            check: (data) => data.suggestionsFromAi?.topic_clusters?.length > 0,
+          },
+        ],
+      },
+      team: {
+        weight: 15,
+        fields: [
+          { name: "authors", check: (data) => data.authors?.length > 0 },
+        ],
+      },
+      analytics: {
+        weight: 20,
+        fields: [
+          {
+            name: "keywords",
+            path: "/onboarding/step-keywords",
+            check: (data) => data.keywords?.length > 0,
+          },
+          {
+            name: "searchConsole",
+            check: (data) =>
+              Object.keys(data.searchConsoleData || {}).length > 0,
+          },
+        ],
+      },
+    };
 
-    console.log(onboardingData);
-    if (onboardingData.domain.trim()) completedFields++;
-    if (onboardingData.location.trim()) completedFields++;
-    if (onboardingData.keywords.length > 0) completedFields++;
-    if (onboardingData.businessDetails.trim()) completedFields++;
-    if (onboardingData.authors.length > 0) completedFields++;
+    // Calculate completion percentage for each section
+    const sectionCompletions = {};
+    let totalPercentage = 0;
 
-    // If all fields are empty, return 0%
-    if (completedFields === 0) return 0;
+    for (const [sectionName, section] of Object.entries(sections)) {
+      const completedFields = section.fields.filter((field) =>
+        field.check(onboardingData)
+      ).length;
+      const sectionPercentage =
+        (completedFields / section.fields.length) * section.weight;
+      sectionCompletions[sectionName] = sectionPercentage;
+      totalPercentage += sectionPercentage;
+    }
 
-    return Math.round((completedFields / totalFields) * 100); // Return as percentage
+    // Add section completion percentages to the result for detailed reporting
+    const result = {
+      total: Math.round(totalPercentage),
+      sections: sectionCompletions,
+      details: Object.entries(sections).map(([sectionName, section]) => ({
+        name: sectionName,
+        completedFields: section.fields.filter((field) =>
+          field.check(onboardingData)
+        ).length,
+        totalFields: section.fields.length,
+        weight: section.weight,
+        percentage: Math.round(
+          (section.fields.filter((field) => field.check(onboardingData))
+            .length /
+            section.fields.length) *
+            100
+        ),
+      })),
+    };
+
+    return result;
   };
 
   return (

@@ -9,6 +9,9 @@ import FromBusiness from "./FromBusiness";
 import FromYoutube from "./FromSocial/FromYoutube";
 import FromReddit from "./FromSocial/FromReddit";
 import SocialNavigation from "./FromSocial/SocialNavigation";
+import CreateQuickContents from "./CreateQuickContents";
+import BySeoIdeas from "./BySeoIdeas";
+import GenerateCalendarSeoIdeas from "./GenerateCalendarSeoIdeas";
 
 const ContentGenerationNavigator = () => {
   const navigate = useNavigate();
@@ -26,6 +29,9 @@ const ContentGenerationNavigator = () => {
         <Route path="from-social" element={<SocialNavigation />} />
         <Route path="from-youtube" element={<FromYoutube />} />
         <Route path="from-reddit" element={<FromReddit />} />
+        <Route path="quick-contents" element={<CreateQuickContents />} />
+        <Route path="by-seo-ideas" element={<BySeoIdeas />} />
+        <Route path="by-calendar" element={<GenerateCalendarSeoIdeas />} />
       </Routes>
     </div>
   );
