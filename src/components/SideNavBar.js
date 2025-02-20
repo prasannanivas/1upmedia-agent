@@ -4,7 +4,7 @@ import DropdownMenu from "./DropdownMenu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-function SideNavBar({ isMenuOpen, toggleMenu }) {
+function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const [dropdowns, setDropdowns] = useState({});
 
   const { logout } = useAuth();
@@ -22,10 +22,16 @@ function SideNavBar({ isMenuOpen, toggleMenu }) {
 
   return (
     <div
+      ref={navBarRef}
       className={`NavBar ${isMenuOpen ? "NavBar-open" : ""}`}
       style={{ transition: "left 0.5s ease-in-out" }}
     >
       <ul>
+        <li>
+          <Link to="/" onClick={handleLinkClick}>
+            Home
+          </Link>
+        </li>
         <li>
           <Link to="/dashboard" onClick={handleLinkClick}>
             Dashboard

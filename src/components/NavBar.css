@@ -141,6 +141,7 @@
 
 .company-logo img {
   height: 10vh;
+  cursor: pointer;
 }
 
 /* Sidebar offset for header */

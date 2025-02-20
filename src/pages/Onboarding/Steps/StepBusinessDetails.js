@@ -98,7 +98,7 @@ const StepBusinessDetails = () => {
         delete filteredSiteData.dynamic_fields;
       }
 
-      await fetch("http://localhost:3000/aiagent/updateBusinessdetails", {
+      await fetch("http://ai.1upmedia.com:3000/aiagent/updateBusinessdetails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

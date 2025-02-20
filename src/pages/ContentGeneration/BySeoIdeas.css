@@ -77,6 +77,22 @@
   font-weight: 500;
 }
 
+.status-message {
+  color: #0c5460;
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 12px;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Generate Button */
 .generate-button {
   padding: 14px 28px;
@@ -120,10 +136,46 @@
   margin-top: 30px;
 }
 
-.ideas-section h2 {
+.ideas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 0 20px;
+}
+
+.ideas-header h2 {
   font-size: 1.8rem;
   color: #333;
-  margin-bottom: 20px;
+  margin: 0;
+}
+
+.ideas-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.select-all-button {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid #0f8723;
+  border-radius: 6px;
+  background: transparent;
+  color: #0f8723;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.select-all-button:hover {
+  background: #f0f7f0;
+}
+
+.selection-count {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
 }
 
 .ideas-grid {
@@ -138,19 +190,40 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
+  transition: all 0.2s ease;
   text-align: left;
+  position: relative;
+  cursor: pointer;
 }
 
 .idea-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.idea-card-selected {
+  border: 2px solid #0f8723;
+  background: linear-gradient(to bottom, white, #f0fff0);
+}
+
+.idea-checkbox {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+}
+
+.idea-checkbox input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #0f8723;
 }
 
 .idea-card h3 {
   color: #0f8723;
   margin: 0 0 15px 0;
   font-size: 1.2rem;
+  padding-right: 30px; /* Make room for checkbox */
 }
 
 .idea-description {
@@ -164,6 +237,7 @@
   padding: 10px;
   border-radius: 8px;
   font-size: 0.9rem;
+  margin-bottom: 5px;
 }
 
 .idea-combination strong {
@@ -177,10 +251,45 @@
   margin: 0;
 }
 
+/* Generate Content Section */
+.generate-content-section {
+  margin: 30px 0;
+  padding: 0 20px;
+}
+
+.generate-content-button {
+  width: 100%;
+  max-width: 400px;
+  padding: 16px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  background: #0f8723;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.generate-content-button:hover {
+  background: #096b1a;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.generate-content-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
   .seo-ideas-container {
     padding: 20px;
+    width: 100%;
   }
 
   .seo-ideas-title {
@@ -193,5 +302,19 @@
 
   .generate-button {
     width: 100%;
+  }
+  
+  .ideas-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .ideas-actions {
+    justify-content: space-between;
+  }
+  
+  .generate-content-button {
+    max-width: 100%;
   }
 }
