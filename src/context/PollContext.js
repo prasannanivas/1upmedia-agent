@@ -31,7 +31,7 @@ export const PollProvider = ({ children }) => {
         const { percentage, messages, status } = data.progress;
 
         setProgressPercentage(percentage);
-        setShowProgressBar(true);
+        // setShowProgressBar(true);
 
         handleToast("positive", `Progress Update: ${messages.slice(-1)[0]}`);
 

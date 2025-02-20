@@ -57,7 +57,7 @@ const BySeoIdeas = () => {
         }
       );
 
-      if (response.data.success) {
+      if (response.data?.status?.success) {
         // Add an id and selected property to each idea
         const ideasWithMetadata = response.data.data.map((idea, index) => ({
           ...idea,
