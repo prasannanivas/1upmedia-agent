@@ -192,7 +192,7 @@ const GenerateCalendarSeoIdeas = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/aiagent/generate-seo-ideas",
+        "http://ai.1upmedia.com:3000/aiagent/generate-seo-ideas",
         {
           email: authState.email,
           url: onboardingData.domain,
@@ -267,7 +267,7 @@ const GenerateCalendarSeoIdeas = () => {
 
       startPolling();
       const response = await axios.post(
-        "http://localhost:3000/aiagent/generateContentFromIdeas",
+        "http://ai.1upmedia.com:3000/aiagent/generateContentFromIdeas",
         {
           email: authState.email,
           ideas: selectedIdeaObjects,
