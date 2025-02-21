@@ -11,6 +11,8 @@ export const SocialMediaProvider = ({ children }) => {
   const [redditProfiles, setRedditProfiles] = useState([]);
   const [twitterProfiles, setTwitterProfiles] = useState([]);
   const [googleProfiles, setGoogleProfiles] = useState([]);
+  const [wordpressProfiles, setWordpressProfiles] = useState([]);
+  const [linkedinProfiles, setLinkedinProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
 
@@ -44,18 +46,18 @@ export const SocialMediaProvider = ({ children }) => {
         }
         if (profile.social_media_name === "Facebook - Connected") {
           connectedFacebookPages.push(profile);
-        }
-        if (profile.social_media_name === "Instagram") {
+        } else if (profile.social_media_name === "Instagram") {
           connectedInstagramProfiles.push(profile);
-        }
-        if (profile.social_media_name === "reddit") {
-          redditProfiles.push(profile);
-        }
-        if (profile.social_media_name === "twitter") {
-          twitterProfiles.push(profile);
-        }
-        if (profile.social_media_name === "google") {
-          googleProfiles.push(profile);
+        } else if (profile.social_media_name === "reddit") {
+          setRedditProfiles((prev) => [...prev, profile]);
+        } else if (profile.social_media_name === "twitter") {
+          setTwitterProfiles((prev) => [...prev, profile]);
+        } else if (profile.social_media_name === "google") {
+          setGoogleProfiles((prev) => [...prev, profile]);
+        } else if (profile.social_media_name === "wordpress") {
+          wordpressProfiles.push(profile);
+        } else if (profile.social_media_name === "linkedin") {
+          linkedinProfiles.push(profile);
         }
       });
 
@@ -117,10 +119,12 @@ export const SocialMediaProvider = ({ children }) => {
         instagramProfiles,
         redditProfiles,
         twitterProfiles,
+        linkedinProfiles,
         googleProfiles,
         setGoogleProfiles,
         loadingPages,
         storeSocialMediaToken,
+        wordpressProfiles,
         setLoadingPages,
         setFacebookPages,
         setInstagramProfiles,

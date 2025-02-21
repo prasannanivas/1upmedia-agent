@@ -15,7 +15,7 @@ function PostDetails() {
 
   return (
     <>
-      <FloatingOptions />
+      <FloatingOptions post={post} />
       <div className="post-details__container">
         <h2 className="post-details__title">{post.title}</h2>
 

@@ -142,7 +142,28 @@ export const AuthProvider = ({ children }) => {
     //setLoadingPages(false);
   };
 
-  const handleAuthorize = (platform, shop = null) => {
+  const handleAuthorize = (platform, shop = null, credentials) => {
+    if (platform === "wordpress") {
+      // Directly store WordPress credentials without opening a window
+      storeSocialMediaToken({
+        email: authState.email,
+        social_media: {
+          social_media_name: platform,
+          account_name: credentials.username,
+          access_token: credentials.appPassword,
+          profile_picture: "", // WordPress doesn't provide this
+          dynamic_fields: {
+            siteUrl: credentials.siteUrl,
+            username: credentials.username,
+            // Don't store the actual app password in dynamic_fields for security
+            userId: credentials.userData?.id,
+            userRoles: credentials.userData?.roles,
+          },
+        },
+      });
+      return; // Exit early for WordPress
+    }
+
     let authUrl = "";
     let eventType = "";
 

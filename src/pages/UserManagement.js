@@ -12,7 +12,9 @@ import instagramLogo from "../assets/instagram-logo.png";
 import shopifyLogo from "../assets/shopify-logo.png";
 import webflowLogo from "../assets/webflow-logo.png";
 import redditLogo from "../assets/reddit-logo.png";
+import emptyLogo from "../assets/empty-logo.png";
 import Loader from "../components/Loader";
+import WordPressAuthModal from "./WordpressAuthModal";
 
 const UserManagement = () => {
   const { authState, handleRemoveAccount, handleAuthorize } = useAuth();
@@ -20,6 +22,22 @@ const UserManagement = () => {
   const { socialMediaProfiles, fetchSocialMediaProfiles, loadingPages } =
     useSocialMedia();
   const [shopifyShop, setShopifyShop] = useState("");
+
+  const [isWordPressModalOpen, setIsWordPressModalOpen] = useState(false);
+
+  // Update your WordPress authorization handler
+  const handleWordPressAuth = (credentials) => {
+    // Close modal
+    setIsWordPressModalOpen(false);
+
+    // Call your existing handleAuthorize with the credentials
+    handleAuthorize("wordpress", null, {
+      siteUrl: credentials.siteUrl,
+      username: credentials.username,
+      appPassword: credentials.appPassword,
+      userData: credentials.userData,
+    });
+  };
 
   useEffect(() => {
     if (email) {
@@ -72,16 +90,19 @@ const UserManagement = () => {
                         ? redditLogo
                         : account.social_media_name === "twitter"
                         ? twitterLogo
-                        : "https://via.placeholder.com/50" // Default for unknown platforms
+                        : account.social_media_name === "wordpress"
+                        ? wordpressLogo
+                        : account.social_media_name === "shopify"
+                        ? shopifyLogo
+                        : account.social_media_name === "webflow"
+                        ? webflowLogo
+                        : emptyLogo // Default for unknown platforms
                     }
                     alt={account.social_media_name}
                     className="connected-platform-logo"
                   />
                   <img
-                    src={
-                      account.profile_picture ||
-                      "https://via.placeholder.com/50"
-                    }
+                    src={account.profile_picture || emptyLogo}
                     alt={account.account_name}
                     className="connected-profile-pic"
                   />
@@ -191,6 +212,23 @@ const UserManagement = () => {
             Add
           </button>
         </div>
+
+        <div className="auth-platform">
+          <img src={wordpressLogo} alt="wordpress" className="platform-logo" />
+          <button
+            className="auth-button wordpress"
+            onClick={() => setIsWordPressModalOpen(true)}
+          >
+            Add
+          </button>
+        </div>
+
+        {/* Add the modal component */}
+        <WordPressAuthModal
+          isOpen={isWordPressModalOpen}
+          onClose={() => setIsWordPressModalOpen(false)}
+          onSuccess={handleWordPressAuth}
+        />
       </div>
     </div>
   );
