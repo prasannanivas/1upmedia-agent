@@ -17,6 +17,9 @@ import FacebookShareModal from "../pages/SocialShareModals/FacebookShareModal";
 import InstagramShareModal from "../pages/SocialShareModals/InstagramShareModal";
 import RedditShareModal from "../pages/SocialShareModals/RedditShareModal";
 import LinkedInShareModal from "../pages/SocialShareModals/LinkedinShareModal";
+import TwitterShareModal from "../pages/SocialShareModals/TwitterShareModal";
+import WebflowShareModal from "../pages/SocialShareModals/WebfloeShareModal";
+import ShopifyShareModal from "../pages/SocialShareModals/ShopifyShareModal";
 
 const FloatingOptions = ({ post }) => {
   const [expanded, setExpanded] = useState(false);
@@ -25,12 +28,18 @@ const FloatingOptions = ({ post }) => {
   const [isInstagramModalOpen, setInstagramModalOpen] = useState(false);
   const [isRedditModalOpen, setRedditModalOpen] = useState(false);
   const [isLinkedinModalOpen, setLinkedinModalOpen] = useState(false);
+  const [isTwitterModalOpen, setIsTwitterModalOpen] = useState(false);
+  const [isWebflowModalOpen, setIsWebflowModalOpen] = useState(false);
+  const [isShopifyModalOpen, setIsShopifyModalOpen] = useState(false);
   const {
     wordpressProfiles,
     facebookPages,
     instagramProfiles,
     redditProfiles,
     linkedinProfiles,
+    twitterProfiles,
+    webflowProfiles,
+    shopifyProfiles,
   } = useSocialMedia();
 
   console.log(linkedinProfiles);
@@ -62,6 +71,21 @@ const FloatingOptions = ({ post }) => {
     setExpanded(false); // Close the floating menu
   };
 
+  const handleTwitterClick = () => {
+    setIsTwitterModalOpen(true);
+    setExpanded(false); // Close the floating menu
+  };
+
+  const handleWebflowClick = () => {
+    setIsWebflowModalOpen(true);
+    setExpanded(false); // Close the floating menu
+  };
+
+  const handleShopifyClick = () => {
+    setIsShopifyModalOpen(true);
+    setExpanded(false); // Close the floating menu
+  };
+
   return (
     <>
       <Draggable>
@@ -87,7 +111,11 @@ const FloatingOptions = ({ post }) => {
               >
                 <FaInstagramSquare className="social-icon" />
               </div>
-              <div className="option-item" title="Share on Twitter">
+              <div
+                className="option-item"
+                title="Share on Twitter"
+                onClick={handleTwitterClick}
+              >
                 <FaTwitter className="social-icon" />
               </div>
               <div
@@ -104,7 +132,11 @@ const FloatingOptions = ({ post }) => {
               >
                 <FaLinkedinIn className="social-icon" />
               </div>
-              <div className="option-item" title="Share on Webflow">
+              <div
+                className="option-item"
+                title="Share on Webflow"
+                onClick={handleWebflowClick}
+              >
                 <SiWebflow className="social-icon" />
               </div>
               <div
@@ -114,7 +146,11 @@ const FloatingOptions = ({ post }) => {
               >
                 <FaWordpress className="social-icon" />
               </div>
-              <div className="option-item" title="Share on Shopify">
+              <div
+                className="option-item"
+                title="Share on Shopify"
+                onClick={handleShopifyClick}
+              >
                 <SiShopify className="social-icon" />
               </div>
             </div>
@@ -152,6 +188,26 @@ const FloatingOptions = ({ post }) => {
         onClose={() => setLinkedinModalOpen(false)}
         post={post}
         linkedinProfiles={linkedinProfiles}
+      />
+
+      <TwitterShareModal
+        isOpen={isTwitterModalOpen}
+        onClose={() => setIsTwitterModalOpen(false)}
+        post={post}
+        twitterProfiles={twitterProfiles}
+      />
+      <WebflowShareModal
+        isOpen={isWebflowModalOpen}
+        onClose={() => setIsWebflowModalOpen(false)}
+        post={post}
+        webflowProfiles={webflowProfiles}
+      />
+
+      <ShopifyShareModal
+        isOpen={isShopifyModalOpen}
+        onClose={() => setIsShopifyModalOpen(false)}
+        post={post}
+        shopifyProfiles={shopifyProfiles}
       />
     </>
   );

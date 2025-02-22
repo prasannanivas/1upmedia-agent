@@ -207,6 +207,8 @@ export const AuthProvider = ({ children }) => {
     );
 
     window.addEventListener("message", async function handleAuthEvent(event) {
+      console.log(event.data);
+
       if (event.data.type === "twitterAuthSuccess") {
         const { accessToken, userProfile } = event.data;
 
@@ -224,13 +226,19 @@ export const AuthProvider = ({ children }) => {
           },
         });
       } else if (event.data.type === "webflowAuthSuccess") {
-        const { accessToken } = event.data;
+        const { accessToken, userProfile } = event.data;
+
+        console.log(event.data);
 
         await storeSocialMediaToken({
           email: authState.email,
           social_media: {
             social_media_name: platform,
             access_token: accessToken,
+            account_name: userProfile?.account_name,
+            dynamic_fields: {
+              account_id: userProfile?.id,
+            },
           },
         });
       } else if (event.data.type === "redditAuthSuccess") {

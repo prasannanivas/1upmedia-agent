@@ -1240,3 +1240,298 @@
 .truncate-button:hover {
   background-color: #b91c1c;
 }
+
+
+
+/* Twitter Modal Specific Styles */
+.twitter-modal {
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+}
+
+.twitter-icon {
+  color: #1DA1F2;
+  font-size: 28px;
+}
+
+.twitter-account-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f7f9f9;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+.twitter-account-info .profile-picture {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.twitter-account-info span {
+  font-size: 15px;
+  color: #0f1419;
+}
+
+/* Content Editor Styles */
+.content-textarea {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #cfd9de;
+  border-radius: 16px;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  transition: border-color 0.2s;
+  margin-top: 12px;
+}
+
+.content-textarea:focus {
+  border-color: #1DA1F2;
+  outline: none;
+}
+
+.content-textarea.error {
+  border-color: #f4212e;
+}
+
+/* Character Count */
+.content-controls span {
+  font-size: 13px;
+  color: #536471;
+}
+
+.content-controls span.over-limit {
+  color: #f4212e;
+}
+
+/* Share Button Styles */
+.share-button.twitter {
+  width: 100%;
+  padding: 12px;
+  background-color: #1DA1F2;
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 16px;
+}
+
+.share-button.twitter:hover:not(:disabled) {
+  background-color: #1a8cd8;
+}
+
+.share-button.twitter:disabled {
+  background-color: #8ecdf7;
+  cursor: not-allowed;
+}
+
+.twitter-post-link {
+  color: #1DA1F2;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #e8f5fd;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.twitter-post-link:hover {
+  background-color: #d3eafc;
+  text-decoration: underline;
+}
+
+.twitter-post-link::after {
+  content: '↗';
+  font-size: 16px;
+}
+
+/* Status Messages */
+.status-message {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.status-message.success {
+  background-color: #e8f5fd;
+  color: #1DA1F2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-message.error {
+  background-color: #fee7eb;
+  color: #f4212e;
+}
+
+.status-message.info {
+  background-color: #e8f5fd;
+  color: #1DA1F2;
+}
+
+/* Profile Selector */
+.profile-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background-color: #f7f9f9;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+.profile-selector select {
+  padding: 8px 12px;
+  border: 1px solid #cfd9de;
+  border-radius: 9999px;
+  background-color: white;
+  font-size: 14px;
+  color: #0f1419;
+  cursor: pointer;
+}
+
+/* Modal Header */
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eff3f4;
+}
+
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font-size: 20px;
+  color: #0f1419;
+}
+
+
+.webflow-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+}
+
+.webflow-icon {
+  color: #4353ff;
+  font-size: 24px;
+  margin-right: 12px;
+}
+
+.site-selector {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.site-selector select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.webflow-account-info {
+  margin-top: 12px;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.share-button.webflow {
+  background-color: #4353ff;
+}
+
+.share-button.webflow:hover {
+  background-color: #3442cc;
+}
+
+.webflow-post-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background-color: #4353ff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.image-preview {
+  margin-top: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 200px;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Shopify specific styles */
+.shopify-modal .shopify-icon {
+  color: #96bf47;
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.shopify-modal .blog-selector {
+  margin-top: 15px;
+}
+
+.shopify-modal .title-input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.shopify-store-info {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.share-button.shopify {
+  background-color: #96bf47;
+}
+
+.share-button.shopify:hover {
+  background-color: #7ea03c;
+}
+
+.shopify-post-link {
+  color: #96bf47;
+}

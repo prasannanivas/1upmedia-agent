@@ -12,7 +12,9 @@ export const SocialMediaProvider = ({ children }) => {
   const [twitterProfiles, setTwitterProfiles] = useState([]);
   const [googleProfiles, setGoogleProfiles] = useState([]);
   const [wordpressProfiles, setWordpressProfiles] = useState([]);
+  const [webflowProfiles, setWebflowProfiles] = useState([]);
   const [linkedinProfiles, setLinkedinProfiles] = useState([]);
+  const [shopifyProfiles, setShopifyProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
 
@@ -51,13 +53,17 @@ export const SocialMediaProvider = ({ children }) => {
         } else if (profile.social_media_name === "reddit") {
           setRedditProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "twitter") {
-          setTwitterProfiles((prev) => [...prev, profile]);
+          twitterProfiles.push(profile);
         } else if (profile.social_media_name === "google") {
           setGoogleProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "wordpress") {
           wordpressProfiles.push(profile);
         } else if (profile.social_media_name === "linkedin") {
           linkedinProfiles.push(profile);
+        } else if (profile.social_media_name === "webflow") {
+          webflowProfiles.push(profile);
+        } else if (profile.social_media_name === "shopify") {
+          shopifyProfiles.push(profile);
         }
       });
 
@@ -120,6 +126,8 @@ export const SocialMediaProvider = ({ children }) => {
         redditProfiles,
         twitterProfiles,
         linkedinProfiles,
+        shopifyProfiles,
+        webflowProfiles,
         googleProfiles,
         setGoogleProfiles,
         loadingPages,
