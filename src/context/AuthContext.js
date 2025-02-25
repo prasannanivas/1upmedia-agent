@@ -15,6 +15,8 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true); // Add a loading state
   const [redirectPath, setRedirectPath] = useState(null); // To store redirect path
+
+  const [isWordPressModalOpen, setIsWordPressModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const {
@@ -143,6 +145,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const handleAuthorize = (platform, shop = null, credentials) => {
+    console.log(platform);
     if (platform === "wordpress") {
       // Directly store WordPress credentials without opening a window
       storeSocialMediaToken({
@@ -215,7 +218,7 @@ export const AuthProvider = ({ children }) => {
         await storeSocialMediaToken({
           email: authState.email,
           social_media: {
-            social_media_name: platform,
+            social_media_name: "twitter",
             account_name: userProfile?.data?.name,
             profile_picture: userProfile?.data?.profile_image_url || "",
             access_token: accessToken,
@@ -233,7 +236,7 @@ export const AuthProvider = ({ children }) => {
         await storeSocialMediaToken({
           email: authState.email,
           social_media: {
-            social_media_name: platform,
+            social_media_name: "webflow",
             access_token: accessToken,
             account_name: userProfile?.account_name,
             dynamic_fields: {
@@ -247,7 +250,7 @@ export const AuthProvider = ({ children }) => {
         await storeSocialMediaToken({
           email: authState.email,
           social_media: {
-            social_media_name: platform,
+            social_media_name: "reddit",
             account_name: userProfile?.name,
             profile_picture: userProfile?.icon_img || "",
             access_token: accessToken,
@@ -261,7 +264,7 @@ export const AuthProvider = ({ children }) => {
         await storeSocialMediaToken({
           email: authState.email,
           social_media: {
-            social_media_name: platform,
+            social_media_name: "shopify",
             account_name: shopInfo?.name,
             access_token: accessToken,
             dynamic_fields: {
@@ -373,6 +376,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const handleWordPressAuth = (credentials) => {
+    // Close modal
+    setIsWordPressModalOpen(false);
+
+    // Call your existing handleAuthorize with the credentials
+    handleAuthorize("wordpress", null, {
+      siteUrl: credentials.siteUrl,
+      username: credentials.username,
+      appPassword: credentials.appPassword,
+      userData: credentials.userData,
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -380,8 +396,11 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
+        isWordPressModalOpen,
+        setIsWordPressModalOpen,
         getUserLoginDetails,
         handleRemoveAccount,
+        handleWordPressAuth,
         handleAuthorize,
       }}
     >

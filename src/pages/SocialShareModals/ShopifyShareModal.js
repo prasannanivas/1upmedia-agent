@@ -3,6 +3,7 @@ import { FaShopify } from "react-icons/fa";
 import axios from "axios";
 import { ContentFormatter } from "../../utils/ContentFormatter";
 import { useAuth } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
   // State for selected profile and blog
@@ -235,7 +236,7 @@ const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
           <h2>Share to Shopify</h2>
 
           {/* Profile Selector */}
-          {shopifyProfiles && shopifyProfiles.length > 1 && (
+          {shopifyProfiles && shopifyProfiles.length >= 1 ? (
             <div className="profile-selector">
               <label>Select Shopify Store: </label>
               <select
@@ -252,6 +253,8 @@ const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
                 ))}
               </select>
             </div>
+          ) : (
+            <Link to="/settings/user-management">Connect Shopify</Link>
           )}
 
           {/* Blog Selector */}

@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 const FACEBOOK_CAPTION_LIMIT = 63206; // Facebook's character limit
 
 const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
   // Parse and format the initial content
   const initialContent = useMemo(() => {
@@ -303,6 +303,15 @@ const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
         ) : (
           <div className="no-pages-message">
             <p>No Facebook pages connected.</p>
+
+            {/* Login with Facebook Button */}
+            <button
+              className="facebook-login-btn"
+              onClick={() => handleAuthorize("facebook")}
+            >
+              Login with Facebook
+            </button>
+
             <button onClick={onClose}>Close</button>
           </div>
         )}

@@ -19,7 +19,7 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
     progress: { completed: 0, total: 0 },
   });
 
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
 
   // Calculate remaining characters
@@ -293,6 +293,14 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
         ) : (
           <div className="no-accounts-message">
             <p>No Instagram accounts connected.</p>
+
+            <button
+              className="facebook-login-btn"
+              onClick={() => handleAuthorize("facebook")}
+            >
+              Login with Facebook to Connect Instagram
+            </button>
+
             <button onClick={onClose}>Close</button>
           </div>
         )}

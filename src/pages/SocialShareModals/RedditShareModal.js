@@ -12,7 +12,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
   // State to track which profile is currently selected
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
   // Subreddit/user-sub state
   const [title, setTitle] = useState("");
@@ -320,7 +320,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
           <h2>Share to Reddit</h2>
 
           {/* Profile Selector */}
-          {redditProfiles && redditProfiles.length > 1 && (
+          {redditProfiles && redditProfiles.length >= 1 ? (
             <div className="profile-selector">
               <label>Select Reddit Profile: </label>
               <select
@@ -336,6 +336,13 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
                 ))}
               </select>
             </div>
+          ) : (
+            <button
+              className="reddit-login-btn"
+              onClick={() => handleAuthorize("reddit")}
+            >
+              Login with Reddit
+            </button>
           )}
 
           {/* Show account name for clarity */}

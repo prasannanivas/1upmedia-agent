@@ -17,27 +17,20 @@ import Loader from "../components/Loader";
 import WordPressAuthModal from "./WordpressAuthModal";
 
 const UserManagement = () => {
-  const { authState, handleRemoveAccount, handleAuthorize } = useAuth();
+  const {
+    authState,
+    handleRemoveAccount,
+    handleAuthorize,
+    handleWordPressAuth,
+    isWordPressModalOpen,
+    setIsWordPressModalOpen,
+  } = useAuth();
   const { name, profilePicture, email } = authState;
   const { socialMediaProfiles, fetchSocialMediaProfiles, loadingPages } =
     useSocialMedia();
   const [shopifyShop, setShopifyShop] = useState("");
 
-  const [isWordPressModalOpen, setIsWordPressModalOpen] = useState(false);
-
   // Update your WordPress authorization handler
-  const handleWordPressAuth = (credentials) => {
-    // Close modal
-    setIsWordPressModalOpen(false);
-
-    // Call your existing handleAuthorize with the credentials
-    handleAuthorize("wordpress", null, {
-      siteUrl: credentials.siteUrl,
-      username: credentials.username,
-      appPassword: credentials.appPassword,
-      userData: credentials.userData,
-    });
-  };
 
   useEffect(() => {
     if (email) {

@@ -14,7 +14,7 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
   const [sites, setSites] = useState([]);
   const [collections, setCollections] = useState([]);
 
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
 
   // Content state
@@ -216,7 +216,7 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
           <h2>Share to Webflow</h2>
 
           {/* Profile Selector */}
-          {webflowProfiles && webflowProfiles.length > 1 && (
+          {webflowProfiles && webflowProfiles.length >= 1 ? (
             <div className="profile-selector">
               <label>Select Webflow Profile: </label>
               <select
@@ -232,6 +232,13 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
                 ))}
               </select>
             </div>
+          ) : (
+            <button
+              className="webflow-login-btn"
+              onClick={() => handleAuthorize("webflow")}
+            >
+              Login with Webflow
+            </button>
           )}
 
           {/* Site Selector */}

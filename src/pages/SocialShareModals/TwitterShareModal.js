@@ -9,7 +9,7 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
   console.log(twitterProfiles);
   // State for selected profile
 
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
@@ -192,7 +192,7 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
           <h2>Share to Twitter</h2>
 
           {/* Profile Selector */}
-          {twitterProfiles && twitterProfiles.length > 1 && (
+          {twitterProfiles && twitterProfiles.length >= 1 ? (
             <div className="profile-selector">
               <label>Select Twitter Profile: </label>
               <select
@@ -208,6 +208,13 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
                 ))}
               </select>
             </div>
+          ) : (
+            <button
+              className="twitter-login-btn"
+              onClick={() => handleAuthorize("twitter")}
+            >
+              Login with X
+            </button>
           )}
 
           {/* Show account info */}

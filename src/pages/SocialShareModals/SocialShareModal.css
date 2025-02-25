@@ -70,6 +70,19 @@
   color: #ff4500;
 }
 
+
+.reddit-login-btn {
+  background-color: #ff4500;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+
 /* Lists */
 .fb-pages-list,
 .ig-accounts-list {
@@ -164,16 +177,67 @@
   background: #1877f2;
 }
 
+.facebook-login-btn {
+  background-color: #1877f2;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.facebook-login-btn:hover {
+  background-color: #155dbd;
+}
+
+
 .share-button.instagram {
   background: #e4405f;
 }
+
+
+.instagram-login-btn {
+  background-color: #e4405f;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
 
 .share-button.twitter {
   background: #1da1f2;
 }
 
+.twitter-login-btn {
+  background-color: #151515;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
 .share-button.linkedin {
   background: #0a66c2;
+}
+
+.linkedin-login-btn {
+  background-color: #0a66c2;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 .share-button.reddit {
@@ -1444,6 +1508,18 @@
   margin-right: 12px;
 }
 
+
+.webflow-login-btn {
+  background-color: #4353ff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
 .site-selector {
   margin-top: 16px;
   width: 100%;
@@ -1502,6 +1578,18 @@
   color: #96bf47;
   font-size: 24px;
   margin-right: 10px;
+}
+
+
+.shopify-login-btn {
+  background-color: #96bf47;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 .shopify-modal .blog-selector {

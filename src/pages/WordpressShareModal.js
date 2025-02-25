@@ -4,9 +4,15 @@ import axios from "axios";
 import "./WordPressShareModal.css";
 import { FaWordpress } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
+import WordPressAuthModal from "./WordpressAuthModal";
 
 const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
-  const { authState } = useAuth();
+  const {
+    authState,
+    isWordPressModalOpen,
+    setIsWordPressModalOpen,
+    handleWordPressAuth,
+  } = useAuth();
   const { email } = authState;
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [status, setStatus] = useState({
@@ -190,7 +196,7 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
           </div>
         )}
 
-        {wordpressProfiles.length > 0 && (
+        {wordpressProfiles.length > 0 ? (
           <button
             className={`share-button ${status.loading ? "loading" : ""}`}
             onClick={handleShare}
@@ -198,7 +204,20 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
           >
             {status.loading ? "Publishing..." : "Publish to WordPress"}
           </button>
+        ) : (
+          <button
+            className="auth-button wordpress"
+            onClick={() => setIsWordPressModalOpen(true)}
+          >
+            Login with Wordpress
+          </button>
         )}
+
+        <WordPressAuthModal
+          isOpen={isWordPressModalOpen}
+          onClose={() => setIsWordPressModalOpen(false)}
+          onSuccess={handleWordPressAuth}
+        />
 
         {status.message && (
           <div className={`status-message ${status.type}`}>

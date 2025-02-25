@@ -1,70 +1,82 @@
-// WordPressAuthModal.jsx
-import React, { useState } from "react";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
 import "./WordPressAuthModal.css";
 import { FaWordpressSimple } from "react-icons/fa";
 
+const API_BASE_URL = "https://ai.1upmedia.com:443/wordpress";
+
 const WordPressAuthModal = ({ isOpen, onClose, onSuccess }) => {
-  const [credentials, setCredentials] = useState({
-    siteUrl: "",
-    username: "",
-    appPassword: "",
-  });
+  const [siteUrl, setSiteUrl] = useState("");
+  const [authWindow, setAuthWindow] = useState(null);
   const [status, setStatus] = useState({
     loading: false,
     message: "",
-    type: "", // 'error' or 'success'
+    type: "",
   });
 
-  const handleValidation = async (e) => {
-    e.preventDefault();
-    setStatus({
-      loading: true,
-      message: "Validating credentials...",
-      type: "info",
-    });
+  const handleOAuthRedirect = async () => {
+    if (!siteUrl.trim()) {
+      setStatus({
+        message: "Please enter your WordPress site URL.",
+        type: "error",
+      });
+      return;
+    }
 
     try {
-      const response = await axios.post(
-        "https://ai.1upmedia.com:443/wordpress/validate-wordpress",
-        {
-          siteUrl: credentials.siteUrl,
-          username: credentials.username,
-          appPassword: credentials.appPassword,
-        }
+      const response = await fetch(
+        `${API_BASE_URL}/auth?siteUrl=${encodeURIComponent(siteUrl)}`
       );
+      const data = await response.json();
 
-      if (response.data.success) {
-        setStatus({
-          loading: false,
-          message: "Connection successful!",
-          type: "success",
-        });
-
-        // Wait for 1 second to show success message
-        setTimeout(() => {
-          onSuccess({
-            siteUrl: credentials.siteUrl,
-            username: credentials.username,
-            appPassword: credentials.appPassword,
-            userData: response.data.user,
-          });
-        }, 1000);
+      if (data.success) {
+        const popup = window.open(
+          data.authUrl,
+          "WordPressAuth",
+          "width=600,height=700"
+        );
+        setAuthWindow(popup);
       } else {
         setStatus({
-          loading: false,
-          message: response.data.message,
+          message: "Failed to initiate authentication.",
           type: "error",
         });
       }
     } catch (error) {
-      setStatus({
-        loading: false,
-        message: error.response?.data?.message || "Connection failed",
-        type: "error",
-      });
+      setStatus({ message: "Connection error", type: "error" });
     }
   };
+
+  useEffect(() => {
+    const handleAuthMessage = (event) => {
+      console.log("Received event:", event.data);
+
+      // Ensure the message is coming from the correct origin
+      if (!event.origin.includes("ai.1upmedia.com")) return;
+
+      const { success, siteUrl, username, appPassword } = event.data;
+
+      if (success) {
+        setStatus({ loading: false, message: "Connected!", type: "success" });
+        onSuccess({ siteUrl, username, appPassword });
+
+        if (authWindow) {
+          authWindow.close();
+        }
+      } else {
+        setStatus({
+          loading: false,
+          message: "Authentication failed",
+          type: "error",
+        });
+      }
+    };
+
+    window.addEventListener("message", handleAuthMessage);
+
+    return () => {
+      window.removeEventListener("message", handleAuthMessage);
+    };
+  }, [authWindow]);
 
   if (!isOpen) return null;
 
@@ -76,76 +88,27 @@ const WordPressAuthModal = ({ isOpen, onClose, onSuccess }) => {
         </button>
 
         <div className="modal-header">
-          <img
-            src={FaWordpressSimple}
-            alt="WordPress"
-            className="wordpress-logo"
-          />
+          <FaWordpressSimple className="wordpress-logo" />
           <h2>Connect WordPress Site</h2>
         </div>
 
-        <form onSubmit={handleValidation} className="wordpress-form">
-          <div className="form-group">
-            <label>WordPress Site URL</label>
-            <input
-              type="url"
-              value={credentials.siteUrl}
-              onChange={(e) =>
-                setCredentials({
-                  ...credentials,
-                  siteUrl: e.target.value,
-                })
-              }
-              placeholder="https://your-site.com"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Username</label>
-            <input
-              type="text"
-              value={credentials.username}
-              onChange={(e) =>
-                setCredentials({
-                  ...credentials,
-                  username: e.target.value,
-                })
-              }
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Application Password</label>
-            <input
-              type="password"
-              value={credentials.appPassword}
-              onChange={(e) =>
-                setCredentials({
-                  ...credentials,
-                  appPassword: e.target.value,
-                })
-              }
-              placeholder="xxxx xxxx xxxx xxxx"
-              required
-            />
-            <small>
-              Generate from WordPress Dashboard → Users → Profile → Application
-              Passwords
-            </small>
-          </div>
+        <div className="wordpress-auth-content">
+          <label>Enter Your WordPress Site URL</label>
+          <input
+            type="url"
+            value={siteUrl}
+            onChange={(e) => setSiteUrl(e.target.value)}
+            placeholder="https://your-site.com"
+            required
+          />
 
           <button
-            type="submit"
-            className={`wordpress-submit-btn ${
-              status.loading ? "loading" : ""
-            }`}
-            disabled={status.loading}
+            className="wordpress-submit-btn"
+            onClick={handleOAuthRedirect}
           >
-            {status.loading ? "Validating..." : "Connect Site"}
+            Connect via WordPress
           </button>
-        </form>
+        </div>
 
         {status.message && (
           <div className={`status-message ${status.type}`}>

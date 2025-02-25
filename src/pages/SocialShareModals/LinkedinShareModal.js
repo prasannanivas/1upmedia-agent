@@ -7,7 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 const LINKEDIN_TEXT_LIMIT = 3000;
 
 const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
   // State for selected profile
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
@@ -142,7 +142,7 @@ const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
           <h2>Share to LinkedIn</h2>
 
           {/* Profile Selector */}
-          {linkedinProfiles && linkedinProfiles.length > 1 && (
+          {linkedinProfiles && linkedinProfiles.length >= 1 ? (
             <div className="profile-selector">
               <label>Select LinkedIn Profile: </label>
               <select
@@ -158,6 +158,13 @@ const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
                 ))}
               </select>
             </div>
+          ) : (
+            <button
+              className="linkedin-login-btn"
+              onClick={() => handleAuthorize("linkedin")}
+            >
+              Login with LinkedIn
+            </button>
           )}
 
           {/* Show account info */}
