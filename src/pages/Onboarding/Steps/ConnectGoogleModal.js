@@ -14,14 +14,14 @@ const ConnectGoogleModal = ({
   const [loadingPages, setLoadingPages] = useState(false);
   const [error, setError] = useState(null);
 
-  const { authState } = useAuth();
+  const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
 
   useEffect(() => {
     if (isOpen) {
       fetchGoogleSites();
     }
-  }, [isOpen]);
+  }, [isOpen, googleProfiles]);
 
   const fetchGoogleSites = async () => {
     setLoadingPages(true);
@@ -204,6 +204,13 @@ const ConnectGoogleModal = ({
     <div className="modal-overlay">
       <div className="modal-content">
         <h3>Select a Google Search Console Account</h3>
+
+        <button
+          className="google-login-btn"
+          onClick={() => handleAuthorize("google")}
+        >
+          Login with Google
+        </button>
 
         {loadingPages ? (
           <p>Loading accounts...</p>
