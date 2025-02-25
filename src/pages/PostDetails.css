@@ -26,6 +26,7 @@
   max-width: 600px;
   height: auto;
 }
+
 .post-details__image {
   max-width: 100%;
   height: auto;
@@ -38,13 +39,16 @@
   font-size: 1.15em;
   margin-bottom: 20px;
 }
+
 .post-details__content p {
   margin-bottom: 1.2em;
 }
+
 .post-details__content a {
   color: #0073aa;
   text-decoration: none;
 }
+
 .post-details__content a:hover {
   text-decoration: underline;
 }
@@ -102,4 +106,75 @@
   text-align: center;
   margin-top: 50px;
   color: #999;
+}
+
+/* Share History Button */
+.post-details__share-history-btn {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 15px;
+  font-size: 1em;
+  background-color: #0073aa;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.post-details__share-history-btn:hover {
+  background-color: #005b89;
+}
+
+/* Share History Modal */
+.share-history__modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.share-history__content {
+  background: white;
+  padding: 20px;
+  width: 400px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+}
+
+.share-history__close-btn {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+.share-history__list {
+  list-style: none;
+  padding: 0;
+  margin-top: 15px;
+}
+
+.share-history__item {
+  margin: 10px 0;
+}
+
+.share-history__item a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.share-history__item a:hover {
+  text-decoration: underline;
 }

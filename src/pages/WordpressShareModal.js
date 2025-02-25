@@ -3,8 +3,11 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./WordPressShareModal.css";
 import { FaWordpress } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
 
 const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
+  const { authState } = useAuth();
+  const { email } = authState;
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [status, setStatus] = useState({
     loading: false,
@@ -26,7 +29,6 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
       return;
     }
 
-    console.log(post);
     setStatus({
       loading: true,
       message: "Publishing to WordPress...",
@@ -34,8 +36,6 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
     });
 
     try {
-      // Format the post data
-
       // Get credentials from the selected profile
       const credentials = {
         siteUrl: selectedProfile.dynamic_fields.siteUrl,
@@ -55,7 +55,7 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
           description: post.image_data?.description,
         },
         tags: post.tags || [],
-        status: "future", //
+        status: "future", // Scheduled post
       };
 
       const validationResponse = await axios.post(
@@ -75,7 +75,35 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
         }
       );
 
+      // scheduleResponse.data
+
+      //   {
+      //     "success": true,
+      //     "postId": 6694,
+      //     "postUrl": "https://dev.1upmedia.com/industry-insights-on-ltte-prabakaran/",
+      //     "scheduledDate": "2025-02-25T12:39:07",
+      //     "featuredImage": {
+      //         "id": 6693,
+      //         "url": "https://res.cloudinary.com/dwakndhkf/image/upload/v1739444785/ai_generated_images/qqr3y5xhsxqetc185ybr.png"
+      //     }
+      // }
+
       if (scheduleResponse.data.success) {
+        const { postId, postUrl, scheduledDate, featuredImage } =
+          scheduleResponse.data;
+
+        // Store share history immediately
+        const shareHistoryEntry = {
+          platform: "wordpress",
+          link: postUrl,
+          extra_data: {
+            postId,
+            scheduledDate,
+            featuredImageUrl: featuredImage?.url || null,
+            siteUrl: selectedProfile.dynamic_fields.siteUrl,
+          },
+        };
+
         setStatus({
           loading: false,
           message: `Successfully scheduled for ${new Date(
@@ -83,6 +111,17 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
           ).toLocaleString()}!`,
           type: "success",
         });
+
+        try {
+          await axios.put(
+            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            {
+              share_history: [shareHistoryEntry],
+            }
+          );
+        } catch (error) {
+          console.error("Error storing share history:", error);
+        }
 
         // Close modal after success
         setTimeout(() => {

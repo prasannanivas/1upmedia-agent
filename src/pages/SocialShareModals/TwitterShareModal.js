@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import { FaTwitter } from "react-icons/fa";
 import axios from "axios";
 import { ContentFormatter } from "../../utils/ContentFormatter";
-
+import { useAuth } from "../../context/AuthContext";
 const TWITTER_TEXT_LIMIT = 5980; // Twitter's character limit
 
 const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
   console.log(twitterProfiles);
   // State for selected profile
+
+  const { authState } = useAuth();
+  const { email } = authState;
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
   // Content state
@@ -75,9 +78,62 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
         postData
       );
 
+      // response.data
+
+      //   {
+      //     "success": true,
+      //     "thread": [
+      //         {
+      //             "id": "1894364843412517053",
+      //             "url": "https://twitter.com/i/web/status/1894364843412517053"
+      //         },
+      //         {
+      //             "id": "1894364849418752200",
+      //             "url": "https://twitter.com/i/web/status/1894364849418752200"
+      //         },
+      //         {
+      //             "id": "1894364854443524137",
+      //             "url": "https://twitter.com/i/web/status/1894364854443524137"
+      //         },
+      //         {
+      //             "id": "1894364859434762538",
+      //             "url": "https://twitter.com/i/web/status/1894364859434762538"
+      //         },
+      //         {
+      //             "id": "1894364864421806083",
+      //             "url": "https://twitter.com/i/web/status/1894364864421806083"
+      //         },
+      //         {
+      //             "id": "1894364869488517335",
+      //             "url": "https://twitter.com/i/web/status/1894364869488517335"
+      //         },
+      //         {
+      //             "id": "1894364874567798897",
+      //             "url": "https://twitter.com/i/web/status/1894364874567798897"
+      //         },
+      //         {
+      //             "id": "1894364879596712050",
+      //             "url": "https://twitter.com/i/web/status/1894364879596712050"
+      //         }
+      //     ],
+      //     "mainTweetUrl": "https://twitter.com/i/web/status/1894364843412517053",
+      //     "postedAt": "2025-02-22 15:52:50",
+      //     "author": "prasannanivas"
+      // }
+
       if (response.data.success) {
-        // Create tweet URL using the tweet ID
-        const tweetUrl = `https://twitter.com/i/web/status/${response.data.tweetId}`;
+        const { mainTweetUrl, thread } = response.data;
+
+        // Create share history object
+        const shareHistoryEntry = {
+          platform: "twitter",
+          link: mainTweetUrl,
+          extra_data: {
+            thread,
+          },
+        };
+
+        // Store share history in backend
 
         setStatus({
           loading: false,
@@ -87,8 +143,19 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
 
         setSuccessWithLink({
           show: true,
-          url: tweetUrl,
+          url: mainTweetUrl,
         });
+
+        try {
+          await axios.put(
+            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            {
+              share_history: [shareHistoryEntry],
+            }
+          );
+        } catch (error) {
+          console.error(error);
+        }
 
         setTimeout(() => {
           onClose();

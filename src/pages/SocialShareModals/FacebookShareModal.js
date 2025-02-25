@@ -3,9 +3,12 @@ import { FaFacebook } from "react-icons/fa";
 import axios from "axios";
 import "./SocialShareModal.css";
 import { ContentFormatter } from "../../utils/ContentFormatter";
+import { useAuth } from "../../context/AuthContext";
 const FACEBOOK_CAPTION_LIMIT = 63206; // Facebook's character limit
 
 const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
+  const { authState } = useAuth();
+  const { email } = authState;
   // Parse and format the initial content
   const initialContent = useMemo(() => {
     if (!post?.content) return "";
@@ -80,7 +83,7 @@ const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
 
     try {
       const results = await Promise.allSettled(
-        selectedPages.map(async (page, index) => {
+        selectedPages.map(async (page) => {
           try {
             const postData = {
               pageId: page.dynamic_fields.page_id,
@@ -95,25 +98,59 @@ const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
               "http://ai.1upmedia.com:3000/facebook/postImageToFacebookPage",
               postData
             );
+            // response.data
+            // {"success":true,"postId":"122146739510503075"}
 
-            setStatus((prev) => ({
-              ...prev,
-              progress: {
-                completed: prev.progress.completed + 1,
-                total: selectedPages.length,
-              },
-            }));
+            if (response.data.success) {
+              const postUrl = `https://www.facebook.com/${response.data?.postId}`;
 
-            return {
-              pageName: page.account_name,
-              success: response.data.success,
-              message: response.data.message,
-            };
+              // Store share history immediately
+              const shareHistoryEntry = {
+                platform: "facebook",
+                link: postUrl,
+                extra_data: {
+                  postId: response.data.postId,
+                  pageName: page.account_name,
+                  scheduleDate: post.scheduleDate || "2025-02-21 15:25:38",
+                  imageUrl: post?.image_data?.url || null,
+                },
+              };
+
+              setStatus((prev) => ({
+                ...prev,
+                progress: {
+                  completed: prev.progress.completed + 1,
+                  total: selectedPages.length,
+                },
+              }));
+
+              try {
+                await axios.put(
+                  `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+                  {
+                    share_history: [shareHistoryEntry],
+                  }
+                );
+              } catch (error) {
+                console.error("Error storing share history:", error);
+              }
+
+              return {
+                pageName: page.account_name,
+                success: true,
+                message: "Successfully posted",
+              };
+            } else {
+              throw new Error("Post failed");
+            }
           } catch (error) {
             return {
               pageName: page.account_name,
               success: false,
-              message: error.response?.data?.message || error.message,
+              message:
+                error.response?.data?.message ||
+                error.message ||
+                "Error posting to Facebook",
             };
           }
         })

@@ -2,10 +2,13 @@ import React, { useState, useEffect } from "react";
 import { FaLinkedin } from "react-icons/fa";
 import axios from "axios";
 import { ContentFormatter } from "../../utils/ContentFormatter";
+import { useAuth } from "../../context/AuthContext";
 
 const LINKEDIN_TEXT_LIMIT = 3000;
 
 const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
+  const { authState } = useAuth();
+  const { email } = authState;
   // State for selected profile
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
@@ -67,14 +70,43 @@ const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
         "http://ai.1upmedia.com:3000/linkedin/shareOnLinkedIn",
         postData
       );
+      // response.data
 
+      //   {
+      //     "success": true,
+      //     "message": "Post shared successfully!",
+      //     "data": {
+      //         "id": "urn:li:share:7300141466348134400"
+      //     }
+      // }
       if (response.data.success) {
+        const postUrl = `https://www.linkedin.com/feed/update/${response.data?.data?.id}`;
+
+        // Store share history immediately
+        const shareHistoryEntry = {
+          platform: "linkedIn",
+          link: postUrl,
+          extra_data: {
+            postId: response.data.data.id,
+            imageUrl: post?.image_data?.url || null,
+          },
+        };
+
         setStatus({
           loading: false,
           message: "Successfully posted to LinkedIn!",
           type: "success",
         });
-
+        try {
+          await axios.put(
+            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            {
+              share_history: [shareHistoryEntry],
+            }
+          );
+        } catch (error) {
+          console.error("Error storing share history", error);
+        }
         setTimeout(() => {
           onClose();
         }, 2000);

@@ -3,6 +3,7 @@ import { FaInstagram } from "react-icons/fa";
 import axios from "axios";
 import "./SocialShareModal.css";
 import { ContentFormatter } from "../../utils/ContentFormatter";
+import { useAuth } from "../../context/AuthContext";
 
 const INSTAGRAM_CAPTION_LIMIT = 2200;
 
@@ -17,6 +18,9 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
     type: "",
     progress: { completed: 0, total: 0 },
   });
+
+  const { authState } = useAuth();
+  const { email } = authState;
 
   // Calculate remaining characters
   const remainingChars = INSTAGRAM_CAPTION_LIMIT - editedCaption.length;
@@ -89,21 +93,49 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
               postData
             );
 
-            setStatus((prev) => ({
-              ...prev,
-              progress: {
-                completed: prev.progress.completed + 1,
-                total: selectedAccounts.length,
-              },
-            }));
+            if (response.data.success) {
+              const postUrl = `https://www.instagram.com/p/${response.data.postId}`;
 
-            return {
-              accountName: account.account_name,
-              success: response.data.success,
-              message: response.data.message,
-            };
+              // Store share history immediately
+              const shareHistoryEntry = {
+                platform: "instagram",
+                link: postUrl,
+                extra_data: {
+                  postId: response.data.postId,
+                  accountName: account.account_name,
+                  scheduleDate: post.scheduleDate || "2025-02-21 15:48:56",
+                  imageUrl: post?.image_data?.url || null,
+                },
+              };
+
+              setStatus((prev) => ({
+                ...prev,
+                progress: {
+                  completed: prev.progress.completed + 1,
+                  total: selectedAccounts.length,
+                },
+              }));
+
+              try {
+                await axios.put(
+                  `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+                  {
+                    share_history: [shareHistoryEntry],
+                  }
+                );
+              } catch (error) {
+                console.error("Error storing share history:", error);
+              }
+
+              return {
+                accountName: account.account_name,
+                success: true,
+                message: "Successfully posted",
+              };
+            } else {
+              throw new Error("Post failed");
+            }
           } catch (error) {
-            // Check for caption length error
             if (
               error.response?.data?.message?.includes(
                 "maximum number of characters permitted"
@@ -118,7 +150,10 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
             return {
               accountName: account.account_name,
               success: false,
-              message: error.response?.data?.message || error.message,
+              message:
+                error.response?.data?.message ||
+                error.message ||
+                "Error posting to Instagram",
             };
           }
         })

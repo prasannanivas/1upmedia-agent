@@ -3,6 +3,7 @@ import { FaReddit } from "react-icons/fa";
 import axios from "axios";
 import debounce from "lodash/debounce";
 import { ContentFormatter } from "../../utils/ContentFormatter";
+import { useAuth } from "../../context/AuthContext";
 
 const REDDIT_TITLE_LIMIT = 300;
 const REDDIT_TEXT_LIMIT = 40000;
@@ -11,6 +12,8 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
   // State to track which profile is currently selected
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
+  const { authState } = useAuth();
+  const { email } = authState;
   // Subreddit/user-sub state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -56,7 +59,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
         addSpacing: true,
       });
       const lines = formatted.split("\n");
-      setTitle(lines[0].slice(0, REDDIT_TITLE_LIMIT));
+      setTitle(post.title);
       setContent(lines.slice(1).join("\n").trim());
     }
 
@@ -229,17 +232,55 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
         postData
       );
 
+      // response.data
+      //   {
+      //     "success": true,
+      //     "data": {
+      //         "errors": [],
+      //         "data": {
+      //             "url": "https://www.reddit.com/r/TamilNadu/comments/1ixu06z/industry_insights_on_ltte_prabakaran/",
+      //             "drafts_count": 0,
+      //             "id": "1ixu06z",
+      //             "name": "t3_1ixu06z"
+      //         }
+      //     }
+      // }
+
       if (response.data.success) {
+        const { url, id, name, drafts_count } = response.data.data;
+
+        // Store share history immediately
+        const shareHistoryEntry = {
+          platform: "reddit",
+          link: url,
+          extra_data: {
+            postId: id,
+            postName: name,
+            draftsCount: drafts_count,
+            subreddit: selectedSubreddit.name,
+            flairId: selectedFlair?.id || null,
+          },
+        };
+
         setStatus({
           loading: false,
           message: "Successfully posted to Reddit!",
           type: "success",
         });
+        try {
+          await axios.put(
+            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            {
+              share_history: [shareHistoryEntry],
+            }
+          );
+        } catch (error) {
+          console.error("Error storing share history:", error);
+        }
         setTimeout(() => {
           onClose();
         }, 2000);
       } else {
-        // If there's some unexpected structure
         setStatus({
           loading: false,
           message: "Error: Something unexpected happened.",
