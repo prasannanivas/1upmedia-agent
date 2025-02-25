@@ -36,7 +36,7 @@ function TemplateManager() {
     const fetchTemplates = async () => {
       try {
         const response = await fetch(
-          `http://ai.1upmedia.com:3000/aiagent/pipeline-templates/${email}`
+          `https://ai.1upmedia.com:443/aiagent/pipeline-templates/${email}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -118,7 +118,7 @@ function TemplateManager() {
   const saveTemplates = async () => {
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/pipeline-templates",
+        "https://ai.1upmedia.com:443/aiagent/pipeline-templates",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

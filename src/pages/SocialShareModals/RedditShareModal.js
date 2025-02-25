@@ -89,7 +89,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
 
     try {
       const response = await axios.get(
-        `http://ai.1upmedia.com:3000/reddit/subreddits`,
+        `https://ai.1upmedia.com:443/reddit/subreddits`,
         {
           params: {
             accessToken: accessToken,
@@ -118,7 +118,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
 
         try {
           const response = await axios.get(
-            `http://ai.1upmedia.com:3000/reddit/search-subreddits`,
+            `https://ai.1upmedia.com:443/reddit/search-subreddits`,
             {
               params: {
                 accessToken: accessToken,
@@ -140,7 +140,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
 
     try {
       const response = await axios.get(
-        `http://ai.1upmedia.com:3000/reddit/flairs`,
+        `https://ai.1upmedia.com:443/reddit/flairs`,
         {
           params: {
             accessToken: accessToken,
@@ -228,7 +228,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
       };
 
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/reddit/post",
+        "https://ai.1upmedia.com:443/reddit/post",
         postData
       );
 
@@ -269,7 +269,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
         });
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

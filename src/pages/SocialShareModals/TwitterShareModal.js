@@ -74,7 +74,7 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
       };
 
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/twitter/posttweet",
+        "https://ai.1upmedia.com:443/twitter/posttweet",
         postData
       );
 
@@ -148,7 +148,7 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
 
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

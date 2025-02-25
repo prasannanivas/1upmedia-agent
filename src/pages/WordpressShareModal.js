@@ -59,7 +59,7 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
       };
 
       const validationResponse = await axios.post(
-        "http://ai.1upmedia.com:3000/wordpress/validate-wordpress",
+        "https://ai.1upmedia.com:443/wordpress/validate-wordpress",
         credentials
       );
 
@@ -68,7 +68,7 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
       }
 
       const scheduleResponse = await axios.post(
-        "http://ai.1upmedia.com:3000/wordpress/schedule-post",
+        "https://ai.1upmedia.com:443/wordpress/schedule-post",
         {
           ...credentials,
           postData,
@@ -114,7 +114,7 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
 
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

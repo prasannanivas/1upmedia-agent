@@ -89,7 +89,7 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
             };
 
             const response = await axios.post(
-              "http://ai.1upmedia.com:3000/facebook/postImageToInstagramPage",
+              "https://ai.1upmedia.com:443/facebook/postImageToInstagramPage",
               postData
             );
 
@@ -118,7 +118,7 @@ const InstagramShareModal = ({ isOpen, onClose, post, instagramAccounts }) => {
 
               try {
                 await axios.put(
-                  `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+                  `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
                   {
                     share_history: [shareHistoryEntry],
                   }

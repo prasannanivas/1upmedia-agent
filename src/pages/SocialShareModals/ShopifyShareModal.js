@@ -64,7 +64,7 @@ const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
 
       try {
         const response = await axios.post(
-          "http://ai.1upmedia.com:3000/shopify/fetch-blogs",
+          "https://ai.1upmedia.com:443/shopify/fetch-blogs",
           {
             shop,
             accessToken,
@@ -134,7 +134,7 @@ const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
       };
 
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/shopify/post-content",
+        "https://ai.1upmedia.com:443/shopify/post-content",
         postData
       );
 
@@ -196,7 +196,7 @@ const ShopifyShareModal = ({ isOpen, onClose, post, shopifyProfiles }) => {
 
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

@@ -38,7 +38,7 @@ export const OnboardingProvider = ({ children }) => {
 
         // Fetch Business Details
         const businessResponse = await axios.get(
-          "http://ai.1upmedia.com:3000/aiagent/getBusinessDetails",
+          "https://ai.1upmedia.com:443/aiagent/getBusinessDetails",
           { params: { email } }
         );
 
@@ -71,7 +71,7 @@ export const OnboardingProvider = ({ children }) => {
 
         // Fetch Authors
         const authorsResponse = await fetch(
-          `http://ai.1upmedia.com:3000/aiagent/getAuthors?email=${email}`
+          `https://ai.1upmedia.com:443/aiagent/getAuthors?email=${email}`
         );
         if (authorsResponse.ok) {
           const authorsData = await authorsResponse.json();

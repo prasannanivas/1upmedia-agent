@@ -42,7 +42,7 @@ const WebflowIntegration = () => {
 
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/webflow/sites",
+        "https://ai.1upmedia.com:443/webflow/sites",
         {
           params: { accessToken },
         }
@@ -58,7 +58,7 @@ const WebflowIntegration = () => {
   const createSchemaCollection = async () => {
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/webflow/create-collection",
+        "https://ai.1upmedia.com:443/webflow/create-collection",
         {
           accessToken,
           siteId: selectedSite,
@@ -97,7 +97,7 @@ const WebflowIntegration = () => {
 
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/webflow/collections",
+        "https://ai.1upmedia.com:443/webflow/collections",
         {
           params: { accessToken, siteId: selectedSite },
         }
@@ -109,7 +109,7 @@ const WebflowIntegration = () => {
 
       for (let collection of fetchedCollections) {
         const fieldsResponse = await axios.get(
-          "http://ai.1upmedia.com:3000/webflow/collection-fields",
+          "https://ai.1upmedia.com:443/webflow/collection-fields",
           {
             params: { accessToken, collectionId: collection.id },
           }
@@ -152,7 +152,7 @@ const WebflowIntegration = () => {
     if (!collectionId) return;
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/webflow/collection-fields",
+        "https://ai.1upmedia.com:443/webflow/collection-fields",
         {
           params: { accessToken, collectionId },
         }
@@ -205,7 +205,7 @@ const WebflowIntegration = () => {
 
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/webflow/publish-content",
+        "https://ai.1upmedia.com:443/webflow/publish-content",
         {
           accessToken,
           collectionId: selectedCollection,

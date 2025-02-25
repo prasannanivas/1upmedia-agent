@@ -59,7 +59,7 @@ const Login = () => {
         console.log(event.data);
         const { accessToken, name, profilePicture, email } = event.data;
         try {
-          fetch("http://ai.1upmedia.com:3000/aiagent/login", {
+          fetch("https://ai.1upmedia.com:443/aiagent/login", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -91,7 +91,7 @@ const Login = () => {
 
   // Handle Email & Password Login
   const handleEmailLogin = () => {
-    if (email !== "test@1upmedia.com") {
+    if (email !== "test@1upmedia.com" || email === "adamtest@1upmedia.com") {
       setErrorMessage("Invalid email. Only 'test@1upmedia.com' is allowed.");
       return;
     }

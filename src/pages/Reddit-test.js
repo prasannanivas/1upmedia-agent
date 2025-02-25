@@ -37,7 +37,7 @@ const FromReddit = () => {
     if (!searchQuery) return;
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/reddit/search-subreddits",
+        "https://ai.1upmedia.com:443/reddit/search-subreddits",
         {
           params: { accessToken, query: searchQuery },
         }
@@ -52,7 +52,7 @@ const FromReddit = () => {
     if (!accessToken) return;
 
     axios
-      .get("http://ai.1upmedia.com:3000/reddit/subreddits", {
+      .get("https://ai.1upmedia.com:443/reddit/subreddits", {
         params: { accessToken },
       })
       .then((response) => setSubreddits(response.data.subreddits))
@@ -63,7 +63,7 @@ const FromReddit = () => {
     if (!accessToken || !subreddit) return;
 
     axios
-      .get("http://ai.1upmedia.com:3000/reddit/flairs", {
+      .get("https://ai.1upmedia.com:443/reddit/flairs", {
         params: { accessToken, subreddit },
       })
       .then((response) => {
@@ -74,7 +74,7 @@ const FromReddit = () => {
   }, [subreddit]);
 
   const handleLogin = () => {
-    const authUrl = "http://ai.1upmedia.com:3000/reddit/auth";
+    const authUrl = "https://ai.1upmedia.com:443/reddit/auth";
     const popupWindow = window.open(
       authUrl,
       "RedditAuth",
@@ -92,7 +92,7 @@ const FromReddit = () => {
 
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/reddit/post",
+        "https://ai.1upmedia.com:443/reddit/post",
         {
           accessToken,
           subreddit,
@@ -112,7 +112,7 @@ const FromReddit = () => {
     if (!accessToken) return;
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/reddit/posts",
+        "https://ai.1upmedia.com:443/reddit/posts",
         {
           params: { accessToken },
         }

@@ -55,7 +55,7 @@ const FromReddit = () => {
 
   // Only allow login if there are no Reddit profiles in context.
   const handleLogin = () => {
-    const authUrl = "http://ai.1upmedia.com:3000/reddit/auth";
+    const authUrl = "https://ai.1upmedia.com:443/reddit/auth";
     const popupWindow = window.open(
       authUrl,
       "RedditAuth",
@@ -83,7 +83,7 @@ const FromReddit = () => {
     if (!accessToken) return;
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/reddit/posts",
+        "https://ai.1upmedia.com:443/reddit/posts",
         { params: { accessToken } }
       );
       setPosts(response.data.data?.children || []);

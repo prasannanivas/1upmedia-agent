@@ -28,7 +28,7 @@ const TwitterAuth = () => {
   // Trigger OAuth login popup
   const handleLogin = () => {
     const popupWindow = window.open(
-      "http://ai.1upmedia.com:3000/twitter/auth",
+      "https://ai.1upmedia.com:443/twitter/auth",
       "TwitterAuth",
       "width=600,height=600"
     );
@@ -39,7 +39,7 @@ const TwitterAuth = () => {
   const fetchTweets = async () => {
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/twitter/tweets",
+        "https://ai.1upmedia.com:443/twitter/tweets",
         {
           params: { accessToken, accessSecret },
         }
@@ -54,7 +54,7 @@ const TwitterAuth = () => {
   // Post a tweet using both text and (optionally) an image URL
   const postTweet = async () => {
     try {
-      await axios.post("http://ai.1upmedia.com:3000/twitter/posttweet", {
+      await axios.post("https://ai.1upmedia.com:443/twitter/posttweet", {
         accessToken,
         accessSecret, // Send the access secret along with the token
         tweetText,

@@ -25,7 +25,7 @@ const StepMainDomain = () => {
     try {
       // Call your backend endpoint
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/get-domain-authority",
+        "https://ai.1upmedia.com:443/get-domain-authority",
         {
           method: "POST",
           headers: {
@@ -73,7 +73,7 @@ const StepMainDomain = () => {
         },
       };
 
-      await fetch("http://ai.1upmedia.com:3000/aiagent/updateBusinessdetails", {
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

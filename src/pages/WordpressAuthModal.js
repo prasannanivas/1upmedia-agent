@@ -26,7 +26,7 @@ const WordPressAuthModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/wordpress/validate-wordpress",
+        "https://ai.1upmedia.com:443/wordpress/validate-wordpress",
         {
           siteUrl: credentials.siteUrl,
           username: credentials.username,

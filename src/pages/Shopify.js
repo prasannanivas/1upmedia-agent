@@ -38,7 +38,7 @@ const ShopifyLogin = () => {
     if (!shopDetails) return alert("Please login first.");
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/shopify/fetch-blogs",
+        "https://ai.1upmedia.com:443/shopify/fetch-blogs",
         {
           shop: shopDetails.domain,
           accessToken: accessToken,
@@ -54,7 +54,7 @@ const ShopifyLogin = () => {
     e.preventDefault();
     if (!selectedBlog) return alert("Select a blog first!");
     try {
-      await axios.post("http://ai.1upmedia.com:3000/shopify/post-content", {
+      await axios.post("https://ai.1upmedia.com:443/shopify/post-content", {
         shop: shopDetails.domain,
         accessToken: accessToken,
         blogId: selectedBlog,
@@ -69,7 +69,7 @@ const ShopifyLogin = () => {
   const fetchBlogPosts = async () => {
     try {
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/shopify/fetch-blog-posts",
+        "https://ai.1upmedia.com:443/shopify/fetch-blog-posts",
         {
           shop: shopDetails.domain,
           accessToken,

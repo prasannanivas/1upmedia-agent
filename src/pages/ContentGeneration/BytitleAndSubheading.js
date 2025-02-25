@@ -115,7 +115,7 @@ function BytitleAndSubheadings() {
 
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/generate-content-by-subheadings",
+        "https://ai.1upmedia.com:443/aiagent/generate-content-by-subheadings",
         {
           method: "POST",
           headers: {

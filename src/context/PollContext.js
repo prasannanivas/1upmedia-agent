@@ -24,7 +24,7 @@ export const PollProvider = ({ children }) => {
   const pollProgress = async () => {
     try {
       const response = await fetch(
-        `http://ai.1upmedia.com:3000/aiagent/progress/${email}`
+        `https://ai.1upmedia.com:443/aiagent/progress/${email}`
       );
       if (response.ok) {
         const data = await response.json();

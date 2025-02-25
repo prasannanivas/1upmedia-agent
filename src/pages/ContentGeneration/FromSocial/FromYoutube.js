@@ -49,7 +49,7 @@ function FromYoutube() {
   const fetchYouTubeVideos = async () => {
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/youtube/videos",
+        "https://ai.1upmedia.com:443/youtube/videos",
         {
           params: { accessToken },
         }
@@ -126,7 +126,7 @@ function FromYoutube() {
     setVideoLoadingState(id, true);
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/youtube/transcript",
+        "https://ai.1upmedia.com:443/youtube/transcript",
         {
           params: { videoId: id },
         }
@@ -199,7 +199,7 @@ function FromYoutube() {
     setLoadingTranscripts((prev) => ({ ...prev, [videoId]: true }));
     try {
       const response = await axios.get(
-        "http://ai.1upmedia.com:3000/youtube/transcript",
+        "https://ai.1upmedia.com:443/youtube/transcript",
         {
           params: { videoId },
         }

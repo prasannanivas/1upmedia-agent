@@ -95,7 +95,7 @@ const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
             };
 
             const response = await axios.post(
-              "http://ai.1upmedia.com:3000/facebook/postImageToFacebookPage",
+              "https://ai.1upmedia.com:443/facebook/postImageToFacebookPage",
               postData
             );
             // response.data
@@ -126,7 +126,7 @@ const FacebookShareModal = ({ isOpen, onClose, post, facebookPages }) => {
 
               try {
                 await axios.put(
-                  `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+                  `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
                   {
                     share_history: [shareHistoryEntry],
                   }

@@ -67,7 +67,7 @@ const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
       };
 
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/linkedin/shareOnLinkedIn",
+        "https://ai.1upmedia.com:443/linkedin/shareOnLinkedIn",
         postData
       );
       // response.data
@@ -99,7 +99,7 @@ const LinkedInShareModal = ({ isOpen, onClose, post, linkedinProfiles }) => {
         });
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

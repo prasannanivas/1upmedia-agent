@@ -32,7 +32,7 @@ const StepCreateAuthors = () => {
     const fetchPersonas = async () => {
       try {
         const response = await fetch(
-          "http://ai.1upmedia.com:3000/aiagent/default-personas"
+          "https://ai.1upmedia.com:443/aiagent/default-personas"
         );
         if (!response.ok) throw new Error("Failed to fetch personas");
         const data = await response.json();
@@ -87,7 +87,7 @@ const StepCreateAuthors = () => {
 
   const handleNext = async () => {
     try {
-      await fetch("http://ai.1upmedia.com:3000/aiagent/updateAuthors", {
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateAuthors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

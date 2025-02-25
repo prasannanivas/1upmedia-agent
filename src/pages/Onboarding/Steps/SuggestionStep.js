@@ -31,7 +31,7 @@ const SuggestionStep = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/suggest-content-strategy",
+        "https://ai.1upmedia.com:443/aiagent/suggest-content-strategy",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -99,7 +99,7 @@ const SuggestionStep = () => {
 
       // Call the API to update only the suggestions
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/updateBusinessdetails",
+        "https://ai.1upmedia.com:443/aiagent/updateBusinessdetails",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

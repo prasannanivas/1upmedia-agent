@@ -48,7 +48,7 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
   const fetchSites = async () => {
     try {
       const response = await axios.get(
-        `http://ai.1upmedia.com:3000/webflow/sites?accessToken=${accessToken}`
+        `https://ai.1upmedia.com:443/webflow/sites?accessToken=${accessToken}`
       );
       setSites(response.data.sites);
       if (response.data.sites.length > 0) {
@@ -104,7 +104,7 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
       };
 
       const response = await axios.post(
-        "http://ai.1upmedia.com:3000/webflow/publish-webflow-post",
+        "https://ai.1upmedia.com:443/webflow/publish-webflow-post",
         postData
       );
 
@@ -172,7 +172,7 @@ const WebflowShareModal = ({ isOpen, onClose, post, webflowProfiles }) => {
 
         try {
           await axios.put(
-            `http://ai.1upmedia.com:3000/aiagent/posts/${email}/${post.post_id}/share-history`,
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${post.post_id}/share-history`,
             {
               share_history: [shareHistoryEntry],
             }

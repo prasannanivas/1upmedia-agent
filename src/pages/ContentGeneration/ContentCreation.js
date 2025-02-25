@@ -87,7 +87,7 @@ function ContentGenerator() {
       startPolling();
 
       const response = await fetch(
-        "http://ai.1upmedia.com:3000/aiagent/generate-content",
+        "https://ai.1upmedia.com:443/aiagent/generate-content",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

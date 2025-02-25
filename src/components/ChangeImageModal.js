@@ -25,7 +25,7 @@ const ChangeImageModal = ({
   const fetchExistingImages = async () => {
     try {
       const response = await fetch(
-        `http://ai.1upmedia.com:3000/aiagent/uploadsByUser/${"ai_generated_images"}`
+        `https://ai.1upmedia.com:443/aiagent/uploadsByUser/${"ai_generated_images"}`
       );
       const data = await response.json();
       if (response.ok) {
