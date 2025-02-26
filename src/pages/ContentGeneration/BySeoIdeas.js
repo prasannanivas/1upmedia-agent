@@ -57,7 +57,7 @@ const BySeoIdeas = () => {
         }
       );
 
-      if (response.data?.status?.success) {
+      if (response.data?.success) {
         // Add an id and selected property to each idea
         const ideasWithMetadata = response.data.data.map((idea, index) => ({
           ...idea,
@@ -156,7 +156,7 @@ const BySeoIdeas = () => {
         }
       );
 
-      if (response.data.success) {
+      if (response.data.status === "success") {
         setContentGenerationStatus(
           `Successfully generated content for ${selectedIdeas.length} ideas!`
         );

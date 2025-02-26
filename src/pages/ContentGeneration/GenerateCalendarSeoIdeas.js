@@ -281,7 +281,7 @@ const GenerateCalendarSeoIdeas = () => {
         }
       );
 
-      if (response.data?.status?.success) {
+      if (response.data?.status === "success") {
         setContentGenerationStatus(
           `Successfully generated content for ${selectedIdeas.length} ideas!`
         );

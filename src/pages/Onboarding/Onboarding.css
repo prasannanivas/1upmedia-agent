@@ -13,11 +13,10 @@
 }
 
 .Onboarding button {
-  margin-top: 20px;
   padding: 10px 20px;
   font-size: 16px;
   background-color: #13ab5c;
-  color: white;
+  color: rgb(249, 249, 249);
   border: none;
   border-radius: 4px;
   cursor: pointer;

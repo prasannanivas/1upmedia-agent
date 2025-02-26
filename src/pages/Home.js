@@ -6,9 +6,17 @@ import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
 
 const quickLinks = [
-  { name: "Dashboard", path: "/dashboard", icon: <Globe size={24} /> },
-  { name: "Profile", path: "/profile", icon: <User size={24} /> },
-  { name: "Settings", path: "/settings", icon: <Settings size={24} /> },
+  { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
+  {
+    name: "Create Content",
+    path: "/agents/content-creation/by-seo-ideas",
+    icon: <User size={24} />,
+  },
+  {
+    name: "Settings",
+    path: "/settings/user-management",
+    icon: <Settings size={24} />,
+  },
 ];
 
 // Rotating Features
@@ -193,6 +201,21 @@ const HomePage = () => {
         </div>
       </motion.section>
 
+      {/* Quick Links */}
+      <motion.section
+        className="homepage-quick-links"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 1 }}
+      >
+        {quickLinks.map((link) => (
+          <Link key={link.name} to={link.path} className="homepage-quick-link">
+            {link.icon}
+            <h3>{link.name}</h3>
+          </Link>
+        ))}
+      </motion.section>
+
       {/* About Video Section */}
       <motion.section
         className="homepage-video-section"
@@ -224,21 +247,6 @@ const HomePage = () => {
           1UP AI enhances your workflow with seamless automation, smart
           recommendations, and powerful integrations.
         </p>
-      </motion.section>
-
-      {/* Quick Links */}
-      <motion.section
-        className="homepage-quick-links"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-      >
-        {quickLinks.map((link) => (
-          <Link key={link.name} to={link.path} className="homepage-quick-link">
-            {link.icon}
-            <h3>{link.name}</h3>
-          </Link>
-        ))}
       </motion.section>
     </div>
   );

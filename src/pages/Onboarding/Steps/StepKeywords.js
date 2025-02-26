@@ -1,27 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../../context/OnboardingContext";
-import { useSocialMedia } from "../../../context/SocialMediaContext"; // Import social media context
-import { FaTimes } from "react-icons/fa"; // Import X icon
-import ConnectGoogleModal from "./ConnectGoogleModal"; // Import modal
-import "./StepKeywords.css"; // Import CSS
+import { useSocialMedia } from "../../../context/SocialMediaContext";
+import { FaPlus, FaSearch, FaTimes } from "react-icons/fa";
+import ConnectGoogleModal from "./ConnectGoogleModal";
+import "./StepKeywords.css";
+import Loader from "../../../components/Loader";
+import { useAuth } from "../../../context/AuthContext";
 
 const StepKeywords = () => {
-  const { onboardingData, setOnboardingData } = useOnboarding();
-  const { googleProfiles } = useSocialMedia(); // Fetch Google accounts
+  const { onboardingData, setOnboardingData, loading } = useOnboarding();
+  const { googleProfiles } = useSocialMedia();
+  const { authState } = useAuth();
+  const { email } = authState;
+  const [siteURL, setSiteURL] = useState(onboardingData.domain || "");
+  const [location, setLocation] = useState(onboardingData.location || "");
+  const [keywords, setKeywords] = useState(onboardingData.keywords || []);
   const [keyword, setKeyword] = useState("");
   const [keywordList, setKeywordList] = useState(onboardingData.keywords || []);
   const [relatedKeywords, setRelatedKeywords] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [analysisData, setAnalysisData] = useState(
+    onboardingData.initialAnalysisState || {}
+  );
   const [GSCdata, setGSCdata] = useState(
     onboardingData.searchConsoleData || {}
   );
+  const [loadingRelated, setLoadingRelated] = useState(false); // New state for loading related keywords
   const navigate = useNavigate();
 
   const handleAddKeyword = () => {
-    if (keyword.trim() && !keywordList.includes(keyword)) {
-      setKeywordList((prev) => [...prev, keyword]);
+    const trimmed = keyword.trim();
+    if (trimmed && !keywordList.includes(trimmed)) {
+      setKeywordList((prev) => [...prev, trimmed]);
       setKeyword("");
+      setRelatedKeywords((prev) => prev.filter((k) => k !== trimmed));
+    }
+  };
+
+  const handleAddRelatedKeyword = (relatedKeyword) => {
+    if (!keywordList.includes(relatedKeyword)) {
+      setKeywordList((prev) => [...prev, relatedKeyword]);
+      setRelatedKeywords((prev) => prev.filter((k) => k !== relatedKeyword));
     }
   };
 
@@ -30,6 +50,7 @@ const StepKeywords = () => {
   };
 
   const fetchRelatedKeywords = async () => {
+    setLoadingRelated(true);
     try {
       const response = await fetch(
         `https://ai.1upmedia.com:443/get-keywords-and-target-audience`,
@@ -48,8 +69,19 @@ const StepKeywords = () => {
       setRelatedKeywords(data.result.keywords.split(", ") || []);
     } catch (error) {
       console.error("Error fetching related keywords:", error);
+    } finally {
+      setLoadingRelated(false);
     }
   };
+
+  useEffect(() => {
+    setSiteURL(onboardingData.domain || "");
+    setLocation(onboardingData.location || "");
+    setKeywords(onboardingData.keywords || []);
+    setAnalysisData(onboardingData.initialAnalysisState || {});
+    setKeywordList(onboardingData.keywords || []);
+    setGSCdata(onboardingData.searchConsoleData || {});
+  }, [onboardingData]);
 
   useEffect(() => {
     setOnboardingData((prev) => ({
@@ -58,103 +90,162 @@ const StepKeywords = () => {
     }));
   }, [GSCdata]);
 
-  const handleNext = () => {
+  const handleSave = async () => {
+    try {
+      // Extract only defined values to avoid sending undefined data
+      const filteredSiteData = {
+        ...(siteURL && { URL: siteURL }),
+        ...(location && { location }),
+        ...(keywordList && { keywordList }),
+        ...(GSCdata && { search_analytics: GSCdata }),
+        dynamic_fields: {
+          ...analysisData, // Preserve existing dynamic fields
+          ...(onboardingData.suggestionsFromAi && {
+            suggestions: {
+              ...onboardingData.suggestionsFromAi, // Preserve existing suggestions
+            },
+          }),
+        },
+      };
+
+      // Remove empty `dynamic_fields` if no updates
+      if (Object.keys(filteredSiteData.dynamic_fields).length === 0) {
+        delete filteredSiteData.dynamic_fields;
+      }
+
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email, // Required field
+          siteData: filteredSiteData,
+        }),
+      });
+
+      alert("Business details saved successfully!");
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error saving business details:", error);
+      alert("Error saving business details. Please try again.");
+    }
+    navigate("/onboarding/step-suggestions");
+  };
+  const handleNext = async () => {
     setOnboardingData((prev) => ({
       ...prev,
       keywords: keywordList,
     }));
+    await handleSave();
     navigate("/onboarding/step-business-details");
   };
 
   return (
-    <div className="step-keywords-container">
-      <h2 className="step-keywords-title">Define Keywords</h2>
-      <div className="step-keywords-input-group">
-        <input
-          type="text"
-          placeholder="Enter a keyword"
-          className="step-keywords-input"
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAddKeyword()}
-        />
-        <button
-          onClick={handleAddKeyword}
-          disabled={!keyword}
-          className="step-keywords-add-btn"
-        >
-          Add
-        </button>
-      </div>
-
-      {keyword && (
-        <button
-          onClick={fetchRelatedKeywords}
-          className="step-keywords-related-btn"
-        >
-          Find Related Keywords
-        </button>
-      )}
-
-      {keywordList.length > 0 && (
-        <div className="step-keywords-list">
-          <h3>Keywords:</h3>
-          <ul>
-            {keywordList.map((kw, index) => (
-              <li key={index} className="step-keywords-item">
-                {kw}
-                <FaTimes
-                  className="step-keywords-remove"
-                  onClick={() => handleRemoveKeyword(index)}
+    <div className="step-keywords">
+      <div className="step-keywords__container">
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <h2 className="step-keywords__title">Define Keywords</h2>
+            <div className="step-keywords__input-section">
+              <div className="step-keywords__input-group">
+                <input
+                  type="text"
+                  placeholder="Enter a keyword"
+                  className="step-keywords__input"
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddKeyword()}
                 />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {relatedKeywords.length > 0 && (
-        <div className="step-keywords-related">
-          <h3>Related Keywords:</h3>
-          <ul>
-            {relatedKeywords.map((related, index) => (
-              <li key={index} className="step-keywords-related-item">
-                {related}
-                <button
-                  className="step-keywords-add-related"
-                  onClick={() => setKeywordList((prev) => [...prev, related])}
-                >
-                  +
+                <button onClick={handleAddKeyword} disabled={!keyword}>
+                  Add
                 </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+              </div>
+              {keyword && (
+                <button
+                  onClick={fetchRelatedKeywords}
+                  className="step-keywords__related-btn"
+                  disabled={loadingRelated}
+                >
+                  {loadingRelated ? (
+                    "Loading..."
+                  ) : (
+                    <>
+                      <FaSearch /> Find Related Keywords
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            {relatedKeywords.length > 0 && (
+              <div className="step-keywords__related-section">
+                <h3 className="step-keywords__subtitle">
+                  Related Keywords ({relatedKeywords.length})
+                </h3>
+                <div className="step-keywords__related-tags">
+                  {relatedKeywords.map((related, index) => (
+                    <div key={index} className="step-keywords__related-tag">
+                      <span>{related}</span>
+                      <div
+                        className="step-keywords__tag-add"
+                        onClick={() => handleAddRelatedKeyword(related)}
+                      >
+                        +
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="step-keywords__content">
+              <div className="step-keywords__main-list">
+                {keywordList.length > 0 && (
+                  <div className="step-keywords__section">
+                    <h3 className="step-keywords__subtitle">
+                      Selected Keywords ({keywordList.length})
+                    </h3>
+                    <div className="step-keywords__tags">
+                      {keywordList.map((kw, index) => (
+                        <div key={index} className="step-keywords__tag">
+                          <span>{kw}</span>
+                          <div
+                            className="step-keywords__tag-remove"
+                            onClick={() => handleRemoveKeyword(index)}
+                          >
+                            X
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
 
-      {/* Connect Google Search Console Button */}
-      <button
-        className="step-keywords-google-btn"
-        onClick={() => setIsModalOpen(true)}
-      >
-        Connect Google Search Console
-      </button>
-
-      {/* Google Accounts Modal */}
+            <div className="step-keywords__actions">
+              <button
+                className="step-keywords__google-btn"
+                onClick={() => setIsModalOpen(true)}
+              >
+                Connect Google Search Console
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={keywordList.length === 0}
+                className="step-keywords__next-btn"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
+      </div>
       <ConnectGoogleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onKeywordsSelected={setKeywordList}
         onGSCreceived={setGSCdata}
       />
-
-      <button
-        onClick={handleNext}
-        disabled={keywordList.length === 0}
-        className="step-keywords-next-btn"
-      >
-        Next
-      </button>
     </div>
   );
 };

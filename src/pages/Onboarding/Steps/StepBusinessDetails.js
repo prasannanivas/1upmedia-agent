@@ -9,21 +9,30 @@ const StepBusinessDetails = () => {
   const { onboardingData, setOnboardingData } = useOnboarding();
   const { authState } = useAuth();
   const { email } = authState;
-  const [siteURL] = useState(onboardingData.domain || "");
-  const [location] = useState(onboardingData.location || "");
-  const [keywords] = useState(onboardingData.keywords || []);
+  const [siteURL, setSiteURL] = useState(onboardingData.domain || "");
+  const [location, setLocation] = useState(onboardingData.location || "");
+  const [keywords, setKeywords] = useState(onboardingData.keywords || []);
   const [businessDetails, setBusinessDetails] = useState(
     typeof onboardingData.businessDetails === "string"
       ? onboardingData.businessDetails
       : JSON.stringify(onboardingData?.businessDetails || "")
   );
-  const [analysisData] = useState(onboardingData.initialAnalysisState || {});
-  const [GSCdata] = useState(onboardingData.searchConsoleData);
+  const [analysisData, setAnalysisData] = useState(
+    onboardingData.initialAnalysisState || {}
+  );
+  const [GSCdata, setGSCdata] = useState(onboardingData.searchConsoleData);
 
   const [isLoading, setIsLoading] = useState(!businessDetails);
   const navigate = useNavigate();
 
   useEffect(() => {
+    setBusinessDetails(onboardingData.businessDetails || "");
+    setSiteURL(onboardingData.domain || "");
+    setLocation(onboardingData.location || "");
+    setKeywords(onboardingData.keywords || []);
+    setAnalysisData(onboardingData.initialAnalysisState || {});
+    setGSCdata(onboardingData.searchConsoleData || {});
+
     if (businessDetails) {
       // Skip API call if businessDetails are already present
       setIsLoading(false);
@@ -117,6 +126,7 @@ const StepBusinessDetails = () => {
   };
 
   const handleNext = async () => {
+    await handleSave();
     navigate("/onboarding/step-suggestions");
   };
 

@@ -18,6 +18,19 @@ export const SocialMediaProvider = ({ children }) => {
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
 
+  // First, let's create a function to reset all profiles
+  const resetAllProfiles = () => {
+    setSocialMediaProfiles([]);
+    setFacebookPages([]);
+    setInstagramProfiles([]);
+    setRedditProfiles([]);
+    setTwitterProfiles([]);
+    setGoogleProfiles([]);
+    setWordpressProfiles([]);
+    setWebflowProfiles([]);
+    setLinkedinProfiles([]);
+    setShopifyProfiles([]);
+  };
   const fetchSocialMediaProfiles = async (email) => {
     setLoadingPages(true); // Show loading indicator
     try {
@@ -36,6 +49,8 @@ export const SocialMediaProvider = ({ children }) => {
 
       console.log(data);
 
+      resetAllProfiles();
+
       data.social_media.forEach((profile) => {
         mainAccounts.push(profile);
         // Separate main accounts and connected accounts
@@ -53,17 +68,17 @@ export const SocialMediaProvider = ({ children }) => {
         } else if (profile.social_media_name === "reddit") {
           setRedditProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "twitter") {
-          twitterProfiles.push(profile);
+          setTwitterProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "google") {
           setGoogleProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "wordpress") {
-          wordpressProfiles.push(profile);
+          setWordpressProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "linkedin") {
-          linkedinProfiles.push(profile);
+          setLinkedinProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "webflow") {
-          webflowProfiles.push(profile);
+          setWebflowProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "shopify") {
-          shopifyProfiles.push(profile);
+          setShopifyProfiles((prev) => [...prev, profile]);
         }
       });
 

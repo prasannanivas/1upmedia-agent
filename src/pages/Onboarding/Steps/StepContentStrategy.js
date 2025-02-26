@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import "./StepContentStrategy.css"; // Import the custom CSS
 import { useAuth } from "../../../context/AuthContext";
 import "./StepBusinessDetails.css";
+import Loader from "../../../components/Loader";
+import { useNavigate } from "react-router-dom";
 
 function TemplateManager() {
   const [templates, setTemplates] = useState(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [updatedTemplates, setUpdatedTemplates] = useState(null);
   const [expandedSection, setExpandedSection] = useState(""); // Track expanded section
@@ -136,9 +139,11 @@ function TemplateManager() {
     } catch (error) {
       console.error("Error saving templates:", error);
     }
+
+    navigate("/home");
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader />;
 
   return (
     <div className="step-content-strategy">
@@ -291,7 +296,7 @@ function TemplateManager() {
         onClick={saveTemplates}
         className="step-content-strategy__save-button"
       >
-        Save Templates
+        Finish Onboarding
       </button>
     </div>
   );

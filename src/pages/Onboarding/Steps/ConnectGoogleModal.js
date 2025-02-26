@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import { useSocialMedia } from "../../../context/SocialMediaContext";
 import "./ConnectGoogleModal.css";
 import { useAuth } from "../../../context/AuthContext";
@@ -13,6 +13,9 @@ const ConnectGoogleModal = ({
   const [googleSites, setGoogleSites] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const [error, setError] = useState(null);
+  const [updatedGoogleProfiles, setUpdatedGoogleProfiles] = useState(
+    googleProfiles || []
+  );
 
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
@@ -21,19 +24,23 @@ const ConnectGoogleModal = ({
     if (isOpen) {
       fetchGoogleSites();
     }
-  }, [isOpen, googleProfiles]);
+  }, [isOpen]);
+
+  useEffect(() => {
+    setUpdatedGoogleProfiles(googleProfiles);
+  }, [googleProfiles]);
 
   const fetchGoogleSites = async () => {
     setLoadingPages(true);
     try {
       const allSites = [];
       const uniqueProfiles = [
-        ...new Set(googleProfiles.map((p) => p.account_name)),
+        ...new Set(updatedGoogleProfiles.map((p) => p.account_name)),
       ];
 
       await Promise.all(
         uniqueProfiles.map(async (profileName) => {
-          const profile = googleProfiles.find(
+          const profile = updatedGoogleProfiles.find(
             (p) => p.account_name === profileName
           );
           let accessToken = profile.access_token;
@@ -198,6 +205,11 @@ const ConnectGoogleModal = ({
     }
   };
 
+  const handleGoogleLogin = (provider) => {
+    handleAuthorize(provider); // ✅ Call the `handleAuthorize` function from the `useAuth` hook
+    onClose(); // ✅ Close the modal
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -207,7 +219,7 @@ const ConnectGoogleModal = ({
 
         <button
           className="google-login-btn"
-          onClick={() => handleAuthorize("google")}
+          onClick={() => handleGoogleLogin("google")}
         >
           Login with Google
         </button>
