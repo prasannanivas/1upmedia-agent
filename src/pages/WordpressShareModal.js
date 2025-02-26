@@ -173,8 +173,8 @@ const WordPressShareModal = ({ isOpen, onClose, post, wordpressProfiles }) => {
                 onClick={() => setSelectedProfile(profile)}
               >
                 <div className="site-info">
-                  <h3>{profile.account_name}</h3>
-                  <p>{profile.dynamic_fields.siteUrl}</p>
+                  <h3>{profile.dynamic_fields.siteUrl}</h3>
+                  <p>{profile.dynamic_fields.username}</p>
                 </div>
                 <div className="site-select">
                   <input

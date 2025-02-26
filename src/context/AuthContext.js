@@ -152,7 +152,7 @@ export const AuthProvider = ({ children }) => {
         email: authState.email,
         social_media: {
           social_media_name: platform,
-          account_name: credentials.username,
+          account_name: credentials.siteUrl,
           access_token: credentials.appPassword,
           profile_picture: "", // WordPress doesn't provide this
           dynamic_fields: {
@@ -213,7 +213,7 @@ export const AuthProvider = ({ children }) => {
       console.log(event.data);
 
       if (event.data.type === "twitterAuthSuccess") {
-        const { accessToken, userProfile } = event.data;
+        const { accessToken, userProfile, refreshToken } = event.data;
 
         await storeSocialMediaToken({
           email: authState.email,
@@ -225,6 +225,7 @@ export const AuthProvider = ({ children }) => {
             dynamic_fields: {
               id: userProfile.data.id,
               username: userProfile.data.username,
+              refreshToken,
             }, // Add dynamic_fields only if refreshToken exists
           },
         });
@@ -245,7 +246,7 @@ export const AuthProvider = ({ children }) => {
           },
         });
       } else if (event.data.type === "redditAuthSuccess") {
-        const { accessToken, userProfile } = event.data;
+        const { accessToken, userProfile, refreshToken } = event.data;
 
         await storeSocialMediaToken({
           email: authState.email,
@@ -254,7 +255,7 @@ export const AuthProvider = ({ children }) => {
             account_name: userProfile?.name,
             profile_picture: userProfile?.icon_img || "",
             access_token: accessToken,
-            dynamic_fields: { subreddit: userProfile?.subreddit }, // Add dynamic_fields only if refreshToken exists
+            dynamic_fields: { subreddit: userProfile?.subreddit, refreshToken }, // Add dynamic_fields only if refreshToken exists
           },
         });
       } else if (event.data.type === "shopifyAuthSuccess") {

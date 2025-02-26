@@ -36,6 +36,7 @@
 
 /* Content styling */
 .post-details__content {
+  text-align: left;
   font-size: 1.15em;
   margin-bottom: 20px;
 }
