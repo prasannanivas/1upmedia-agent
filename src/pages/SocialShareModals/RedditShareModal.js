@@ -12,6 +12,7 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
   // State to track which profile is currently selected
   const [selectedProfileIndex, setSelectedProfileIndex] = useState(0);
 
+  console.log(redditProfiles);
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
   // Subreddit/user-sub state
@@ -43,8 +44,31 @@ const RedditShareModal = ({ isOpen, onClose, post, redditProfiles }) => {
       ? redditProfiles[selectedProfileIndex]
       : null;
 
-  // Utility to get the current access token safely
-  const accessToken = selectedProfile?.access_token || "";
+  const [validatedToken, setValidatedToken] = useState("");
+  useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const res = await axios.post(
+          "https://ai.1upmedia.com:443/reddit/validate",
+          {
+            accessToken: selectedProfile?.access_token,
+            refreshToken: selectedProfile?.dynamic_fields?.refreshToken,
+          }
+        );
+        if (res.data && res.data.AccessToken) {
+          setValidatedToken(res.data.AccessToken);
+        }
+      } catch (error) {
+        console.error("Error validating Reddit token:", error);
+      }
+    };
+    if (isOpen) {
+      validateToken();
+    }
+  }, [isOpen, selectedProfile]);
+
+  // Utility to get the current access token safely: use validated value if present
+  const accessToken = validatedToken || selectedProfile?.access_token || "";
   // The user's Reddit account name
   const accountName = selectedProfile?.account_name || "";
 

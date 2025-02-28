@@ -31,7 +31,31 @@ const TwitterShareModal = ({ isOpen, onClose, post, twitterProfiles }) => {
 
   // Get current profile
   const selectedProfile = twitterProfiles?.[selectedProfileIndex];
-  const accessToken = selectedProfile?.access_token;
+
+  const [validatedToken, setValidatedToken] = useState("");
+  useEffect(() => {
+    const validateToken = async () => {
+      try {
+        const res = await axios.post(
+          "https://ai.1upmedia.com:443/twitter/validate",
+          {
+            accessToken: selectedProfile?.access_token,
+            refreshToken: selectedProfile?.dynamic_fields?.refreshToken,
+          }
+        );
+        if (res.data && res.data.AccessToken) {
+          setValidatedToken(res.data.AccessToken);
+        }
+      } catch (error) {
+        console.error("Error validating Twitter token:", error);
+      }
+    };
+    if (isOpen) {
+      validateToken();
+    }
+  }, [isOpen, selectedProfile]);
+
+  const accessToken = validatedToken || selectedProfile?.access_token || "";
 
   // Format initial content
   useEffect(() => {
