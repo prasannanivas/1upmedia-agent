@@ -11,7 +11,7 @@ function TopNavBar({ isMenuOpen, toggleMenu }) {
       <div className="company-logo">
         <img onClick={() => navigate("/")} src={logo} alt="Company Logo" />
       </div>
-      <button className="NavBar-toggle" onClick={toggleMenu}>
+      <button className="NavBar-toggle" onClick={(e) => toggleMenu(e)}>
         {isMenuOpen ? "X" : "☰"}
       </button>
     </header>

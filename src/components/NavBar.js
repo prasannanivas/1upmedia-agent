@@ -9,13 +9,20 @@ function NavBar() {
 
   const navBarRef = useRef(null);
 
-  const toggleMenu = () => {
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    console.log("toggleMenu");
     setIsMenuOpen((prev) => !prev);
   };
 
   const handleClickOutside = (event) => {
+    event.stopPropagation();
+    if (event.target.closest(".NavBar-toggle")) return;
+    console.log(isMenuOpen);
     if (navBarRef.current && !navBarRef.current.contains(event.target)) {
-      setIsMenuOpen(false);
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      }
     }
   };
 
