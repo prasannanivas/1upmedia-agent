@@ -10,7 +10,6 @@ function NavBar() {
   const navBarRef = useRef(null);
 
   const toggleMenu = (e) => {
-    e.stopPropagation();
     console.log("toggleMenu");
     setIsMenuOpen((prev) => !prev);
   };
