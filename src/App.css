@@ -1,18 +1,27 @@
 :root {
-  --primary-color: #0f8723; /* Primary: dark gray-blue */
-  --secondary-color: #ffffff; /* Secondary: light gray */
-  --accent-color: #2f9f58; /* Accent: muted blue-gray */
-  --hover-color: #ffffff; /* Hover: darker blue-gray */
-  --text-color: #ffffff; /* Light gray text */
-  --hover-text-color: #0f8723; /* Light blue hover effect */
-  --header-bg: #f8fafc; /* Top header background */
-  --header-text-color: #1e293b; /* Header text */
+  --primary-color: #0f8723;
+  /* Primary: dark gray-blue */
+  --secondary-color: #ffffff;
+  /* Secondary: light gray */
+  --accent-color: #2f9f58;
+  /* Accent: muted blue-gray */
+  --hover-color: #ffffff;
+  /* Hover: darker blue-gray */
+  --text-color: #ffffff;
+  /* Light gray text */
+  --hover-text-color: #0f8723;
+  /* Light blue hover effect */
+  --header-bg: #f8fafc;
+  /* Top header background */
+  --header-text-color: #1e293b;
+  /* Header text */
   --header-height: 7vh;
 }
 
 
 .MainContent {
-  margin-top: var(--header-height); /* Adjust for the TopNavBar height */
+  margin-top: var(--header-height);
+  /* Adjust for the TopNavBar height */
   padding-top: 5vh;
   text-align: center;
   min-height: 80vh;
@@ -22,6 +31,7 @@
 
 @media (max-width: 768px) {
   :root {
-    --header-height: 10vh; /* Adjust for smaller screens */
+    --header-height: 10vh;
+    /* Adjust for smaller screens */
   }
 }

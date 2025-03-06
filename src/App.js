@@ -1,5 +1,5 @@
 // App.js
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -37,8 +37,11 @@ import Loader from "./components/Loader";
 import { OnboardingProvider } from "./context/OnboardingContext";
 import StepCreateAuthors from "./pages/Onboarding/Steps/StepCreateAuthors";
 import Home from "./pages/Home";
+import Notifications from "./pages/Notifications";
+import { NotificationProvider } from "./context/NotificationContext";
 
 const AppWrapper = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(true);
   const { authState, loading } = useAuth();
   const location = useLocation(); // Get the current location
 
@@ -60,16 +63,26 @@ const AppWrapper = () => {
     );
   }
 
-  // Render the app if logged in
+  // Determine the main content width based on the menu state
+  // Assuming the NavBar takes 250px when open
+  const mainContentStyle = {
+    marginLeft: isMenuOpen ? "250px" : "0",
+    width: isMenuOpen ? "calc(100vw - 250px)" : "100vw",
+    transition: "all 0.3s ease",
+  };
+
   return (
     <div className="App">
-      <NavBar />
-      <div className="MainContent">
+      <div className="App-header">
+        <NavBar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+      </div>
+      <div className="MainContent" style={mainContentStyle}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           {/* <Route path="/login" element={<Home />} /> */}
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/notifications" element={<Notifications />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />
           <Route path="/analytics" element={<Analytics />} />
@@ -83,7 +96,6 @@ const AppWrapper = () => {
           <Route path="/agents/strategy" element={<StrategyAnalysis />} />
           <Route path="/agents/ideation" element={<Ideation />} />
           <Route path="/onboarding/*" element={<Onboarding />} />
-
           <Route
             path="/agents/content-creation/*"
             element={<ContentCreation />}
@@ -117,12 +129,14 @@ function App() {
     <ToastProvider>
       <SocialMediaProvider>
         <AuthProvider>
-          <PollProvider>
-            <ProgressBar />
-            <OnboardingProvider>
-              <AppWrapper />
-            </OnboardingProvider>
-          </PollProvider>
+          <NotificationProvider>
+            <PollProvider>
+              <ProgressBar />
+              <OnboardingProvider>
+                <AppWrapper />
+              </OnboardingProvider>
+            </PollProvider>
+          </NotificationProvider>
         </AuthProvider>
       </SocialMediaProvider>
     </ToastProvider>

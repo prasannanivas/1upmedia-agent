@@ -3,10 +3,12 @@ import React, { useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useNotification } from "../context/NotificationContext";
 
 function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const [dropdowns, setDropdowns] = useState({});
 
+  const { unreadCount } = useNotification(); // Initialize the notification context
   const { logout } = useAuth();
 
   const toggleDropdown = (menu) => {
@@ -34,7 +36,15 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
         </li>
         <li>
           <Link to="/dashboard" onClick={handleLinkClick}>
-            Dashboard
+            Posts
+          </Link>
+        </li>
+        <li>
+          <Link to="/notifications" onClick={handleLinkClick}>
+            Notifications{" "}
+            {unreadCount > 0 && (
+              <span style={{ fontWeight: "bold" }}>{unreadCount}</span>
+            )}
           </Link>
         </li>
         <li>

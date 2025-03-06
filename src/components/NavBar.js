@@ -4,12 +4,11 @@ import TopNavBar from "./TopNavBar";
 import SideNavBar from "./SideNavBar";
 import "./NavBar.css";
 
-function NavBar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+function NavBar({ isMenuOpen, setIsMenuOpen }) {
   const navBarRef = useRef(null);
 
   const toggleMenu = (e) => {
+    //e.stopPropagation();
     console.log("toggleMenu");
     setIsMenuOpen((prev) => !prev);
   };

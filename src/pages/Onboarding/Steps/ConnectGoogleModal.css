@@ -11,6 +11,40 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+
+/* Connected Sites */
+.connected-sites {
+  margin-bottom: 20px;
+}
+
+.connected-sites h4 {
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  color: #333;
+}
+
+.connected-sites ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.connected-site-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: whitesmoke;
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.connected-site-item:hover {
+  background: green;
+  transform: translateY(-2px);
+}
+
 /* ✨ Google Sites List */
 .google-sites-list {
   list-style: none;

@@ -1,7 +1,7 @@
 .NavBar {
   position: fixed;
   top: 0;
-  left: -300px;
+  left: -400px;
   width: auto;
   height: 100%;
   background-color: var(--primary-color);
@@ -31,7 +31,7 @@
   border-radius: 4px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   height: 50px;
-  width:50px;
+  width: 50px;
   z-index: 1001;
 }
 
@@ -44,10 +44,16 @@
 .NavBar ul {
   list-style: none;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: space-around;
 }
 
 .NavBar ul li {
   margin-bottom: 1rem;
+  font-size: large;
+  display: flex;
+  flex-direction: column;
 }
 
 .NavBar ul li a {
@@ -58,6 +64,7 @@
 
 .NavBar ul li a:hover {
   background-color: var(--hover-color);
+  color: var(--hover-text-color);
   padding: 0.3rem 0.5rem;
   border-radius: 5%;
 }
@@ -113,6 +120,7 @@
     opacity: 0;
     transform: translateY(-10%);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -146,7 +154,8 @@
 
 /* Sidebar offset for header */
 .NavBar-container {
-  margin-top: calc(var(--header-height) + 10px); /* Offset to account for the top header */
+  margin-top: calc(var(--header-height) + 10px);
+  /* Offset to account for the top header */
 }
 
 /* Hover effect for smoother transitions */

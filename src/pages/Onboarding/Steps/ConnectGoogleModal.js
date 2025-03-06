@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import { useSocialMedia } from "../../../context/SocialMediaContext";
 import "./ConnectGoogleModal.css";
 import { useAuth } from "../../../context/AuthContext";
@@ -16,12 +16,14 @@ const ConnectGoogleModal = ({
   const [updatedGoogleProfiles, setUpdatedGoogleProfiles] = useState(
     googleProfiles || []
   );
-
+  const [connectedSites, setConnectedSites] = useState([]);
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
 
+  // When modal opens, fetch connected sites and Google sites.
   useEffect(() => {
     if (isOpen) {
+      fetchConnectedSites();
       fetchGoogleSites();
     }
   }, [isOpen]);
@@ -30,6 +32,22 @@ const ConnectGoogleModal = ({
     setUpdatedGoogleProfiles(googleProfiles);
   }, [googleProfiles]);
 
+  // Fetch connected sites from your backend (GET route)
+  const fetchConnectedSites = async () => {
+    try {
+      const response = await fetch(
+        `https://ai.1upmedia.com:443/aiagent/search-console/${email}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setConnectedSites(data.data?.sites || []);
+      }
+    } catch (error) {
+      console.error("Error fetching connected sites:", error);
+    }
+  };
+
+  // Fetch Google sites from your API
   const fetchGoogleSites = async () => {
     setLoadingPages(true);
     try {
@@ -65,6 +83,7 @@ const ConnectGoogleModal = ({
                   siteUrl: site.siteUrl,
                   permissionLevel: site.permissionLevel,
                   accessToken,
+                  refreshToken: profile?.dynamic_fields?.refreshToken,
                 }))
               );
               break;
@@ -72,7 +91,6 @@ const ConnectGoogleModal = ({
               console.log(
                 `Access token expired for ${profile.account_name}. Refreshing...`
               );
-
               try {
                 const refreshResponse = await fetch(
                   "https://ai.1upmedia.com:443/google/fetch-new-access-token",
@@ -84,16 +102,13 @@ const ConnectGoogleModal = ({
                     }),
                   }
                 );
-
                 if (refreshResponse.ok) {
                   const { access_token: newAccessToken } =
                     await refreshResponse.json();
                   accessToken = newAccessToken;
-
                   console.log(
                     `Access token refreshed for ${profile.account_name}`
                   );
-
                   await storeSocialMediaToken({
                     email,
                     social_media: {
@@ -116,7 +131,7 @@ const ConnectGoogleModal = ({
                   `Error refreshing access token for ${profile.account_name}:`,
                   error.message
                 );
-                break; // Stop retrying for this profile
+                break;
               }
             } else {
               console.error(
@@ -136,17 +151,58 @@ const ConnectGoogleModal = ({
     }
   };
 
-  // Fetch Site Analytics and Extract Keywords
-  const fetchSiteAnalytics = async (siteUrl, accessToken) => {
+  // Save or update the site data in your backend
+  const storeOrUpdateSiteData = async (site, analyticsData) => {
+    // Check if the site already exists among connected sites
+    const exists = connectedSites.find((s) => s.siteUrl === site.siteUrl);
+    const endpoint = exists
+      ? `/aiagent/search-console/${email}/${encodeURIComponent(site.siteUrl)}`
+      : `/aiagent/search-console`;
+    const method = exists ? "PUT" : "POST";
+
+    try {
+      const response = await fetch(`https://ai.1upmedia.com:443${endpoint}`, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          siteUrl: site.siteUrl,
+          google_console: {
+            siteUrl: site.siteUrl,
+            accessToken: site.accessToken,
+            refreshToken: site.refreshToken,
+            searchConsoleData: analyticsData,
+          },
+        }),
+      });
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        setError(errorResponse.error || "Unknown error occurred.");
+        return;
+      }
+      // Refresh the connected sites list after successful store/update
+      await fetchConnectedSites();
+    } catch (error) {
+      console.error(
+        "Error storing/updating Google console data:",
+        error.message
+      );
+      setError("Failed to store/update Google console data. Please try again.");
+    }
+  };
+
+  // Fetch site analytics and then store/update the data
+  const fetchSiteAnalytics = async (site) => {
+    console.log("Fetching analytics for site:", site);
+    const { siteUrl, accessToken } = site;
     setLoadingPages(true);
     setError(null);
-    // ✅ Generate dynamic dates
+
     const today = new Date();
     const lastYear = new Date();
     lastYear.setFullYear(today.getFullYear() - 1);
-
-    const startDate = lastYear.toISOString().split("T")[0]; // Last year's date
-    const endDate = today.toISOString().split("T")[0]; // Today's date
+    const startDate = lastYear.toISOString().split("T")[0];
+    const endDate = today.toISOString().split("T")[0];
 
     try {
       const response = await fetch(
@@ -179,18 +235,16 @@ const ConnectGoogleModal = ({
       console.log("Analytics Data:", data);
 
       if (data.length > 0) {
-        // ✅ Extract only `keys[0]` from each object
         onGSCreceived(data);
-        const allKeywords = data
-          .map((item) => item.keys?.[0]) // Get only first keyword
-          .filter(Boolean); // Remove undefined values
-
-        // ✅ Remove duplicates
+        const allKeywords = data.map((item) => item.keys?.[0]).filter(Boolean);
         const uniqueKeywords = [...new Set(allKeywords)];
 
+        // Store or update the site data based on its current status
+        await storeOrUpdateSiteData(site, data);
+
         if (uniqueKeywords.length > 0) {
-          onKeywordsSelected(uniqueKeywords); // ✅ Pass to parent
-          onClose(); // ✅ Close modal
+          onKeywordsSelected(uniqueKeywords);
+          onClose();
         } else {
           setError("No relevant keywords found.");
         }
@@ -205,9 +259,30 @@ const ConnectGoogleModal = ({
     }
   };
 
+  // Delete a connected site by calling your DELETE route
+  const deleteConnectedSite = async (siteUrl) => {
+    try {
+      const response = await fetch(
+        `https://ai.1upmedia.com:443/aiagent/search-console/${email}/${encodeURIComponent(
+          siteUrl
+        )}`,
+        { method: "DELETE" }
+      );
+      if (response.ok) {
+        await fetchConnectedSites();
+      } else {
+        const errorResponse = await response.json();
+        setError(errorResponse.error || "Unknown error occurred.");
+      }
+    } catch (error) {
+      console.error("Error deleting connected site:", error);
+      setError("Failed to delete connected site.");
+    }
+  };
+
   const handleGoogleLogin = (provider) => {
-    handleAuthorize(provider); // ✅ Call the `handleAuthorize` function from the `useAuth` hook
-    onClose(); // ✅ Close the modal
+    handleAuthorize(provider);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -215,8 +290,24 @@ const ConnectGoogleModal = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        <h3>Select a Google Search Console Account</h3>
+        {/* Connected sites list (with delete buttons) */}
+        {connectedSites.length > 0 && (
+          <div className="connected-sites">
+            <h4>Connected Sites</h4>
+            <ul>
+              {connectedSites.map((site) => (
+                <li key={site.siteUrl} className="connected-site-item">
+                  <span>{site.siteUrl}</span>
+                  <button onClick={() => deleteConnectedSite(site.siteUrl)}>
+                    Delete
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
+        <h3>Select a Google Search Console Account</h3>
         <button
           className="google-login-btn"
           onClick={() => handleGoogleLogin("google")}
@@ -241,9 +332,7 @@ const ConnectGoogleModal = ({
                 <span className="google-site-url">{site.siteUrl}</span>
                 <button
                   className="google-connect-btn"
-                  onClick={() =>
-                    fetchSiteAnalytics(site.siteUrl, site.accessToken)
-                  }
+                  onClick={() => fetchSiteAnalytics(site)}
                 >
                   Connect
                 </button>
