@@ -66,9 +66,10 @@ const AppWrapper = () => {
   // Determine the main content width based on the menu state
   // Assuming the NavBar takes 250px when open
   const mainContentStyle = {
-    marginLeft: isMenuOpen ? "250px" : "0",
-    width: isMenuOpen ? "calc(100vw - 250px)" : "100vw",
-    transition: "all 0.3s ease",
+    marginLeft: isMenuOpen ? "25%" : "0",
+    width: isMenuOpen ? "calc(100% - 25%)" : "100%",
+    transition:
+      "margin-left 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), width 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
   };
 
   return (

@@ -1,6 +1,6 @@
 /* Fullscreen Container */
 .template-selection-container {
-  width: 100vw;
+  width: 100%;
   background: white;
   color: black;
   display: flex;
