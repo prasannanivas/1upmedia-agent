@@ -1,0 +1,122 @@
+.ideation-container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  font-family: Arial, sans-serif;
+}
+
+.ideation-header {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.ideation-topButtons {
+  margin-bottom: 20px;
+}
+
+.ideation-analyseAllButton {
+  padding: 8px 16px;
+  font-size: 16px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.ideation-analyseAllButton:hover {
+  background-color: #218838;
+}
+
+.ideation-overall {
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #e2e3e5;
+  border-radius: 4px;
+  font-size: 16px;
+  color: #333;
+}
+
+.ideation-keywordList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ideation-keywordItem {
+  margin-bottom: 20px;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.ideation-keywordHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ideation-keywordText {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.ideation-analyseButton {
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.ideation-analyseButton:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.ideation-analyseButton:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.ideation-analysisResult {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+}
+
+.ideation-difficulty {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+/* Difficulty color styles */
+.ideation-difficulty-easy {
+  color: green;
+}
+
+.ideation-difficulty-medium {
+  color: orange;
+}
+
+.ideation-difficulty-hard {
+  color: red;
+}
+
+.ideation-analysisItem {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.ideation-analysisItem:last-child {
+  border-bottom: none;
+}

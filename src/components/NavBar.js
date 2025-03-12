@@ -31,9 +31,20 @@ function NavBar({ isMenuOpen, setIsMenuOpen }) {
     };
   }, []);
 
+  const topNavbarStyle = {
+    marginLeft: isMenuOpen ? "30%" : "0",
+    width: isMenuOpen ? "calc(100% - 25%)" : "100%",
+    transition:
+      "margin-left 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55), width 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+  };
+
   return (
     <div className="NavBar-wrapper">
-      <TopNavBar isMenuOpen={isMenuOpen} toggleMenu={toggleMenu} />
+      <TopNavBar
+        isMenuOpen={isMenuOpen}
+        toggleMenu={toggleMenu}
+        style={topNavbarStyle}
+      />
       <SideNavBar
         navBarRef={navBarRef}
         isMenuOpen={isMenuOpen}

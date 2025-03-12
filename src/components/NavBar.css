@@ -131,10 +131,50 @@
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* src/styles/TopNavBar.css */
+/* src/styles/TopNavBar.css */
+.overlay {
+  position: fixed;
+  cursor: pointer;
+  top: 0;
+  width: 5%;
+  height: 10%;
+  background-color: rgb(12, 167, 115);
+  transition: all 0.5s ease-in-out;
+  color: aliceblue;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* When the sidebar is open, position the overlay at the end of the sidebar and keep it visible */
+.overlay--open {
+  left: 25%;
+  opacity: 1;
+}
+
+/* When the sidebar is closed, position the overlay at the top left and hide it by default */
+.overlay--closed {
+  left: 0;
+  opacity: 0;
+}
+
+/* When the user hovers over the closed overlay area, fade it in */
+.overlay--closed:hover {
+  opacity: 1;
+}
+
+/* Icon styling */
+.overlay__icon {
+  font-size: 1.5rem;
+}
+
+
 /* Top Header Navbar */
 .TopNavBar {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   align-items: center;
   padding: 1rem;
   background-color: var(--header-bg);

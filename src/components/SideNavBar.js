@@ -58,12 +58,12 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           toggle={() => toggleDropdown("agents")}
           handleLinkClick={handleLinkClick}
           links={[
-            { path: "/agents/strategy", label: "Strategy & Analysis" },
-            { path: "/agents/ideation", label: "Ideation" },
+            // { path: "/agents/strategy", label: "Strategy & Analysis" },
+            { path: "/agents/ideation", label: "Keyword Strategy" },
             { path: "/agents/content-creation", label: "Content Creation" },
-            { path: "/agents/content-review", label: "Content Review" },
-            { path: "/agents/publishing", label: "Publishing" },
-            { path: "/agents/social-media", label: "Social Media" },
+            // { path: "/agents/content-review", label: "Content Review" },
+            // { path: "/agents/publishing", label: "Publishing" },
+            // { path: "/agents/social-media", label: "Social Media" },
           ]}
         />
         <DropdownMenu

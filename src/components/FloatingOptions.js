@@ -8,8 +8,9 @@ import {
   FaLinkedinIn,
   FaWordpress,
   FaInstagramSquare,
+  FaStrava,
 } from "react-icons/fa";
-import { SiWebflow, SiShopify } from "react-icons/si";
+import { SiWebflow, SiShopify, SiStrava } from "react-icons/si";
 import "./FloatingOptions.css";
 import { useSocialMedia } from "../context/SocialMediaContext";
 import WordPressShareModal from "../pages/WordpressShareModal";
@@ -152,6 +153,13 @@ const FloatingOptions = ({ post }) => {
                 onClick={handleShopifyClick}
               >
                 <SiShopify className="social-icon" />
+              </div>
+              <div
+                className="option-item"
+                title="Share on Shopify"
+                onClick={handleShopifyClick}
+              >
+                <SiStrava className="social-icon" />
               </div>
             </div>
           )}
