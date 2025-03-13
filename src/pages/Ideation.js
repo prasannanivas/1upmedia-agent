@@ -23,8 +23,8 @@ function Ideation() {
 
   // Determine difficulty based on average rating vs. domainAuthority with ±5 tolerance
   const getDifficulty = (avgRating, authority) => {
-    if (avgRating <= authority - 5) return "Easy";
-    if (avgRating >= authority + 5) return "Hard";
+    if (avgRating <= authority - 15) return "Easy";
+    if (avgRating >= authority + 15) return "Hard";
     return "Medium";
   };
 
@@ -37,7 +37,7 @@ function Ideation() {
 
     try {
       const response = await axios.get(
-        `http://localhost:3000/aiagent/google-custom-search`,
+        `httpa://ai.1upmedia.com:443/aiagent/google-custom-search`,
         { params: { keyword } }
       );
       const data = response.data; // expecting an array of analysis objects
