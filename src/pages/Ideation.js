@@ -37,7 +37,7 @@ function Ideation() {
 
     try {
       const response = await axios.get(
-        `httpa://ai.1upmedia.com:443/aiagent/google-custom-search`,
+        `https://ai.1upmedia.com:443/aiagent/google-custom-search`,
         { params: { keyword } }
       );
       const data = response.data; // expecting an array of analysis objects
