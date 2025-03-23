@@ -199,6 +199,7 @@
   text-align: left;
   position: relative;
   cursor: pointer;
+  text-align: center;
 }
 
 .idea-card:hover {
@@ -208,7 +209,8 @@
 
 .idea-card-selected {
   border: 2px solid #0f8723;
-  background: linear-gradient(to bottom, white, #f0fff0);
+  background: linear-gradient(to bottom, rgb(174, 232, 163), #b2d2b2) !important;
+
 }
 
 .idea-checkbox {
@@ -239,6 +241,7 @@
 }
 
 .idea-combination {
+  text-align: center;
   background: #f8f9fa;
   padding: 10px;
   border-radius: 8px;
@@ -255,6 +258,29 @@
 .idea-combination p {
   color: #666;
   margin: 0;
+}
+
+.idea-combination select {
+  display: block;
+  width: 100%;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.idea-combination button {
+  margin-top: 10px;
+  padding: 5px 15px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.idea-combination button:hover {
+  background-color: #45a049;
 }
 
 /* Generate Content Section */

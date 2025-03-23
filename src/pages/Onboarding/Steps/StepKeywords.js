@@ -242,6 +242,7 @@ const StepKeywords = () => {
       </div>
       <ConnectGoogleModal
         isOpen={isModalOpen}
+        forDomain={siteURL}
         onClose={() => setIsModalOpen(false)}
         onKeywordsSelected={setKeywordList}
         onGSCreceived={setGSCdata}

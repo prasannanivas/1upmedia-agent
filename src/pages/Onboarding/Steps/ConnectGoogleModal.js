@@ -5,6 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 
 const ConnectGoogleModal = ({
   isOpen,
+  forDomain,
   onClose,
   onKeywordsSelected,
   onGSCreceived,
@@ -155,10 +156,13 @@ const ConnectGoogleModal = ({
   const storeOrUpdateSiteData = async (site, analyticsData) => {
     // Check if the site already exists among connected sites
     const exists = connectedSites.find((s) => s.siteUrl === site.siteUrl);
+    console.log(site);
     const endpoint = exists
       ? `/aiagent/search-console/${email}/${encodeURIComponent(site.siteUrl)}`
       : `/aiagent/search-console`;
     const method = exists ? "PUT" : "POST";
+
+    console.log("ForDomain", forDomain, endpoint, method);
 
     try {
       const response = await fetch(`https://ai.1upmedia.com:443${endpoint}`, {
@@ -167,6 +171,7 @@ const ConnectGoogleModal = ({
         body: JSON.stringify({
           email,
           siteUrl: site.siteUrl,
+          forDomain: forDomain,
           google_console: {
             siteUrl: site.siteUrl,
             accessToken: site.accessToken,

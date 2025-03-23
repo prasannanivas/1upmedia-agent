@@ -17,7 +17,7 @@ function Home() {
   // Opens the Strava OAuth popup
   const handleLogin = () => {
     window.open(
-      "http://localhost:3000/strava/auth",
+      "https://ai.1upmedia.com:443/strava/auth",
       "StravaAuthPopup",
       "width=600,height=600"
     );
@@ -27,7 +27,7 @@ function Home() {
   useEffect(() => {
     const handleMessage = (event) => {
       if (!event.data) return;
-      // (Optional) check event.origin === "http://localhost:3000" in production
+      // (Optional) check event.origin === "https://ai.1upmedia.com:443" in production
 
       if (event.data.type === "stravaAuthSuccess") {
         const { accessToken, refreshToken, expiresAt, athlete } = event.data;
@@ -47,7 +47,7 @@ function Home() {
     }
 
     try {
-      const res = await fetch("http://localhost:3000/strava/clubs", {
+      const res = await fetch("https://ai.1upmedia.com:443/strava/clubs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -99,7 +99,7 @@ function Home() {
     try {
       // We'll do a POST to /strava/clubs/:clubId/post
       const res = await fetch(
-        `http://localhost:3000/strava/clubs/${selectedClubId}/post`,
+        `https://ai.1upmedia.com:443/strava/clubs/${selectedClubId}/post`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

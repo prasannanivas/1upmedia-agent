@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { useAuth } from "../../context/AuthContext";
@@ -15,6 +15,29 @@ const BySeoIdeas = () => {
   const [selectedIdeas, setSelectedIdeas] = useState([]);
   const [generatingContent, setGeneratingContent] = useState(false);
   const [contentGenerationStatus, setContentGenerationStatus] = useState(null);
+  const [editingIdea, setEditingIdea] = useState(null);
+
+  const [allContentStrategy, setAllContentStrategy] = useState(
+    onboardingData.suggestionsFromAi?.content_strategies || []
+  );
+  const [allContentTypes, setAllContentTypes] = useState(
+    onboardingData.suggestionsFromAi?.content_types || []
+  );
+  const [allTopicClusters, setAllTopicClusters] = useState(
+    onboardingData.suggestionsFromAi?.topic_clusters || []
+  );
+
+  useEffect(() => {
+    setAllContentStrategy(
+      onboardingData.suggestionsFromAi?.content_strategies || []
+    );
+    setAllContentTypes(onboardingData.suggestionsFromAi?.content_types || []);
+    setAllTopicClusters(onboardingData.suggestionsFromAi?.topic_clusters || []);
+  }, [
+    onboardingData.suggestionsFromAi?.content_strategies,
+    onboardingData.suggestionsFromAi?.content_types,
+    onboardingData.suggestionsFromAi?.topic_clusters,
+  ]);
 
   // Check if all required data is available
   const missingFields = [];
@@ -34,7 +57,7 @@ const BySeoIdeas = () => {
     try {
       // Use axios instead of fetch for better error handling
       const response = await axios.post(
-        "https://ai.1upmedia.com:443/aiagent/generate-seo-ideas",
+        "http://localhost:3000/aiagent/generate-seo-ideas",
         {
           email: authState.email,
           url: onboardingData.domain,
@@ -64,8 +87,8 @@ const BySeoIdeas = () => {
           id: index,
           selected: false,
         }));
-        setIdeas(ideasWithMetadata);
-        setSelectedIdeas([]);
+
+        setIdeas((prev) => prev.concat(ideasWithMetadata));
       } else {
         throw new Error(response.data.error || "Failed to generate ideas");
       }
@@ -120,6 +143,35 @@ const BySeoIdeas = () => {
       setIdeas(ideas.map((idea) => ({ ...idea, selected: true })));
       setSelectedIdeas(ideas.map((idea) => idea.id));
     }
+  };
+
+  const handleModifyIdea = (e, idea) => {
+    e.stopPropagation(); // Prevent the idea card from being selected
+    console.log(idea);
+    setEditingIdea(idea);
+    console.log(idea);
+  };
+
+  const handleSaveModification = (e, ideaId) => {
+    e.stopPropagation();
+    setIdeas(
+      ideas.map((idea) => {
+        if (idea.id === ideaId) {
+          return {
+            ...idea,
+            dailyCombinationsJSON: {
+              ...idea.dailyCombinationsJSON,
+              content_strategy:
+                editingIdea.dailyCombinationsJSON.content_strategy,
+              content_type: editingIdea.dailyCombinationsJSON.content_type,
+              topic_cluster: editingIdea.dailyCombinationsJSON.topic_cluster,
+            },
+          };
+        }
+        return idea;
+      })
+    );
+    setEditingIdea(null);
   };
 
   const handleGenerateContent = async () => {
@@ -267,15 +319,116 @@ const BySeoIdeas = () => {
                     type="checkbox"
                     checked={idea.selected}
                     onChange={() => {}} // Controlled component
-                    onClick={(e) => e.stopPropagation()} // Prevent double toggle
+                    onClick={(e) => {}} // Prevent double toggle
                   />
                 </div>
                 <h3>{idea.title}</h3>
                 <p className="idea-description">{idea.idea}</p>
                 <div className="idea-combination">
-                  <strong>Strategy:</strong>
-                  <p>{idea.combination}</p>
+                  {editingIdea?.id === idea.id ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <select
+                        value={
+                          editingIdea.dailyCombinationsJSON.content_strategy ||
+                          ""
+                        }
+                        onChange={(e) =>
+                          setEditingIdea({
+                            ...editingIdea,
+                            dailyCombinationsJSON: {
+                              ...editingIdea.dailyCombinationsJSON,
+                              content_strategy: e.target.value,
+                            },
+                          })
+                        }
+                      >
+                        {allContentStrategy.map((strategy, idx) => (
+                          <option key={idx} value={strategy.strategy_name}>
+                            {strategy.strategy_name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={
+                          editingIdea.dailyCombinationsJSON.content_type || ""
+                        }
+                        onChange={(e) =>
+                          setEditingIdea({
+                            ...editingIdea,
+                            dailyCombinationsJSON: {
+                              ...editingIdea.dailyCombinationsJSON,
+                              content_type: e.target.value,
+                            },
+                          })
+                        }
+                      >
+                        {allContentTypes.map((type, idx) => (
+                          <option key={idx} value={type.type_name || type}>
+                            {type.type_name || type}
+                          </option>
+                        ))}
+                      </select>
+
+                      <select
+                        value={
+                          editingIdea.dailyCombinationsJSON.topic_cluster || ""
+                        }
+                        onChange={(e) =>
+                          setEditingIdea({
+                            ...editingIdea,
+                            dailyCombinationsJSON: {
+                              ...editingIdea.dailyCombinationsJSON,
+                              topic_cluster: e.target.value,
+                            },
+                          })
+                        }
+                      >
+                        {allTopicClusters.map((cluster, idx) => (
+                          <option
+                            key={idx}
+                            value={cluster.cluster_name || cluster}
+                          >
+                            {cluster.cluster_name || cluster}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        onClick={(e) => handleSaveModification(e, idea.id)}
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {idea.dailyCombinationsJSON ? (
+                        <>
+                          <p>
+                            <strong>Content Strategy: </strong>
+                            {idea.dailyCombinationsJSON.content_strategy}
+                          </p>
+                          <p>
+                            <strong>Content Type: </strong>
+                            {idea.dailyCombinationsJSON.content_type}
+                          </p>
+                          <p>
+                            <strong>Topic Cluster: </strong>
+                            {idea.dailyCombinationsJSON.topic_cluster}
+                          </p>
+                        </>
+                      ) : (
+                        <p>{idea.combination}</p>
+                      )}
+                    </>
+                  )}
                 </div>
+                <button
+                  className="seo-ideas-modify-button"
+                  onClick={(e) => handleModifyIdea(e, idea)}
+                >
+                  Modify Idea
+                </button>
               </div>
             ))}
           </div>

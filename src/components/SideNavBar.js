@@ -60,8 +60,8 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           links={[
             // { path: "/agents/strategy", label: "Strategy & Analysis" },
             { path: "/agents/ideation", label: "Keyword Strategy" },
+            { path: "/agents/content-review", label: "Keyword Review" },
             { path: "/agents/content-creation", label: "Content Creation" },
-            // { path: "/agents/content-review", label: "Content Review" },
             // { path: "/agents/publishing", label: "Publishing" },
             // { path: "/agents/social-media", label: "Social Media" },
           ]}

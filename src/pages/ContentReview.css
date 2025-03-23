@@ -1,0 +1,106 @@
+/* ContentReview.css */
+
+/* Outer container with a subtle gradient background */
+.contentreview-content-review-container {
+  background: linear-gradient(120deg, #ffffff, #d4d4d4);
+  min-height: 80vh;
+  padding: 2rem;
+  border-radius: 6px;
+  color: #333;
+  font-family: Arial, sans-serif;
+}
+
+/* Title */
+.contentreview-content-review-title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #444;
+  text-align: center;
+}
+
+/* Table wrapper */
+.contentreview-table-container {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+  /* scroll horizontally if needed */
+}
+
+/* The table itself */
+.contentreview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+
+/* Header cells */
+.contentreview-table th {
+  background-color: #0ab53a;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.75rem;
+  cursor: pointer;
+  /* indicates it's sortable */
+  position: sticky;
+  top: 0;
+  /* keep header visible if scrolling */
+  text-transform: capitalize;
+}
+
+/* Body cells */
+.contentreview-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eaeaea;
+  text-align: center;
+}
+
+/* Zebra striping on rows */
+.contentreview-table tr:nth-child(even) {
+  background-color: #f8fff4;
+}
+
+/* Hover highlight */
+.contentreview-table tr:hover {
+  background-color: #ffeaea;
+}
+
+/* Sorting indicator */
+.contentreview-sort-indicator {
+  margin-left: 6px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+/* Filter row at the top (just above the table) */
+.contentreview-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Filter group with label + input */
+.contentreview-filter-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  color: #444;
+  min-width: 120px;
+}
+
+/* Generate Button styling (optional) */
+.contentreview-generate-button {
+  background-color: #0ab53a;
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.contentreview-generate-button:hover {
+  background-color: #08a230;
+}

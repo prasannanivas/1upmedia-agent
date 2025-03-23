@@ -27,7 +27,7 @@ export const OnboardingProvider = ({ children }) => {
     socialIntegrations: [],
     suggestionsFromAi: {},
     authors: [],
-    searchConsoleData: {},
+    searchConsoleData: [],
   });
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export const OnboardingProvider = ({ children }) => {
               trustFlow: firstSite.dynamic_fields?.trustFlow || "",
               citationFlow: firstSite.dynamic_fields?.citationFlow || "",
             },
-            searchConsoleData: firstSite.search_analytics || {},
+            searchConsoleData: firstSite.search_analytics || [],
             suggestionsFromAi: {
               content_strategies:
                 firstSite.dynamic_fields?.suggestions?.content_strategies || [],
