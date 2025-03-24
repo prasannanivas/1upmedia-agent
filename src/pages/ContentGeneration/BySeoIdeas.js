@@ -57,7 +57,7 @@ const BySeoIdeas = () => {
     try {
       // Use axios instead of fetch for better error handling
       const response = await axios.post(
-        "http://localhost:3000/aiagent/generate-seo-ideas",
+        "https://ai.1upmedia.com:443/aiagent/generate-seo-ideas",
         {
           email: authState.email,
           url: onboardingData.domain,
