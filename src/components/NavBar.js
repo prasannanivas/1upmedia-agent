@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import TopNavBar from "./TopNavBar";
 import SideNavBar from "./SideNavBar";
+import BreadCrumb from "./BreadCrumb";
 import "./NavBar.css";
 
 function NavBar({ isMenuOpen, setIsMenuOpen }) {
@@ -44,6 +45,11 @@ function NavBar({ isMenuOpen, setIsMenuOpen }) {
         isMenuOpen={isMenuOpen}
         toggleMenu={toggleMenu}
         style={topNavbarStyle}
+      />
+      <BreadCrumb
+        style={{ marginLeft: isMenuOpen ? "30%" : "0" }}
+        isMenuOpen={isMenuOpen}
+        toggleMenu={toggleMenu}
       />
       <SideNavBar
         navBarRef={navBarRef}

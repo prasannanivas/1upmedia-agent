@@ -1,7 +1,8 @@
 import React from "react";
+import ChildLinks from "../components/ChildLinks";
 
-function Boards() {
-  return <div>Boards</div>;
+import { boardLinks } from "../components/SideNavBar";
+
+export default function Boards() {
+  return <ChildLinks routes={boardLinks} title="Agents Dashboard" />;
 }
-
-export default Boards;

@@ -5,10 +5,33 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 
+export const agentLinks = [
+  { path: "/agents/ideation", label: "Keyword Strategy" },
+  { path: "/agents/content-review", label: "Keyword Review" },
+  { path: "/agents/content-creation", label: "Content Creation" },
+];
+
+export const boardLinks = [
+  { path: "/boards/templated", label: "Templated" },
+  { path: "/boards/custom", label: "Custom" },
+];
+
+export const integrationLinks = [
+  { path: "/integrations/setup", label: "Setup Wizard" },
+  { path: "/integrations/active", label: "Active Integrations" },
+];
+
+export const settingsLinks = [
+  { path: "/settings/user-management", label: "User Management" },
+];
+
+export const advancedConfigLinks = [
+  { path: "/settings/advanced-config/security", label: "Security" },
+];
+
 function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const [dropdowns, setDropdowns] = useState({});
-
-  const { unreadCount } = useNotification(); // Initialize the notification context
+  const { unreadCount } = useNotification();
   const { logout } = useAuth();
 
   const toggleDropdown = (menu) => {
@@ -19,7 +42,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   };
 
   const handleLinkClick = () => {
-    toggleMenu(); // Close the side menu
+    //toggleMenu(); // Close the side menu
   };
 
   return (
@@ -57,24 +80,14 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           isOpen={dropdowns.agents}
           toggle={() => toggleDropdown("agents")}
           handleLinkClick={handleLinkClick}
-          links={[
-            // { path: "/agents/strategy", label: "Strategy & Analysis" },
-            { path: "/agents/ideation", label: "Keyword Strategy" },
-            { path: "/agents/content-review", label: "Keyword Review" },
-            { path: "/agents/content-creation", label: "Content Creation" },
-            // { path: "/agents/publishing", label: "Publishing" },
-            // { path: "/agents/social-media", label: "Social Media" },
-          ]}
+          links={agentLinks}
         />
         <DropdownMenu
           title="Boards"
           isOpen={dropdowns.boards}
           toggle={() => toggleDropdown("boards")}
           handleLinkClick={handleLinkClick}
-          links={[
-            { path: "/boards/templated", label: "Templated" },
-            { path: "/boards/custom", label: "Custom" },
-          ]}
+          links={boardLinks}
         />
         <li>
           <Link to="/analytics" onClick={handleLinkClick}>
@@ -86,29 +99,19 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           isOpen={dropdowns.integrations}
           handleLinkClick={handleLinkClick}
           toggle={() => toggleDropdown("integrations")}
-          links={[
-            { path: "/integrations/setup", label: "Setup Wizard" },
-            { path: "/integrations/active", label: "Active Integrations" },
-          ]}
+          links={integrationLinks}
         />
         <DropdownMenu
           title="Settings"
           isOpen={dropdowns.settings}
           toggle={() => toggleDropdown("settings")}
           handleLinkClick={handleLinkClick}
-          links={[
-            { path: "/settings/user-management", label: "User Management" },
-          ]}
+          links={settingsLinks}
           nestedDropdown={{
             title: "Advanced Config",
             isOpen: dropdowns.advancedConfig,
             toggle: () => toggleDropdown("advancedConfig"),
-            links: [
-              {
-                path: "/settings/advanced-config/security",
-                label: "Security",
-              },
-            ],
+            links: advancedConfigLinks,
           }}
         />
         <li>

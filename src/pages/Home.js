@@ -115,6 +115,18 @@ const HomePage = () => {
           <div className="progress-header">
             <p className="homepage-progress-text">
               <strong>{completionPercentage.total}%</strong> Profile Completed
+              {completionPercentage.total === 100 && (
+                <>
+                  {" "}
+                  |{" "}
+                  <Link
+                    className="homepage-create-content-link"
+                    to="/agents/content-creation/by-seo-ideas"
+                  >
+                    Create Content
+                  </Link>
+                </>
+              )}
             </p>
             {completionPercentage.total < 100 && (
               <motion.button

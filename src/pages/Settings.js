@@ -1,7 +1,8 @@
 import React from "react";
+import ChildLinks from "../components/ChildLinks";
 
-function Settings() {
-  return <div>Settings</div>;
+import { settingsLinks } from "../components/SideNavBar";
+
+export default function Settings() {
+  return <ChildLinks routes={settingsLinks} title="Agents Dashboard" />;
 }
-
-export default Settings;

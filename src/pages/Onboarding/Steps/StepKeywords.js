@@ -9,13 +9,18 @@ import Loader from "../../../components/Loader";
 import { useAuth } from "../../../context/AuthContext";
 
 const StepKeywords = () => {
-  const { onboardingData, setOnboardingData, loading } = useOnboarding();
+  const {
+    onboardingData,
+    setOnboardingData,
+    loading,
+    connectedSites,
+    setConnectedSites,
+  } = useOnboarding();
   const { googleProfiles } = useSocialMedia();
   const { authState } = useAuth();
   const { email } = authState;
   const [siteURL, setSiteURL] = useState(onboardingData.domain || "");
   const [location, setLocation] = useState(onboardingData.location || "");
-  const [keywords, setKeywords] = useState(onboardingData.keywords || []);
   const [keyword, setKeyword] = useState("");
   const [keywordList, setKeywordList] = useState(onboardingData.keywords || []);
   const [relatedKeywords, setRelatedKeywords] = useState([]);
@@ -77,7 +82,6 @@ const StepKeywords = () => {
   useEffect(() => {
     setSiteURL(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
-    setKeywords(onboardingData.keywords || []);
     setAnalysisData(onboardingData.initialAnalysisState || {});
     setKeywordList(onboardingData.keywords || []);
     setGSCdata(onboardingData.searchConsoleData || {});
@@ -142,11 +146,31 @@ const StepKeywords = () => {
   return (
     <div className="step-keywords">
       <div className="step-keywords__container">
+        <h2 className="step-keywords__title">Define Keywords</h2>
         {loading ? (
           <Loader />
         ) : (
           <>
-            <h2 className="step-keywords__title">Define Keywords</h2>
+            {
+              <div>
+                <button
+                  className="step-keywords__google-btn"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  {connectedSites.length > 0
+                    ? `${connectedSites.length} site/s connected`
+                    : "Connect Google Search Console"}
+                </button>
+
+                {connectedSites.map((site) => (
+                  <div className="connected-sites" key={site._id}>
+                    <h3>{site.siteUrl}</h3>
+                    <p>{site.forDomain}</p>
+                  </div>
+                ))}
+              </div>
+            }
+
             <div className="step-keywords__input-section">
               <div className="step-keywords__input-group">
                 <input
@@ -224,12 +248,6 @@ const StepKeywords = () => {
 
             <div className="step-keywords__actions">
               <button
-                className="step-keywords__google-btn"
-                onClick={() => setIsModalOpen(true)}
-              >
-                Connect Google Search Console
-              </button>
-              <button
                 onClick={handleNext}
                 disabled={keywordList.length === 0}
                 className="step-keywords__next-btn"
@@ -241,6 +259,8 @@ const StepKeywords = () => {
         )}
       </div>
       <ConnectGoogleModal
+        connectedSites={connectedSites}
+        setConnectedSites={setConnectedSites}
         isOpen={isModalOpen}
         forDomain={siteURL}
         onClose={() => setIsModalOpen(false)}

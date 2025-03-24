@@ -39,6 +39,7 @@ import StepCreateAuthors from "./pages/Onboarding/Steps/StepCreateAuthors";
 import Home from "./pages/Home";
 import Notifications from "./pages/Notifications";
 import { NotificationProvider } from "./context/NotificationContext";
+import NotFound from "./pages/NotFound";
 
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -116,7 +117,7 @@ const AppWrapper = () => {
             path="/settings/advanced-config/security"
             element={<Security />}
           />
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
     </div>

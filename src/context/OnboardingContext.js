@@ -8,6 +8,7 @@ export const OnboardingProvider = ({ children }) => {
   const { authState } = useAuth();
   const { email } = authState;
   const [loading, setLoading] = useState(true);
+  const [connectedSites, setConnectedSites] = useState([]);
 
   const [onboardingData, setOnboardingData] = useState({
     domain: "",
@@ -87,8 +88,31 @@ export const OnboardingProvider = ({ children }) => {
       }
     };
 
+    const fetchConnectedSites = async () => {
+      try {
+        const response = await fetch(
+          `https://ai.1upmedia.com:443/aiagent/search-console/${email}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setConnectedSites(data.data?.sites || []);
+        }
+      } catch (error) {
+        console.error("Error fetching connected sites:", error);
+      }
+    };
+
     if (email) {
-      fetchOnboardingData();
+      try {
+        fetchOnboardingData();
+      } catch (error) {
+        console.error("Error fetching onboarding data:", error);
+        setLoading(false);
+      }
+
+      try {
+        fetchConnectedSites();
+      } catch (error) {}
     }
   }, [email]);
 
@@ -212,6 +236,8 @@ export const OnboardingProvider = ({ children }) => {
   return (
     <OnboardingContext.Provider
       value={{
+        connectedSites,
+        setConnectedSites,
         onboardingData,
         setOnboardingData,
         loading,

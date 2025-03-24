@@ -12,12 +12,20 @@ import SocialNavigation from "./FromSocial/SocialNavigation";
 import CreateQuickContents from "./CreateQuickContents";
 import BySeoIdeas from "./BySeoIdeas";
 import GenerateCalendarSeoIdeas from "./GenerateCalendarSeoIdeas";
+import { Center } from "@chakra-ui/react";
 
 const ContentGenerationNavigator = () => {
   const navigate = useNavigate();
 
   return (
-    <div>
+    <div
+      style={{
+        alignItems: "center",
+        display: "flex",
+        justifyContent: "center",
+        maxWidth: "100%",
+      }}
+    >
       <Routes>
         <Route path="/" element={<Navigate to="choosepath" />} />
         <Route path="choosepath" element={<ContentCreationChoice />} />

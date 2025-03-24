@@ -9,6 +9,8 @@ const ConnectGoogleModal = ({
   onClose,
   onKeywordsSelected,
   onGSCreceived,
+  connectedSites,
+  setConnectedSites,
 }) => {
   const { googleProfiles, storeSocialMediaToken } = useSocialMedia();
   const [googleSites, setGoogleSites] = useState([]);
@@ -17,14 +19,13 @@ const ConnectGoogleModal = ({
   const [updatedGoogleProfiles, setUpdatedGoogleProfiles] = useState(
     googleProfiles || []
   );
-  const [connectedSites, setConnectedSites] = useState([]);
+
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
 
   // When modal opens, fetch connected sites and Google sites.
   useEffect(() => {
     if (isOpen) {
-      fetchConnectedSites();
       fetchGoogleSites();
     }
   }, [isOpen]);
@@ -165,7 +166,7 @@ const ConnectGoogleModal = ({
     console.log("ForDomain", forDomain, endpoint, method);
 
     try {
-      const response = await fetch(`https://ai.1upmedia.com:443${endpoint}`, {
+      const response = await fetch(`http://localhost:3000${endpoint}`, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -183,7 +184,7 @@ const ConnectGoogleModal = ({
       if (!response.ok) {
         const errorResponse = await response.json();
         setError(errorResponse.error || "Unknown error occurred.");
-        return;
+        throw new Error(errorResponse.error || "Unknown error occurred.");
       }
       // Refresh the connected sites list after successful store/update
       await fetchConnectedSites();
