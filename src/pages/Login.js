@@ -55,6 +55,7 @@ const Login = () => {
     );
 
     window.addEventListener("message", async function handleAuthEvent(event) {
+      console.log(event.data);
       if (event.data.type === eventType) {
         console.log(event.data);
         const { accessToken, name, profilePicture, email } = event.data;

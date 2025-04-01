@@ -110,6 +110,25 @@ const HomePage = () => {
           strategy in one place.
         </p>
 
+        {/* Quick Links */}
+        <motion.section
+          className="homepage-quick-links"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          {quickLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.path}
+              className="homepage-quick-link"
+            >
+              {link.icon}
+              <h3>{link.name}</h3>
+            </Link>
+          ))}
+        </motion.section>
+
         {/* Progress Section */}
         <div className="homepage-progress-container">
           <div className="progress-header">
@@ -211,21 +230,6 @@ const HomePage = () => {
             })}
           </div>
         </div>
-      </motion.section>
-
-      {/* Quick Links */}
-      <motion.section
-        className="homepage-quick-links"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-      >
-        {quickLinks.map((link) => (
-          <Link key={link.name} to={link.path} className="homepage-quick-link">
-            {link.icon}
-            <h3>{link.name}</h3>
-          </Link>
-        ))}
       </motion.section>
 
       {/* About Video Section */}

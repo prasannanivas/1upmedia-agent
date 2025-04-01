@@ -52,9 +52,9 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
       style={{ transition: "left 0.5s ease-in-out" }}
     >
       <ul>
-        <li>
-          <Link to="/" onClick={handleLinkClick}>
-            Home
+        <li style={{ fontWeight: "900", marginLeft: 0 }}>
+          <Link style={{ marginLeft: "15px" }} to="/" onClick={handleLinkClick}>
+            Profile
           </Link>
         </li>
         <li>

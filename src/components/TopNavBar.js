@@ -2,13 +2,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import logo from "../logo1.png";
 import { useNavigate, Link, useLocation } from "react-router-dom";
-import {
-  agentLinks,
-  boardLinks,
-  integrationLinks,
-  settingsLinks,
-  advancedConfigLinks,
-} from "./SideNavBar";
 
 const searchRoutes = (query) => {
   if (!query) return [];

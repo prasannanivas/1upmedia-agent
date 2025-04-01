@@ -27,6 +27,37 @@ const ByKeyword = () => {
   const [generatedTitles, setGeneratedTitles] = useState([]);
   const [error, setError] = useState(null);
 
+  const [relatedKeywords, setRelatedKeywords] = useState([]);
+  const [suggestedKeywords, setSuggestedKeywords] = useState(
+    onboardingData.keywords || []
+  );
+  const [loadingRelated, setLoadingRelated] = useState(false);
+
+  const fetchRelatedKeywords = async () => {
+    setLoadingRelated(true);
+    try {
+      const response = await fetch(
+        `https://ai.1upmedia.com:443/get-keywords-and-target-audience`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: manualKeyword,
+            goal: "SEO",
+            business_details: "Finding related Keywords for google search",
+          }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to fetch related keywords");
+      const data = await response.json();
+      setRelatedKeywords(data.result.keywords.split(", ") || []);
+    } catch (error) {
+      console.error("Error fetching related keywords:", error);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
+
   // Fetch Dropdown Options
   useEffect(() => {
     const fetchDropdownOptions = async () => {
@@ -84,19 +115,29 @@ const ByKeyword = () => {
     }
   };
 
-  // Add a suggested keyword
-  const addSuggestedKeyword = (keyword) => {
+  // Modify addSuggestedKeyword to remove from respective lists
+  const addSuggestedKeyword = (keyword, source) => {
     if (!selectedKeywords.includes(keyword)) {
       setSelectedKeywords([...selectedKeywords, keyword]);
+
+      // Remove from related keywords if it exists there
+      if (source === "related") {
+        setRelatedKeywords(relatedKeywords.filter((k) => k !== keyword));
+      }
+      // Remove from suggested keywords if it exists there
+      else if (source === "suggested") {
+        setSuggestedKeywords(suggestedKeywords.filter((k) => k !== keyword));
+      }
     }
   };
 
-  // Add all suggested keywords
+  // Update addAllKeywords to work with suggestedKeywords state
   const addAllKeywords = () => {
     const newKeywords = [
-      ...new Set([...selectedKeywords, ...onboardingData.keywords]),
+      ...new Set([...selectedKeywords, ...suggestedKeywords]),
     ];
     setSelectedKeywords(newKeywords);
+    setSuggestedKeywords([]); // Clear suggested keywords after adding all
   };
 
   // Remove a keyword
@@ -154,20 +195,45 @@ const ByKeyword = () => {
         <button className="by-keyword__add-button" onClick={addManualKeyword}>
           Add
         </button>
+        <button
+          className="by-keyword__fetch-related"
+          onClick={fetchRelatedKeywords}
+          disabled={!manualKeyword || loadingRelated}
+        >
+          {loadingRelated ? "Loading..." : "Find Related"}
+        </button>
       </div>
 
-      {/* Suggested Keywords */}
+      {/* Related Keywords - Updated onClick handler */}
+      {relatedKeywords.length > 0 && (
+        <div className="by-keyword__related-keywords">
+          <h3 className="by-keyword__subheader">Related Keywords</h3>
+          <div className="by-keyword__keyword-list">
+            {relatedKeywords.map((keyword, index) => (
+              <button
+                key={index}
+                className="by-keyword__keyword-button"
+                onClick={() => addSuggestedKeyword(keyword, "related")}
+              >
+                {keyword}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Suggested Keywords - Updated to use suggestedKeywords state */}
       <div className="by-keyword__suggested-keywords">
         <h3 className="by-keyword__subheader">Suggested Keywords</h3>
         <button className="by-keyword__add-all-button" onClick={addAllKeywords}>
           Add All
         </button>
         <div className="by-keyword__keyword-list">
-          {onboardingData.keywords.map((keyword, index) => (
+          {suggestedKeywords.map((keyword, index) => (
             <button
               key={index}
               className="by-keyword__keyword-button"
-              onClick={() => addSuggestedKeyword(keyword)}
+              onClick={() => addSuggestedKeyword(keyword, "suggested")}
             >
               {keyword}
             </button>

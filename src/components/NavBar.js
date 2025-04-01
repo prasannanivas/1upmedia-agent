@@ -14,23 +14,23 @@ function NavBar({ isMenuOpen, setIsMenuOpen }) {
     setIsMenuOpen((prev) => !prev);
   };
 
-  const handleClickOutside = (event) => {
-    event.stopPropagation();
-    if (event.target.closest(".NavBar-toggle")) return;
-    console.log(isMenuOpen);
-    if (navBarRef.current && !navBarRef.current.contains(event.target)) {
-      if (isMenuOpen) {
-        setIsMenuOpen(false);
-      }
-    }
-  };
+  // const handleClickOutside = (event) => {
+  //   event.stopPropagation();
+  //   if (event.target.closest(".NavBar-toggle")) return;
+  //   console.log(isMenuOpen);
+  //   if (navBarRef.current && !navBarRef.current.contains(event.target)) {
+  //     if (isMenuOpen) {
+  //       setIsMenuOpen(false);
+  //     }
+  //   }
+  // };
 
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  // useEffect(() => {
+  //   document.addEventListener("mousedown", handleClickOutside);
+  //   return () => {
+  //     document.removeEventListener("mousedown", handleClickOutside);
+  //   };
+  // }, []);
 
   const topNavbarStyle = {
     marginLeft: isMenuOpen ? "30%" : "0",
