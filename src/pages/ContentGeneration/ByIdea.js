@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./ByIdea.css";
+import { useAuth } from "../../context/AuthContext";
 
 const ByIdea = () => {
   const [idea, setIdea] = useState("");
   const [keywords, setKeywords] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const { authState } = useAuth();
+  const { email } = authState;
 
   // Advanced Fields
   const [contentStrategy, setContentStrategy] = useState("");
@@ -26,49 +30,51 @@ const ByIdea = () => {
   const [generatedTitles, setGeneratedTitles] = useState([]);
   const [error, setError] = useState(null);
 
+  const fetchDropdownOptions = async () => {
+    try {
+      const response = await axios.get(
+        `https://ai.1upmedia.com/aiagent/pipeline-templates/${email}`
+      );
+
+      console.log(response);
+      if (response.data?.templates) {
+        const templates = response.data?.templates;
+
+        // Parse content_templates (key-value pair -> dropdown array)
+        const contentTemplates = Object.keys(templates.content_templates).map(
+          (key) => ({
+            value: key,
+            label: key,
+          })
+        );
+
+        // Parse content_strategies (grouped options -> flatten for dropdown)
+        const contentStrategies = templates.content_strategies.flatMap(
+          (group) =>
+            group.subgroups.map((subgroup) => ({
+              value: subgroup.value,
+              label: `${group.group} - ${subgroup.label}`,
+            }))
+        );
+
+        setDropdownOptions({
+          goals: templates.goals,
+          search_intents: templates.search_intents,
+          content_templates: contentTemplates,
+          content_strategies: contentStrategies,
+          languages: templates.languages,
+        });
+      } else {
+        setError("Failed to fetch dropdown options.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch dropdown options. Please try again.");
+    }
+  };
+
   // Fetch Dropdown Options
   useEffect(() => {
-    const fetchDropdownOptions = async () => {
-      try {
-        const email = "test@1upmedia.com"; // Replace with dynamic email if needed
-        const response = await axios.get(
-          `https://ai.1upmedia.com/aiagent/pipeline-templates/${email}`
-        );
-        if (response.data?.templates) {
-          const templates = response.data.templates;
-
-          // Parse content_templates (key-value pair -> dropdown array)
-          const contentTemplates = Object.keys(templates.content_templates).map(
-            (key) => ({
-              value: key,
-              label: key,
-            })
-          );
-
-          // Parse content_strategies (grouped options -> flatten for dropdown)
-          const contentStrategies = templates.content_strategies.flatMap(
-            (group) =>
-              group.subgroups.map((subgroup) => ({
-                value: subgroup.value,
-                label: `${group.group} - ${subgroup.label}`,
-              }))
-          );
-
-          setDropdownOptions({
-            goals: templates.goals,
-            search_intents: templates.search_intents,
-            content_templates: contentTemplates,
-            content_strategies: contentStrategies,
-            languages: templates.languages,
-          });
-        } else {
-          setError("Failed to fetch dropdown options.");
-        }
-      } catch (err) {
-        setError("Failed to fetch dropdown options. Please try again.");
-      }
-    };
-
     fetchDropdownOptions();
   }, []);
 

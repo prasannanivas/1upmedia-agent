@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./ByKeyword.css";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useAuth } from "../../context/AuthContext";
 
 const ByKeyword = () => {
+  const { authState } = useAuth();
+  const { email } = authState;
   const { onboardingData } = useOnboarding(); // Get suggested keywords
   const [manualKeyword, setManualKeyword] = useState("");
   const [selectedKeywords, setSelectedKeywords] = useState([]);
@@ -62,7 +65,6 @@ const ByKeyword = () => {
   useEffect(() => {
     const fetchDropdownOptions = async () => {
       try {
-        const email = "test@1upmedia.com"; // Replace with dynamic email if needed
         const response = await axios.get(
           `https://ai.1upmedia.com/aiagent/pipeline-templates/${email}`
         );
@@ -97,6 +99,7 @@ const ByKeyword = () => {
           setError("Failed to fetch dropdown options.");
         }
       } catch (err) {
+        console.error(err);
         setError("Failed to fetch dropdown options. Please try again.");
       }
     };

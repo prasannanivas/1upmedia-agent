@@ -9,6 +9,7 @@ export const agentLinks = [
   { path: "/agents/ideation", label: "Keyword Strategy" },
   { path: "/agents/content-review", label: "Keyword Review" },
   { path: "/agents/content-creation", label: "Content Creation" },
+  { path: "/RAG", label: "RAG" },
 ];
 
 export const boardLinks = [

@@ -1,0 +1,154 @@
+/* Container for everything */
+.rag-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  flex-direction: column;
+}
+
+/* The form "card" styling */
+.rag-form {
+  background-color: #fff;
+  padding: 2rem;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.rag-form h1 {
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.rag-welcome {
+  text-align: center;
+  color: #555;
+  margin-bottom: 1rem;
+}
+
+/* Labels and inputs */
+.rag-label {
+  display: block;
+  margin-top: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.rag-input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+/* Buttons */
+.rag-button-secondary {
+  display: inline-block;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  background-color: #e2e2e2;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 1rem;
+}
+
+.rag-button-secondary:hover {
+  background-color: #ccc;
+}
+
+.rag-button-submit {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rag-button-submit:hover {
+  background-color: #0056b3;
+}
+
+/* Loader View */
+.rag-loader-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Spinner */
+.rag-spinner {
+  width: 50px;
+  height: 50px;
+  border: 6px solid #ccc;
+  border-top-color: #007bff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rag-processing-text {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+/* Summary Section */
+.rag-summary {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+}
+
+.rag-success {
+  text-align: center;
+  padding: 1rem;
+  margin-top: 1rem;
+  background-color: #e6ffe6;
+  border-radius: 4px;
+}
+
+.rag-persona {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .rag-form {
+    padding: 1rem;
+  }
+
+  .rag-form h1 {
+    font-size: 1.3rem;
+  }
+
+  .rag-button-secondary,
+  .rag-button-submit {
+    font-size: 0.9rem;
+  }
+}

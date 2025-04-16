@@ -40,6 +40,7 @@ import Home from "./pages/Home";
 import Notifications from "./pages/Notifications";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotFound from "./pages/NotFound";
+import RAG from "./pages/RAG";
 
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -117,6 +118,7 @@ const AppWrapper = () => {
             path="/settings/advanced-config/security"
             element={<Security />}
           />
+          <Route path="/RAG" element={<RAG />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
