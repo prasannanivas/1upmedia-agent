@@ -72,10 +72,13 @@ function RAG() {
       });
 
       // 2) Make the POST request
-      const res = await fetch("http://localhost:3000/RAG/analyzeStyleChunks", {
-        method: "POST",
-        body: fd,
-      });
+      const res = await fetch(
+        "https://ai.1upmedia.com:443/RAG/analyzeStyleChunks",
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
 
       if (!res.ok) throw new Error(`Analyze error: ${res.status}`);
       const data = await res.json();
@@ -95,7 +98,9 @@ function RAG() {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/RAG/summary?email=${encodeURIComponent(email)}`
+        `https://ai.1upmedia.com:443/RAG/summary?email=${encodeURIComponent(
+          email
+        )}`
       );
       if (!res.ok) throw new Error(`Summary error: ${res.status}`);
       const data = await res.json();
@@ -115,7 +120,7 @@ function RAG() {
     setError(null);
     try {
       const res = await fetch(
-        `http://localhost:3000/RAG/personaPrompt?email=${encodeURIComponent(
+        `https://ai.1upmedia.com:443/RAG/personaPrompt?email=${encodeURIComponent(
           email
         )}`
       );
