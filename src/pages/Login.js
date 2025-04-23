@@ -186,19 +186,11 @@ const Login = () => {
       </div>
       <footer className="Login-footer">
         <div className="footer-links">
-          <a
-            href="https://1upmedia.com/privacy-policy/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="/#/privacy" target="_blank" rel="noopener noreferrer">
             Privacy Policy
           </a>
           <span className="separator">•</span>
-          <a
-            href="https://1upmedia.com/terms/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href="/#/terms/" target="_blank" rel="noopener noreferrer">
             Terms of Service
           </a>
         </div>

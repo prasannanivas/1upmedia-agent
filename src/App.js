@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import NavBar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
+import PrivacyPolicy from "./PrivacyPolicy";
 import Agents from "./pages/Agents";
 import Boards from "./pages/Boards";
 import Analytics from "./pages/Analytics/Analytics";
@@ -41,6 +42,8 @@ import Notifications from "./pages/Notifications";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotFound from "./pages/NotFound";
 import RAG from "./pages/RAG";
+import { i } from "framer-motion/client";
+import TermsOfService from "./TermsOfService";
 
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -64,6 +67,12 @@ const AppWrapper = () => {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route
+          path="*"
+          element={<Navigate to="/login" state={{ from: location }} />}
+        />
         <Route
           path="*"
           element={<Navigate to="/login" state={{ from: location }} />}
