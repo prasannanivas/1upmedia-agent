@@ -1,5 +1,5 @@
 // App.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
@@ -45,6 +45,13 @@ import RAG from "./pages/RAG";
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const { authState, loading } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    console.log("Auth State:", authState);
+    // Check if the user is logged in and set the menu state accordingly
+    setIsLoggedIn(authState.isLoggedIn && authState.email !== null);
+  });
   const location = useLocation(); // Get the current location
 
   // Show a loading indicator while loading session data
@@ -52,7 +59,7 @@ const AppWrapper = () => {
     return <Loader />;
   }
 
-  if (!authState.isLoggedIn) {
+  if (!isLoggedIn) {
     // Redirect to login if not logged in, preserving the current location
     return (
       <Routes>

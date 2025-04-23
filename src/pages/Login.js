@@ -113,6 +113,24 @@ const Login = () => {
 
   return (
     <div className="Login">
+      <div className="app-intro">
+        <h1>Welcome to 1Up Media's AI Agent</h1>
+        <h3>
+          {" "}
+          Your AI-powered assistant to streamline content, research, and
+          strategy in one place.
+        </h3>
+        <h2>Learn More About 1UP AI</h2>
+        <div className="video-wrapper-login">
+          <iframe
+            src="https://www.youtube.com/embed/SvbIsQ00laM"
+            title="About 1UP AI"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </div>
       <div className="Login-container">
         <div className="Login-logo">
           <img src={companyLogo} alt="Company Logo" />
@@ -166,6 +184,30 @@ const Login = () => {
           </button>
         </div>
       </div>
+      <footer className="Login-footer">
+        <div className="footer-links">
+          <a
+            href="https://1upmedia.com/privacy-policy/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Privacy Policy
+          </a>
+          <span className="separator">•</span>
+          <a
+            href="https://1upmedia.com/terms/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Terms of Service
+          </a>
+        </div>
+        <div className="footer-info">
+          <p>
+            &copy; {new Date().getFullYear()} 1Up Media. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

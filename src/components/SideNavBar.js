@@ -116,7 +116,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           }}
         />
         <li>
-          <Link to="/logout" onClick={logout}>
+          <Link to="/login" onClick={logout}>
             Logout
           </Link>
         </li>

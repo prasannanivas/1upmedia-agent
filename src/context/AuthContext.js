@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    console.log("logout called");
     setAuthState({
       isLoggedIn: false,
       accessToken: null,
@@ -88,7 +89,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const getUserLoginDetails = () => {
-    if (authState.isLoggedIn && authState.email) {
+    if (authState.isLoggedIn && authState?.email) {
       return {
         email: authState.email,
         name: authState.name,
