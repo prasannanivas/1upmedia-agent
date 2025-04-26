@@ -137,6 +137,88 @@
   border-radius: 4px;
 }
 
+/* File List Section */
+.rag-files-list {
+  margin: 1rem 0;
+}
+
+.rag-file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.rag-file-remove {
+  background: none;
+  border: none;
+  color: #ff4444;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+}
+
+.rag-file-remove:hover {
+  color: #cc0000;
+}
+
+.rag-upload-section {
+  margin: 1rem 0;
+}
+
+/* Strength Section */
+.rag-strength {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.strength-score {
+  margin-bottom: 1rem;
+}
+
+.strength-recommendations ul {
+  list-style: none;
+  padding: 0;
+}
+
+.strength-recommendations li {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+}
+
+/* Content Generation Section */
+.rag-content-generation {
+  margin: 2rem 0;
+}
+
+.rag-generated-content {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.content-text {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+}
+
+.style-profile {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .rag-form {

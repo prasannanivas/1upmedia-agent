@@ -1,0 +1,237 @@
+/* CompetitorSitemapContent.css */
+.competitor-sitemap {
+  max-width: 720px;
+  margin: auto;
+  padding: 1rem;
+}
+
+.competitor-sitemap__label {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.competitor-sitemap__btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.competitor-sitemap__error {
+  color: #c00;
+  margin-top: 0.5rem;
+}
+
+.competitor-sitemap__list {
+  list-style: none;
+  padding: 0;
+}
+
+.competitor-sitemap__group {
+  margin-top: 1rem;
+}
+
+.competitor-sitemap__btn--primary {
+  background: #0070f3;
+  color: #fff;
+}
+
+.fromcomp-sitemap {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fromcomp-sitemap__header {
+  margin-bottom: 2rem;
+}
+
+.fromcomp-sitemap__header h2 {
+  color: #2d3748;
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.fromcomp-sitemap__input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.fromcomp-sitemap__input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.fromcomp-sitemap__input:focus {
+  border-color: #4299e1;
+  outline: none;
+}
+
+.fromcomp-sitemap__btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #4299e1;
+  color: white;
+}
+
+.fromcomp-sitemap__btn:hover {
+  background: #3182ce;
+  transform: translateY(-1px);
+}
+
+.fromcomp-sitemap__btn:disabled {
+  background: #cbd5e0;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.fromcomp-sitemap__error {
+  color: #e53e3e;
+  padding: 0.75rem;
+  background: #fff5f5;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.fromcomp-sitemap__sitemaps {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.fromcomp-sitemap__sitemap-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 4px solid #e2e8f0;
+  transition: all 0.2s;
+}
+
+.fromcomp-sitemap__sitemap-item:hover {
+  background: #edf2f7;
+}
+
+.fromcomp-sitemap__sitemap-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+.fromcomp-sitemap__sitemap-item--valid {
+  border-left-color: #38a169;
+}
+
+.fromcomp-sitemap__sitemap-item--invalid {
+  border-left-color: #e53e3e;
+}
+
+.fromcomp-sitemap__status-text {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.fromcomp-sitemap__status-text--valid {
+  color: #38a169;
+}
+
+.fromcomp-sitemap__status-text--invalid {
+  color: #e53e3e;
+}
+
+.fromcomp-sitemap__link-count {
+  background: #edf2f7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+.fromcomp-sitemap__links-container {
+  margin-top: 2rem;
+}
+
+.fromcomp-sitemap__group {
+  background: #f7fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.fromcomp-sitemap__group h4 {
+  color: #2d3748;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.fromcomp-sitemap__links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+.fromcomp-sitemap__link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.fromcomp-sitemap__link-item:hover {
+  background: #edf2f7;
+}
+
+.fromcomp-sitemap__checkbox {
+  width: 1.2rem;
+  height: 1.2rem;
+  cursor: pointer;
+}
+
+.fromcomp-sitemap__url {
+  font-size: 0.9rem;
+  color: #4a5568;
+  word-break: break-all;
+}
+
+.fromcomp-sitemap__selected-count {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 1rem;
+  border-top: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.fromcomp-sitemap__btn--primary {
+  background: #38a169;
+}
+
+.fromcomp-sitemap__btn--primary:hover {
+  background: #2f855a;
+}

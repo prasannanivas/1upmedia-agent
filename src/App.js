@@ -48,18 +48,31 @@ import TermsOfService from "./TermsOfService";
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
   const { authState, loading } = useAuth();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(authState.isLoggedIn);
 
   useEffect(() => {
-    console.log("Auth State:", authState);
-    // Check if the user is logged in and set the menu state accordingly
-    setIsLoggedIn(authState.isLoggedIn && authState.email !== null);
-  });
+    console.log(authState);
+    const token = authState.accessToken;
+    const email = authState.email;
+
+    if (token && email) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(authState.isLoggedIn && authState.email !== null);
+    }
+  }, [authState, loading]); // Add loading to dependencies
+
   const location = useLocation(); // Get the current location
 
   // Show a loading indicator while loading session data
   if (loading) {
-    return <Loader />;
+    const token = sessionStorage.getItem("accessToken");
+    const email = sessionStorage.getItem("email");
+
+    if (token && email) {
+      return <Loader />;
+    }
+    return <Navigate to="/login" replace />;
   }
 
   if (!isLoggedIn) {
@@ -71,11 +84,9 @@ const AppWrapper = () => {
         <Route path="/terms" element={<TermsOfService />} />
         <Route
           path="*"
-          element={<Navigate to="/login" state={{ from: location }} />}
-        />
-        <Route
-          path="*"
-          element={<Navigate to="/login" state={{ from: location }} />}
+          element={
+            <Navigate to="/login" replace state={{ from: location.pathname }} />
+          }
         />
       </Routes>
     );

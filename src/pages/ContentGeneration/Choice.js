@@ -11,6 +11,10 @@ const ContentCreationChoice = () => {
       title: "Title + SubHeading",
       route: "/agents/content-creation/by-title-subheading",
     },
+    {
+      title: "From Competitors SiteMap",
+      route: "/agents/content-creation/from-competitors-sitemap",
+    },
     { title: "From Business", route: "/agents/content-creation/from-business" },
     { title: "From Social", route: "/agents/content-creation/from-social" },
     { title: "Full Manual", route: "/agents/content-creation/fully-manual" },

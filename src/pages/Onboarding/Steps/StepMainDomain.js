@@ -5,7 +5,9 @@ import { useAuth } from "../../../context/AuthContext";
 import "./StepMainDomain.css";
 import Loader from "../../../components/Loader";
 
-// Add this at the top of your file, outside the component
+// ───────────────────────────────────────────────────────────
+// Did-You-Know facts (unchanged)
+// ───────────────────────────────────────────────────────────
 const DID_YOU_KNOW_FACTS = [
   {
     title: "Domain Authority (DA)",
@@ -78,11 +80,17 @@ const StepMainDomain = () => {
   const { authState } = useAuth();
   const { email } = authState;
   const navigate = useNavigate();
+
+  /* ── state ───────────────────────────────────────────── */
   const [domain, setDomain] = useState(onboardingData.domain || "");
   const [location, setLocation] = useState(onboardingData.location || "");
   const [analysisData, setAnalysisData] = useState(
     onboardingData.initialAnalysisState
   );
+  const [sitemaps, setSitemaps] = useState([]);
+  const [sitemapError, setSitemapError] = useState("");
+  const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
+  const [selectedSitemaps, setSelectedSitemaps] = useState([]);
 
   useEffect(() => {
     setDomain(onboardingData.domain || "");
@@ -96,6 +104,9 @@ const StepMainDomain = () => {
   const [isValidated, setIsValidated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
+  /* ────────────────────────────────
+     1. Validate domain (unchanged)
+  ──────────────────────────────── */
   const handleValidateDomain = async () => {
     if (!domain) return;
 
@@ -112,7 +123,7 @@ const StepMainDomain = () => {
       setDomain(domainValidation.formattedDomain);
       setIsValidated(true);
 
-      // Show success message
+      // success toast
       const notification = document.createElement("div");
       notification.className =
         "step-main-domain__notification step-main-domain__notification--success";
@@ -127,7 +138,50 @@ const StepMainDomain = () => {
     }
   };
 
-  // Modified analyze domain function
+  /* ────────────────────────────────
+     2. Fetch sitemaps  ⟵ **updated**
+  ──────────────────────────────── */
+  const handleFetchSitemaps = async () => {
+    if (!domain) return;
+
+    setIsFetchingSitemaps(true);
+    setSitemapError("");
+    try {
+      // call your Node backend
+      const res = await fetch(
+        `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(
+          domain
+        )}`,
+        { headers: { Accept: "application/json" } }
+      );
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error || "Failed to fetch sitemaps");
+      }
+
+      const { data } = await res.json(); // { topLevelXML, mainXML, blindXML, ... }
+
+      console.log(data);
+
+      const xmlList = [...(data.mainXML || []), ...(data.blindXML || [])];
+
+      if (xmlList.length) {
+        setSitemaps(xmlList);
+      } else {
+        setSitemapError("No sitemaps found. Please provide manually.");
+      }
+    } catch (err) {
+      setSitemapError(err.message || "Unable to fetch sitemaps.");
+      console.error("Error fetching sitemaps:", err);
+    } finally {
+      setIsFetchingSitemaps(false);
+    }
+  };
+
+  /* ────────────────────────────────
+     3. Analyze domain (unchanged)
+  ──────────────────────────────── */
   const handleAnalyzeDomain = async () => {
     if (!domain || !isValidated) return;
 
@@ -139,9 +193,7 @@ const StepMainDomain = () => {
         "https://ai.1upmedia.com:443/get-domain-authority",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             site_url: `https://${domain}`,
             include_majestic: true,
@@ -173,165 +225,51 @@ const StepMainDomain = () => {
     }
   };
 
-  // Add this function at the top of your component, outside the main function
+  /* ────────────────────────────────
+     Helpers (unchanged)
+  ──────────────────────────────── */
   const checkDomainStatus = async (url) => {
     try {
-      const response = await fetch(url, {
-        method: "HEAD",
-        mode: "no-cors", // This is important as we're checking external domains
-      });
+      await fetch(url, { method: "HEAD", mode: "no-cors" });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   };
 
-  // Add this function to format and validate the domain
   const formatAndValidateDomain = async (rawDomain) => {
-    // Remove any white space and convert to lowercase
     let formattedDomain = rawDomain.trim().toLowerCase();
-
-    // Remove any existing protocol
     formattedDomain = formattedDomain.replace(/^(https?:\/\/)?(www\.)?/, "");
-
-    // Remove any paths or query parameters
     formattedDomain = formattedDomain.split("/")[0];
 
-    // Array of protocols to try
     const protocols = ["https://", "http://"];
-
-    // Try with www and without www
     const variations = [formattedDomain, `www.${formattedDomain}`];
 
-    // Try different combinations of protocols and www
     for (const protocol of protocols) {
       for (const variation of variations) {
         const urlToTry = `${protocol}${variation}`;
         const isAccessible = await checkDomainStatus(urlToTry);
-
         if (isAccessible) {
-          return {
-            success: true,
-            url: urlToTry,
-            formattedDomain: variation,
-          };
+          return { success: true, url: urlToTry, formattedDomain: variation };
         }
       }
     }
-
     return {
       success: false,
       error: "Could not establish a connection to the domain",
     };
   };
 
-  // Update your handleAnalyzeDomain function
-  // const handleAnalyzeDomain = async () => {
-  //   if (!domain) return;
-
-  //   setIsAnalyzing(true);
-  //   setError("");
-
-  //   try {
-  //     // First validate and format the domain
-  //     const domainValidation = await formatAndValidateDomain(domain);
-
-  //     if (!domainValidation.success) {
-  //       throw new Error(domainValidation.error);
-  //     }
-
-  //     // Use the validated and formatted domain for analysis
-  //     const response = await fetch(
-  //       "https://ai.1upmedia.com:443/get-domain-authority",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           site_url: domainValidation.url,
-  //           include_majestic: true,
-  //         }),
-  //       }
-  //     );
-
-  //     const { detail } = await response.json();
-  //     const data = detail;
-
-  //     if (!response.ok) {
-  //       throw new Error(data.message || "Failed to analyze domain");
-  //     }
-
-  //     const analysisResult = {
-  //       domainAuthority: data.domain_authority,
-  //       pageAuthority: data.page_authority,
-  //       trustFlow: data.majestic?.majesticTF || 5,
-  //       citationFlow: data.majestic?.majesticCF || 32,
-  //     };
-
-  //     setAnalysisData(analysisResult);
-  //     onboardingData.initialAnalysisState = analysisResult;
-
-  //     // Update the domain state with the properly formatted domain
-  //     setDomain(domainValidation.formattedDomain);
-  //   } catch (error) {
-  //     setError(error.message || "Failed to analyze domain. Please try again.");
-  //     console.error("Error analyzing domain:", error);
-  //   } finally {
-  //     setIsAnalyzing(false);
-  //   }
-  // };
-
-  // const handleAnalyzeDomain = async () => {
-  //   if (!domain) return;
-
-  //   setIsAnalyzing(true);
-  //   setError("");
-
-  //   try {
-  //     const response = await fetch(
-  //       "https://ai.1upmedia.com:443/get-domain-authority",
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({ site_url: domain, include_majestic: true }),
-  //       }
-  //     );
-
-  //     const { detail } = await response.json();
-  //     const data = detail;
-
-  //     if (!response.ok) {
-  //       throw new Error(data.message || "Failed to analyze domain");
-  //     }
-
-  //     const analysisResult = {
-  //       domainAuthority: data.domain_authority,
-  //       pageAuthority: data.page_authority,
-  //       trustFlow: data.majestic?.majesticTF || 5,
-  //       citationFlow: data.majestic?.majesticCF || 32,
-  //     };
-
-  //     setAnalysisData(analysisResult);
-  //     onboardingData.initialAnalysisState = analysisResult;
-  //   } catch (error) {
-  //     setError("Failed to analyze domain. Please try again.");
-  //     console.error("Error analyzing domain:", error);
-  //   } finally {
-  //     setIsAnalyzing(false);
-  //   }
-  // };
-
+  /* ────────────────────────────────
+     Save + next ⟵ **updated**
+  ──────────────────────────────── */
   const handleSave = async () => {
     try {
       const filteredSiteData = {
         URL: domain,
         location,
-        dynamic_fields: {
-          ...analysisData,
-        },
+        dynamic_fields: { ...analysisData },
+        sitemaps: selectedSitemaps,
       };
 
       const response = await fetch(
@@ -339,16 +277,11 @@ const StepMainDomain = () => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            siteData: filteredSiteData,
-          }),
+          body: JSON.stringify({ email, siteData: filteredSiteData }),
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to save domain details");
-      }
+      if (!response.ok) throw new Error("Failed to save domain details");
 
       const notification = document.createElement("div");
       notification.className =
@@ -372,6 +305,9 @@ const StepMainDomain = () => {
     navigate("/onboarding/step-keywords");
   };
 
+  /* ────────────────────────────────
+     Render
+  ──────────────────────────────── */
   if (loading) {
     return (
       <div className="step-main-domain__loading">
@@ -398,7 +334,7 @@ const StepMainDomain = () => {
             <div
               className="step-main-domain__metric-progress"
               style={{ width: `${value}%` }}
-            ></div>
+            />
           </div>
         </div>
       </label>
@@ -411,6 +347,7 @@ const StepMainDomain = () => {
 
       {error && <div className="step-main-domain__error">{error}</div>}
 
+      {/* ── domain input + buttons ─────────────────── */}
       <div className="step-main-domain__input-group">
         <div className="step-main-domain__input-wrapper">
           <label className="step-main-domain__label">
@@ -421,7 +358,7 @@ const StepMainDomain = () => {
                 value={domain}
                 onChange={(e) => {
                   setDomain(e.target.value);
-                  setIsValidated(false); // Reset validation when input changes
+                  setIsValidated(false);
                 }}
                 placeholder="Enter your domain (e.g., example.com)"
                 className={`step-main-domain__input ${
@@ -441,22 +378,41 @@ const StepMainDomain = () => {
 
         <div className="step-main-domain__action-container">
           {!isValidated ? (
-            <button
-              onClick={handleValidateDomain}
-              disabled={!domain || isValidating}
-              className={`step-main-domain__validate-btn ${
-                isValidating ? "step-main-domain__validate-btn--validating" : ""
-              }`}
-            >
-              {isValidating ? (
-                <>
-                  <span className="step-main-domain__spinner-small"></span>
-                  Validating Site...
-                </>
-              ) : (
-                "Validate Site"
-              )}
-            </button>
+            <>
+              <button
+                onClick={handleValidateDomain}
+                disabled={!domain || isValidating}
+                className={`step-main-domain__validate-btn ${
+                  isValidating
+                    ? "step-main-domain__validate-btn--validating"
+                    : ""
+                }`}
+              >
+                {isValidating ? (
+                  <>
+                    <span className="step-main-domain__spinner-small" />
+                    Validating Site...
+                  </>
+                ) : (
+                  "Validate Site"
+                )}
+              </button>
+
+              <button
+                onClick={handleFetchSitemaps}
+                disabled={!domain || isFetchingSitemaps}
+                className="step-main-domain__sitemap-btn"
+              >
+                {isFetchingSitemaps ? (
+                  <>
+                    <span className="step-main-domain__spinner-small" />
+                    Fetching Sitemaps...
+                  </>
+                ) : (
+                  "Fetch Sitemaps"
+                )}
+              </button>
+            </>
           ) : (
             <button
               onClick={handleAnalyzeDomain}
@@ -467,7 +423,7 @@ const StepMainDomain = () => {
             >
               {isAnalyzing ? (
                 <>
-                  <span className="step-main-domain__spinner-small"></span>
+                  <span className="step-main-domain__spinner-small" />
                   Fetching Site Metrics...
                 </>
               ) : (
@@ -476,8 +432,63 @@ const StepMainDomain = () => {
             </button>
           )}
         </div>
+
+        {(sitemaps.length > 0 || sitemapError) && (
+          <div className="step-main-domain__sitemaps">
+            <h4>Sitemaps</h4>
+            {sitemapError ? (
+              <div className="step-main-domain__sitemap-error">
+                {sitemapError}
+              </div>
+            ) : (
+              <div className="step-main-domain__sitemap-container">
+                <div className="step-main-domain__sitemap-header">
+                  <label className="step-main-domain__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={selectedSitemaps.length === sitemaps.length}
+                      onChange={(e) => {
+                        setSelectedSitemaps(
+                          e.target.checked ? [...sitemaps] : []
+                        );
+                      }}
+                    />
+                    Select All
+                  </label>
+                </div>
+                <ul className="step-main-domain__sitemap-list">
+                  {sitemaps.map((sitemap, index) => (
+                    <li key={index} className="step-main-domain__sitemap-item">
+                      <label className="step-main-domain__checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectedSitemaps.includes(sitemap)}
+                          onChange={(e) => {
+                            setSelectedSitemaps((prev) =>
+                              e.target.checked
+                                ? [...prev, sitemap]
+                                : prev.filter((s) => s !== sitemap)
+                            );
+                          }}
+                        />
+                        <a
+                          href={sitemap}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {sitemap}
+                        </a>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* ── analysis metrics ───────────────────────── */}
       {analysisData.domainAuthority && (
         <div className="step-main-domain__analysis">
           <h3 className="step-main-domain__subtitle">Site Analysis Results</h3>
@@ -486,46 +497,35 @@ const StepMainDomain = () => {
               label="Domain Authority (DA)"
               value={analysisData.domainAuthority}
               onChange={(value) =>
-                setAnalysisData((prev) => ({
-                  ...prev,
-                  domainAuthority: value,
-                }))
+                setAnalysisData((prev) => ({ ...prev, domainAuthority: value }))
               }
             />
             <MetricInput
               label="Page Authority (PA)"
               value={analysisData.pageAuthority}
               onChange={(value) =>
-                setAnalysisData((prev) => ({
-                  ...prev,
-                  pageAuthority: value,
-                }))
+                setAnalysisData((prev) => ({ ...prev, pageAuthority: value }))
               }
             />
             <MetricInput
               label="Trust Flow"
               value={analysisData.trustFlow}
               onChange={(value) =>
-                setAnalysisData((prev) => ({
-                  ...prev,
-                  trustFlow: value,
-                }))
+                setAnalysisData((prev) => ({ ...prev, trustFlow: value }))
               }
             />
             <MetricInput
               label="Citation Flow"
               value={analysisData.citationFlow}
               onChange={(value) =>
-                setAnalysisData((prev) => ({
-                  ...prev,
-                  citationFlow: value,
-                }))
+                setAnalysisData((prev) => ({ ...prev, citationFlow: value }))
               }
             />
           </div>
         </div>
       )}
 
+      {/* ── location input ─────────────────────────── */}
       <label className="step-main-domain__label">
         <strong>Location:</strong>
         <input
@@ -537,6 +537,7 @@ const StepMainDomain = () => {
         />
       </label>
 
+      {/* ── action buttons ─────────────────────────── */}
       <div className="step-main-domain__button-group">
         <button
           onClick={handleSave}

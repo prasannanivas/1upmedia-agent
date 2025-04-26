@@ -6,12 +6,19 @@ import { useSocialMedia } from "./SocialMediaContext";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [authState, setAuthState] = useState({
-    isLoggedIn: false,
-    accessToken: null,
-    name: null,
-    profilePicture: null,
-    email: null,
+  const [authState, setAuthState] = useState(() => {
+    const token = sessionStorage.getItem("accessToken");
+    const name = sessionStorage.getItem("name");
+    const profilePicture = sessionStorage.getItem("profilePicture");
+    const email = sessionStorage.getItem("email");
+
+    return {
+      isLoggedIn: !!token && !!email,
+      accessToken: token || null,
+      name: name || null,
+      profilePicture: profilePicture || null,
+      email: email || null,
+    };
   });
   const [loading, setLoading] = useState(true); // Add a loading state
   const [redirectPath, setRedirectPath] = useState(null); // To store redirect path
@@ -32,23 +39,8 @@ export const AuthProvider = ({ children }) => {
 
   const { PositiveToast } = useToast();
   useEffect(() => {
-    // Load stored session data on app load
-    setLoading(true);
-    const token = sessionStorage.getItem("accessToken");
-    const name = sessionStorage.getItem("name");
-    const profilePicture = sessionStorage.getItem("profilePicture");
-    const email = sessionStorage.getItem("email");
-    if (token) {
-      setAuthState({
-        isLoggedIn: true,
-        accessToken: token,
-        name,
-        profilePicture,
-        email,
-      });
-    }
-    setLoading(false); // Mark loading as complete
-  }, []);
+    setLoading(false);
+  }, []); // Empty dependency array since we only want this to run once
 
   const login = (token, name, profilePicture, email) => {
     console.log("login called");

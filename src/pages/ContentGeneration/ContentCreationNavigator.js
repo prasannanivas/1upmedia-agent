@@ -13,6 +13,7 @@ import CreateQuickContents from "./CreateQuickContents";
 import BySeoIdeas from "./BySeoIdeas";
 import GenerateCalendarSeoIdeas from "./GenerateCalendarSeoIdeas";
 import { Center } from "@chakra-ui/react";
+import FromCompSitemap from "./FromCompSitemap";
 
 const ContentGenerationNavigator = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const ContentGenerationNavigator = () => {
         <Route path="by-keyword" element={<ByKeyword />} />
         <Route path="by-idea" element={<ByIdea />} />
         <Route path="by-title-subheading" element={<BytitleAndSubheading />} />
+        <Route path="from-competitors-sitemap" element={<FromCompSitemap />} />
         <Route path="from-business" element={<FromBusiness />} />
         <Route path="fully-manual" element={<ContentGenerator />} />
         <Route path="from-social" element={<SocialNavigation />} />
