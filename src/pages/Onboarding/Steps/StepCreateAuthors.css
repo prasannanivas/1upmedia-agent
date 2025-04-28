@@ -1,6 +1,28 @@
+/* Add these new styles at the top of the file */
+.split-layout-container {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.split-layout-left,
+.split-layout-right {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.split-layout-left {
+  border-right: 1px solid #e2e8f0;
+}
+
 .step-create-authors-container {
-  max-width: 700px;
-  margin: auto;
+  max-width: 100%;
+  /* Changed from 700px */
+  margin: 0;
+  /* Changed from auto */
   padding: 20px;
   background: #fff;
   border-radius: 10px;
@@ -198,5 +220,25 @@
 
   .step-create-authors-title {
     font-size: 1.8rem;
+  }
+}
+
+/* Add responsive styles */
+@media (max-width: 1024px) {
+  .split-layout-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .split-layout-left,
+  .split-layout-right {
+    width: 100%;
+    height: auto;
+    padding: 10px;
+  }
+
+  .split-layout-left {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
   }
 }

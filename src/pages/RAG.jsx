@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react"; // Add useEffect
+import React, { useState, useEffect } from "react";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { useAuth } from "../context/AuthContext";
 import "./RAG.css";
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function RAG() {
   const { authState } = useAuth();
@@ -22,13 +27,63 @@ function RAG() {
   const [strengthData, setStrengthData] = useState(null);
   const [generatedContent, setGeneratedContent] = useState(null);
   const [contentTopic, setContentTopic] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
 
-  /* Add useEffect to load summary on mount */
+  const [chunksData] = useState({
+    totalChunks: 2,
+    maxRecommendedChunks: 10,
+  });
+
+  const chunksChartData = {
+    labels: ["Current Chunks", "Recommended More"],
+    datasets: [
+      {
+        data: [
+          chunksData.totalChunks,
+          chunksData.maxRecommendedChunks - chunksData.totalChunks,
+        ],
+        backgroundColor: [
+          "rgba(75, 192, 192, 0.8)",
+          "rgba(211, 211, 211, 0.3)",
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  /* Add useEffect to load summary and strength on mount */
   useEffect(() => {
     if (email) {
       handleCheckSummary();
+      handleCheckStrength(); // Add strength check on mount
     }
   }, [email]);
+
+  const strengthChartData = {
+    labels: ["Strength Score"],
+    datasets: [
+      {
+        data: [
+          strengthData?.strengthScore || 0,
+          100 - (strengthData?.strengthScore || 0),
+        ],
+        backgroundColor: [
+          "rgba(54, 162, 235, 0.8)",
+          "rgba(211, 211, 211, 0.3)",
+        ],
+        borderWidth: 0,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    cutout: "70%",
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  };
 
   /* ──────────────────────────────────────────────────────────────────────
      Handlers for link array
@@ -210,13 +265,93 @@ function RAG() {
      ────────────────────────────────────────────────────────────────────── */
   return (
     <div className="rag-container">
-      {/* Show summary at the top if available */}
-      {summaryData && (
-        <div className="rag-summary">
-          <h3>Your RAG Summary:</h3>
-          <p>{summaryData.message}</p>
+      {/* Strength Overview */}
+      {strengthData && (
+        <div className="rag-strength-overview">
+          <div className="strength-chart">
+            <div
+              style={{ width: "200px", height: "200px", position: "relative" }}
+            >
+              <Doughnut data={strengthChartData} options={chartOptions} />
+              <div className="chart-center-text">
+                <strong>{strengthData.strengthScore}</strong>
+                <span>/{100}</span>
+              </div>
+            </div>
+            <div className="strength-level">
+              <h3>{strengthData.strengthLevel}</h3>
+              <button
+                className="rag-button-secondary"
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? "Hide Details" : "Show Details"}
+              </button>
+            </div>
+          </div>
+
+          {showDetails && (
+            <div className="strength-details">
+              <div className="quality-description">
+                <h4>Analysis</h4>
+                <p>{strengthData.qualityDescription}</p>
+              </div>
+
+              <div className="recommendations">
+                <h4>Recommendations</h4>
+                <div className="recommendation-cards">
+                  {strengthData.recommendations.map((rec, index) => (
+                    <div
+                      key={index}
+                      className={`rec-card priority-${rec.priority.toLowerCase()}`}
+                    >
+                      <h5>{rec.aspect}</h5>
+                      <p>{rec.suggestion}</p>
+                      <div className="rec-metrics">
+                        <span>Current: {rec.current}</span>
+                        <span>→</span>
+                        <span>Target: {rec.target}</span>
+                      </div>
+                      <div className="priority-badge">{rec.priority}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
+
+      {/* Chunks Overview */}
+      {/* <div className="rag-chunks-overview">
+        <div className="chunks-chart">
+          <div
+            style={{ width: "200px", height: "200px", position: "relative" }}
+          >
+            <Doughnut data={chunksChartData} options={chartOptions} />
+            <div className="chart-center-text">
+              <strong>{chunksData.totalChunks}</strong>
+              <span>/{chunksData.maxRecommendedChunks}</span>
+            </div>
+          </div>
+          <div className="chunks-info">
+            <h3>RAG Chunks Status</h3>
+            <p>
+              Current chunks: <strong>{chunksData.totalChunks}</strong>
+            </p>
+            <p className="chunks-recommendation">
+              More chunks = More accurate results
+              {chunksData.totalChunks < chunksData.maxRecommendedChunks && (
+                <span className="recommendation-text">
+                  Add {chunksData.maxRecommendedChunks - chunksData.totalChunks}{" "}
+                  more documents for optimal performance
+                </span>
+              )}
+            </p>
+          </div> 
+        </div>
+      </div> */}
+
+      {/* Rest of the component */}
       {isLoading ? (
         <div className="rag-loader-wrap">
           <div className="rag-spinner"></div>
@@ -309,41 +444,6 @@ function RAG() {
           </button>
         </div>
       )}
-      {/* Add after the persona prompt section */}(
-      <div className="rag-actions">
-        <button
-          type="button"
-          onClick={handleCheckStrength}
-          className="rag-button-secondary"
-        >
-          Analyze RAG Strength
-        </button>
-      </div>
-      )
-      {strengthData && (
-        <div className="rag-strength">
-          <h3>RAG Strength Analysis</h3>
-          <div className="strength-score">
-            <p>Strength Score: {strengthData.strengthScore}/100</p>
-            <p>Level: {strengthData.strengthLevel}</p>
-            <p>{strengthData.qualityDescription}</p>
-          </div>
-          <div className="strength-recommendations">
-            <h4>Recommendations:</h4>
-            <ul>
-              {strengthData.recommendations.map((rec, index) => (
-                <li key={index}>
-                  <strong>{rec.aspect}</strong>: {rec.suggestion}
-                  <br />
-                  Current: {rec.current} → Target: {rec.target}
-                  <br />
-                  Priority: {rec.priority}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
       {/* Show persona prompt */}
       {personaPrompt && (
         <div className="rag-persona">
@@ -351,18 +451,9 @@ function RAG() {
           <pre style={{ whiteSpace: "pre-wrap" }}>{personaPrompt}</pre>
         </div>
       )}
-      {/* Show strength analysis */}
-      {strengthData && (
-        <div className="rag-strength">
-          <h3>Strength Analysis:</h3>
-          <pre style={{ whiteSpace: "pre-wrap" }}>
-            {JSON.stringify(strengthData, null, 2)}
-          </pre>
-        </div>
-      )}
       {/* Content Generation Form */}
       <div className="rag-content-generation">
-        <h3>Generate Content</h3>
+        <h3>Generate Content to Test your RAG!</h3>
         <form onSubmit={handleGenerateContent}>
           <input
             type="text"
