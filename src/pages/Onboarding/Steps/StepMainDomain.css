@@ -178,6 +178,11 @@
   background: #ffffff;
 }
 
+.step-main-domain__input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 .step-main-domain__analyze-btn {
   padding: 0.75rem 1.5rem;
   background: #3b82f6;
@@ -223,8 +228,14 @@
 }
 
 .step-main-domain__spinner-small {
+  display: inline-block;
   width: 16px;
   height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
 }
 
 @keyframes spin {
@@ -317,6 +328,11 @@
 
 .step-main-domain__save-btn:hover:not(:disabled) {
   background: #e2e8f0;
+}
+
+.step-main-domain__save-btn--saving {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .step-main-domain__next-btn {
@@ -476,6 +492,8 @@
 
 .step-main-domain__input-container {
   position: relative;
+  gap: 10px;
+  align-items: center;
 }
 
 .step-main-domain__validation-success {
@@ -636,6 +654,29 @@
   text-decoration: underline;
 }
 
+.step-main-domain__get-location-btn {
+  padding: 8px 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.step-main-domain__get-location-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.step-main-domain__get-location-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.step-main-domain__get-location-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -646,6 +687,11 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Prevent double-clicks on all buttons when loading */
+button:disabled {
+  pointer-events: none;
 }
 
 /* Dark mode adjustments */

@@ -91,6 +91,9 @@ const StepMainDomain = () => {
   const [sitemapError, setSitemapError] = useState("");
   const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
   const [selectedSitemaps, setSelectedSitemaps] = useState([]);
+  const [isSitemapValidated, setIsSitemapValidated] = useState(false);
+  const [isLocationLoading, setIsLocationLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setDomain(onboardingData.domain || "");
@@ -105,52 +108,30 @@ const StepMainDomain = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   /* ────────────────────────────────
-     1. Validate domain (unchanged)
+     1. Validate domain ⟵ **updated**
   ──────────────────────────────── */
   const handleValidateDomain = async () => {
     if (!domain) return;
 
     setIsValidating(true);
     setError("");
+    setSitemapError("");
 
     try {
+      // 1. First validate the domain
       const domainValidation = await formatAndValidateDomain(domain);
 
       if (!domainValidation.success) {
         throw new Error(domainValidation.error);
       }
 
+      console.log("Domain validation successful:", domainValidation);
       setDomain(domainValidation.formattedDomain);
-      setIsValidated(true);
 
-      // success toast
-      const notification = document.createElement("div");
-      notification.className =
-        "step-main-domain__notification step-main-domain__notification--success";
-      notification.textContent = "Domain validated successfully!";
-      document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
-    } catch (error) {
-      setError(error.message || "Failed to validate domain. Please try again.");
-      console.error("Error validating domain:", error);
-    } finally {
-      setIsValidating(false);
-    }
-  };
-
-  /* ────────────────────────────────
-     2. Fetch sitemaps  ⟵ **updated**
-  ──────────────────────────────── */
-  const handleFetchSitemaps = async () => {
-    if (!domain) return;
-
-    setIsFetchingSitemaps(true);
-    setSitemapError("");
-    try {
-      // call your Node backend
+      // 2. Then fetch sitemaps
       const res = await fetch(
         `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(
-          domain
+          domainValidation.formattedDomain
         )}`,
         { headers: { Accept: "application/json" } }
       );
@@ -160,27 +141,39 @@ const StepMainDomain = () => {
         throw new Error(error || "Failed to fetch sitemaps");
       }
 
-      const { data } = await res.json(); // { topLevelXML, mainXML, blindXML, ... }
-
-      console.log(data);
-
+      const { data } = await res.json();
       const xmlList = [...(data.mainXML || []), ...(data.blindXML || [])];
 
       if (xmlList.length) {
         setSitemaps(xmlList);
+        setIsSitemapValidated(true);
       } else {
         setSitemapError("No sitemaps found. Please provide manually.");
       }
-    } catch (err) {
-      setSitemapError(err.message || "Unable to fetch sitemaps.");
-      console.error("Error fetching sitemaps:", err);
+      setIsValidated(true);
+
+      // Show success notification
+      const notification = document.createElement("div");
+      notification.className =
+        "step-main-domain__notification step-main-domain__notification--success";
+      notification.textContent = "Domain validated successfully!";
+      document.body.appendChild(notification);
+      setTimeout(() => notification.remove(), 3000);
+    } catch (error) {
+      setError(error.message || "Failed to validate domain. Please try again.");
+      console.error("Error validating domain:", error);
+      setIsValidated(false);
+      setIsSitemapValidated(false);
     } finally {
-      setIsFetchingSitemaps(false);
+      setIsValidating(false);
     }
   };
 
   /* ────────────────────────────────
-     3. Analyze domain (unchanged)
+     2. Fetch sitemaps (unchanged)
+
+  /* ────────────────────────────────
+     3. Analyze domain (updated)
   ──────────────────────────────── */
   const handleAnalyzeDomain = async () => {
     if (!domain || !isValidated) return;
@@ -189,7 +182,8 @@ const StepMainDomain = () => {
     setError("");
 
     try {
-      const response = await fetch(
+      // First fetch domain metrics
+      const metricsResponse = await fetch(
         "https://ai.1upmedia.com:443/get-domain-authority",
         {
           method: "POST",
@@ -201,11 +195,25 @@ const StepMainDomain = () => {
         }
       );
 
-      const { detail } = await response.json();
+      const { detail } = await metricsResponse.json();
       const data = detail;
 
-      if (!response.ok) {
+      if (!metricsResponse.ok) {
         throw new Error(data.message || "Failed to analyze domain");
+      }
+
+      // Then fetch business location
+      const locationResponse = await fetch(
+        `https://ai.1upmedia.com:443/get-business-location?url=${encodeURIComponent(
+          domain
+        )}`
+      );
+
+      if (locationResponse.ok) {
+        const locationData = await locationResponse.json();
+        if (locationData.detail) {
+          setLocation(locationData.detail);
+        }
       }
 
       const analysisResult = {
@@ -261,9 +269,12 @@ const StepMainDomain = () => {
   };
 
   /* ────────────────────────────────
-     Save + next ⟵ **updated**
+     Save + next (updated)
   ──────────────────────────────── */
   const handleSave = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
     try {
       const filteredSiteData = {
         URL: domain,
@@ -292,6 +303,8 @@ const StepMainDomain = () => {
     } catch (error) {
       console.error("Error saving domain details:", error);
       setError("Failed to save domain details. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -347,7 +360,7 @@ const StepMainDomain = () => {
 
       {error && <div className="step-main-domain__error">{error}</div>}
 
-      {/* ── domain input + buttons ─────────────────── */}
+      {/* ── domain input + buttons ⟵ **updated** ─────────────────── */}
       <div className="step-main-domain__input-group">
         <div className="step-main-domain__input-wrapper">
           <label className="step-main-domain__label">
@@ -359,6 +372,7 @@ const StepMainDomain = () => {
                 onChange={(e) => {
                   setDomain(e.target.value);
                   setIsValidated(false);
+                  setIsSitemapValidated(false);
                 }}
                 placeholder="Enter your domain (e.g., example.com)"
                 className={`step-main-domain__input ${
@@ -372,47 +386,93 @@ const StepMainDomain = () => {
                   <span>Site validated successfully!</span>
                 </div>
               )}
+              {isSitemapValidated && (
+                <div className="step-main-domain__validation-success">
+                  <CheckMarkIcon />
+                  <span>Sitemaps found successfully!</span>
+                </div>
+              )}
+
+              {(sitemaps.length > 0 || sitemapError) && (
+                <div className="step-main-domain__sitemaps">
+                  <h4>Sitemaps</h4>
+                  {sitemapError ? (
+                    <div className="step-main-domain__sitemap-error">
+                      {sitemapError}
+                    </div>
+                  ) : (
+                    <div className="step-main-domain__sitemap-container">
+                      <div className="step-main-domain__sitemap-header">
+                        <label className="step-main-domain__checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={
+                              selectedSitemaps.length === sitemaps.length
+                            }
+                            onChange={(e) => {
+                              setSelectedSitemaps(
+                                e.target.checked ? [...sitemaps] : []
+                              );
+                            }}
+                          />
+                          Select All
+                        </label>
+                      </div>
+                      <ul className="step-main-domain__sitemap-list">
+                        {sitemaps.map((sitemap, index) => (
+                          <li
+                            key={index}
+                            className="step-main-domain__sitemap-item"
+                          >
+                            <label className="step-main-domain__checkbox-label">
+                              <input
+                                type="checkbox"
+                                checked={selectedSitemaps.includes(sitemap)}
+                                onChange={(e) => {
+                                  setSelectedSitemaps((prev) =>
+                                    e.target.checked
+                                      ? [...prev, sitemap]
+                                      : prev.filter((s) => s !== sitemap)
+                                  );
+                                }}
+                              />
+                              <a
+                                href={sitemap}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {sitemap}
+                              </a>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </label>
         </div>
 
         <div className="step-main-domain__action-container">
           {!isValidated ? (
-            <>
-              <button
-                onClick={handleValidateDomain}
-                disabled={!domain || isValidating}
-                className={`step-main-domain__validate-btn ${
-                  isValidating
-                    ? "step-main-domain__validate-btn--validating"
-                    : ""
-                }`}
-              >
-                {isValidating ? (
-                  <>
-                    <span className="step-main-domain__spinner-small" />
-                    Validating Site...
-                  </>
-                ) : (
-                  "Validate Site"
-                )}
-              </button>
-
-              <button
-                onClick={handleFetchSitemaps}
-                disabled={!domain || isFetchingSitemaps}
-                className="step-main-domain__sitemap-btn"
-              >
-                {isFetchingSitemaps ? (
-                  <>
-                    <span className="step-main-domain__spinner-small" />
-                    Fetching Sitemaps...
-                  </>
-                ) : (
-                  "Fetch Sitemaps"
-                )}
-              </button>
-            </>
+            <button
+              onClick={handleValidateDomain}
+              disabled={!domain || isValidating}
+              className={`step-main-domain__validate-btn ${
+                isValidating ? "step-main-domain__validate-btn--validating" : ""
+              }`}
+            >
+              {isValidating ? (
+                <>
+                  <span className="step-main-domain__spinner-small" />
+                  Validating Site...
+                </>
+              ) : (
+                "Validate Site"
+              )}
+            </button>
           ) : (
             <button
               onClick={handleAnalyzeDomain}
@@ -432,60 +492,6 @@ const StepMainDomain = () => {
             </button>
           )}
         </div>
-
-        {(sitemaps.length > 0 || sitemapError) && (
-          <div className="step-main-domain__sitemaps">
-            <h4>Sitemaps</h4>
-            {sitemapError ? (
-              <div className="step-main-domain__sitemap-error">
-                {sitemapError}
-              </div>
-            ) : (
-              <div className="step-main-domain__sitemap-container">
-                <div className="step-main-domain__sitemap-header">
-                  <label className="step-main-domain__checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={selectedSitemaps.length === sitemaps.length}
-                      onChange={(e) => {
-                        setSelectedSitemaps(
-                          e.target.checked ? [...sitemaps] : []
-                        );
-                      }}
-                    />
-                    Select All
-                  </label>
-                </div>
-                <ul className="step-main-domain__sitemap-list">
-                  {sitemaps.map((sitemap, index) => (
-                    <li key={index} className="step-main-domain__sitemap-item">
-                      <label className="step-main-domain__checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={selectedSitemaps.includes(sitemap)}
-                          onChange={(e) => {
-                            setSelectedSitemaps((prev) =>
-                              e.target.checked
-                                ? [...prev, sitemap]
-                                : prev.filter((s) => s !== sitemap)
-                            );
-                          }}
-                        />
-                        <a
-                          href={sitemap}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {sitemap}
-                        </a>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ── analysis metrics ───────────────────────── */}
@@ -526,29 +532,77 @@ const StepMainDomain = () => {
       )}
 
       {/* ── location input ─────────────────────────── */}
-      <label className="step-main-domain__label">
-        <strong>Location:</strong>
-        <input
-          type="text"
-          value={location}
-          onChange={(e) => setLocation(e.target.value)}
-          placeholder="Enter your location (e.g., New York, USA)"
-          className="step-main-domain__input"
-        />
-      </label>
+      <div className="step-main-domain__input-group">
+        <label className="step-main-domain__label">
+          <strong>Location:</strong>
+          <div className="step-main-domain__input-container">
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Enter your location (e.g., New York, USA)"
+              className="step-main-domain__input"
+              disabled={isLocationLoading}
+            />
+            <button
+              onClick={async () => {
+                setIsLocationLoading(true);
+                try {
+                  const response = await fetch(
+                    `https://ai.1upmedia.com:443/get-business-location?url=${encodeURIComponent(
+                      domain
+                    )}`
+                  );
+                  if (response.ok) {
+                    const data = await response.json();
+                    if (data.detail) {
+                      setLocation(data.detail);
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error fetching location:", error);
+                  setError("Failed to fetch location");
+                } finally {
+                  setIsLocationLoading(false);
+                }
+              }}
+              className="step-main-domain__get-location-btn"
+              disabled={!domain || isLocationLoading}
+            >
+              {isLocationLoading ? (
+                <>
+                  <span className="step-main-domain__spinner-small" />
+                  Loading...
+                </>
+              ) : (
+                "Get Location"
+              )}
+            </button>
+          </div>
+        </label>
+      </div>
 
       {/* ── action buttons ─────────────────────────── */}
       <div className="step-main-domain__button-group">
         <button
           onClick={handleSave}
-          disabled={!domain || !location}
-          className="step-main-domain__save-btn"
+          disabled={!domain || !location || isSaving}
+          className={`step-main-domain__save-btn ${
+            isSaving ? "step-main-domain__save-btn--saving" : ""
+          }`}
         >
-          Save
+          {isSaving ? (
+            <>
+              <span className="step-main-domain__spinner-small" />
+              Saving...
+            </>
+          ) : (
+            "Save"
+          )}
         </button>
         <button
           onClick={handleNext}
-          disabled={!domain || !location}
+          disabled={!domain || !location || isSaving}
           className="step-main-domain__next-btn"
         >
           Next
