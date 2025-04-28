@@ -2,9 +2,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useOnboarding } from "../context/OnboardingContext";
 import "./ContentReview.css";
+import { useAuth } from "../context/AuthContext";
 
 const ContentReview = () => {
   const { onboardingData } = useOnboarding();
+  const { authState } = useAuth();
+  const { email } = authState;
 
   // States
   const [keywordData, setKeywordData] = useState([]);
@@ -38,7 +41,7 @@ const ContentReview = () => {
   useEffect(() => {
     if (domain && keywordData.length > 0) {
       const encodedKeywords = encodeURIComponent(JSON.stringify(keywordData));
-      const url = `https://ai.1upmedia.com:443/aiagent/keyword-classify?email=test@1upmedia.com&domain=${domain}&keywords=${encodedKeywords}`;
+      const url = `https://ai.1upmedia.com:443/aiagent/keyword-classify?email=${email}&domain=${domain}&keywords=${encodedKeywords}`;
 
       fetch(url)
         .then((res) => {
