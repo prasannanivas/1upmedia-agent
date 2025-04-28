@@ -227,6 +227,12 @@ function PostsList() {
     return (
       <div>
         <div className="top-actions">{renderFilterControls()}</div>
+        <button
+          onClick={() => navigate("/agents/content-creation/by-seo-ideas")}
+          className="generate-button"
+        >
+          Generate Post
+        </button>
         <div>No posts found.</div>
       </div>
     );

@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   left: -400px;
-  width: auto;
+  width: 20vw;
   height: 100%;
   background-color: var(--primary-color);
   color: var(--text-color);
@@ -54,6 +54,7 @@
   font-size: large;
   display: flex;
   flex-direction: column;
+  font-size: x-large;
 }
 
 .NavBar ul li a {

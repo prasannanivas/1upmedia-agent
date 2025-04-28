@@ -53,9 +53,9 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
       style={{ transition: "left 0.5s ease-in-out" }}
     >
       <ul>
-        <li style={{ fontWeight: "900", marginLeft: 0 }}>
-          <Link style={{ marginLeft: "15px" }} to="/" onClick={handleLinkClick}>
-            Profile
+        <li>
+          <Link to="/" onClick={handleLinkClick}>
+            Dashboard
           </Link>
         </li>
         <li>
@@ -64,18 +64,16 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           </Link>
         </li>
         <li>
-          <Link to="/notifications" onClick={handleLinkClick}>
-            Notifications{" "}
-            {unreadCount > 0 && (
-              <span style={{ fontWeight: "bold" }}>{unreadCount}</span>
-            )}
+          <Link to="/onboarding" onClick={handleLinkClick}>
+            Setup
           </Link>
         </li>
         <li>
-          <Link to="/onboarding" onClick={handleLinkClick}>
-            Onboarding
+          <Link to="/analytics" onClick={handleLinkClick}>
+            Analytics
           </Link>
         </li>
+
         <DropdownMenu
           title="Agents"
           isOpen={dropdowns.agents}
@@ -83,38 +81,42 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           handleLinkClick={handleLinkClick}
           links={agentLinks}
         />
-        <DropdownMenu
+        {/* <DropdownMenu
           title="Boards"
           isOpen={dropdowns.boards}
           toggle={() => toggleDropdown("boards")}
           handleLinkClick={handleLinkClick}
           links={boardLinks}
-        />
-        <li>
-          <Link to="/analytics" onClick={handleLinkClick}>
-            Analytics & Reports
-          </Link>
-        </li>
-        <DropdownMenu
+        /> */}
+
+        {/* <DropdownMenu
           title="Integrations & Connections"
           isOpen={dropdowns.integrations}
           handleLinkClick={handleLinkClick}
           toggle={() => toggleDropdown("integrations")}
           links={integrationLinks}
-        />
+        /> */}
         <DropdownMenu
           title="Settings"
           isOpen={dropdowns.settings}
           toggle={() => toggleDropdown("settings")}
           handleLinkClick={handleLinkClick}
           links={settingsLinks}
-          nestedDropdown={{
-            title: "Advanced Config",
-            isOpen: dropdowns.advancedConfig,
-            toggle: () => toggleDropdown("advancedConfig"),
-            links: advancedConfigLinks,
-          }}
+          // nestedDropdown={{
+          //   title: "Advanced Config",
+          //   isOpen: dropdowns.advancedConfig,
+          //   toggle: () => toggleDropdown("advancedConfig"),
+          //   links: advancedConfigLinks,
+          // }}
         />
+        <li>
+          <Link to="/notifications" onClick={handleLinkClick}>
+            Notifications{" "}
+            {unreadCount > 0 && (
+              <span style={{ fontWeight: "bold" }}>{unreadCount}</span>
+            )}
+          </Link>
+        </li>
         <li>
           <Link to="/login" onClick={logout}>
             Logout
