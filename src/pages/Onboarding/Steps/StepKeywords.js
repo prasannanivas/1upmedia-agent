@@ -31,7 +31,8 @@ const StepKeywords = () => {
   const [GSCdata, setGSCdata] = useState(
     onboardingData.searchConsoleData || {}
   );
-  const [loadingRelated, setLoadingRelated] = useState(false); // New state for loading related keywords
+  const [loadingRelated, setLoadingRelated] = useState(false);
+  const [loadingBusinessKeywords, setLoadingBusinessKeywords] = useState(false);
   const navigate = useNavigate();
 
   const handleAddKeyword = () => {
@@ -79,6 +80,34 @@ const StepKeywords = () => {
     }
   };
 
+  const fetchBusinessKeywords = async () => {
+    if (!siteURL) {
+      alert("Please enter a site URL first");
+      return;
+    }
+
+    setLoadingBusinessKeywords(true);
+    try {
+      const response = await fetch(
+        `https://ai.1upmedia.com:443/get-business-keywords?url=${encodeURIComponent(
+          siteURL
+        )}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch business keywords");
+      const data = await response.json();
+
+      // Add suggested keywords to related keywords list
+      if (data.keywords && Array.isArray(data.keywords)) {
+        setRelatedKeywords((prev) => [...new Set([...prev, ...data.keywords])]);
+      }
+    } catch (error) {
+      console.error("Error fetching business keywords:", error);
+      alert("Error fetching business keywords. Please try again.");
+    } finally {
+      setLoadingBusinessKeywords(false);
+    }
+  };
+
   useEffect(() => {
     setSiteURL(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
@@ -96,23 +125,21 @@ const StepKeywords = () => {
 
   const handleSave = async () => {
     try {
-      // Extract only defined values to avoid sending undefined data
       const filteredSiteData = {
         ...(siteURL && { URL: siteURL }),
         ...(location && { location }),
         ...(keywordList && { keywordList }),
         ...(GSCdata && { search_analytics: GSCdata }),
         dynamic_fields: {
-          ...analysisData, // Preserve existing dynamic fields
+          ...analysisData,
           ...(onboardingData.suggestionsFromAi && {
             suggestions: {
-              ...onboardingData.suggestionsFromAi, // Preserve existing suggestions
+              ...onboardingData.suggestionsFromAi,
             },
           }),
         },
       };
 
-      // Remove empty `dynamic_fields` if no updates
       if (Object.keys(filteredSiteData.dynamic_fields).length === 0) {
         delete filteredSiteData.dynamic_fields;
       }
@@ -121,7 +148,7 @@ const StepKeywords = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email, // Required field
+          email,
           siteData: filteredSiteData,
         }),
       });
@@ -198,6 +225,17 @@ const StepKeywords = () => {
                       <FaSearch /> Find Related Keywords
                     </>
                   )}
+                </button>
+              )}
+              {siteURL && (
+                <button
+                  onClick={fetchBusinessKeywords}
+                  className="step-keywords__business-btn"
+                  disabled={loadingBusinessKeywords}
+                >
+                  {loadingBusinessKeywords
+                    ? "Loading..."
+                    : "Fetch Business Keywords"}
                 </button>
               )}
             </div>
