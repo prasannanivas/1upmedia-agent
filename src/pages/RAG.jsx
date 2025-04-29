@@ -22,12 +22,16 @@ function RAG() {
 
   // Server responses
   const [analysisResponse, setAnalysisResponse] = useState(null);
-  const [summaryData, setSummaryData] = useState(null);
   const [personaPrompt, setPersonaPrompt] = useState(null);
   const [strengthData, setStrengthData] = useState(null);
   const [generatedContent, setGeneratedContent] = useState(null);
   const [contentTopic, setContentTopic] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [contentStrategy, setContentStrategy] = useState(null);
+  const [isEditingStrategy, setIsEditingStrategy] = useState(false);
+  const [isUploadExpanded, setIsUploadExpanded] = useState(false);
+  const [wordCount, setWordCount] = useState(500); // Add this state
+  const [isCustomWordCount, setIsCustomWordCount] = useState(false); // Add this state
 
   const [chunksData] = useState({
     totalChunks: 2,
@@ -54,7 +58,6 @@ function RAG() {
   /* Add useEffect to load summary and strength on mount */
   useEffect(() => {
     if (email) {
-      handleCheckSummary();
       handleCheckStrength(); // Add strength check on mount
     }
   }, [email]);
@@ -98,12 +101,6 @@ function RAG() {
   /* ──────────────────────────────────────────────────────────────────────
      Handlers for file array
      ────────────────────────────────────────────────────────────────────── */
-  const handleAddFileInput = () => setFilesArray([...filesArray, null]);
-  const handleFilesChange = (idx, fileList) => {
-    const newArr = [...filesArray];
-    newArr[idx] = fileList;
-    setFilesArray(newArr);
-  };
 
   const handleRemoveFile = (index) => {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
@@ -148,6 +145,14 @@ function RAG() {
       if (!res.ok) throw new Error(`Analyze error: ${res.status}`);
       const data = await res.json();
       setAnalysisResponse(data);
+
+      // Clear uploads on success
+      setLinks([""]);
+      setFilesArray([]);
+      setUploadedFiles([]);
+
+      // Refresh strength data
+      await handleCheckStrength();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -157,25 +162,7 @@ function RAG() {
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/summary?email=...
-     ────────────────────────────────────────────────────────────────────── */
-  const handleCheckSummary = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `https://ai.1upmedia.com:443/RAG/summary?email=${encodeURIComponent(
-          email
-        )}`
-      );
-      if (!res.ok) throw new Error(`Summary error: ${res.status}`);
-      const data = await res.json();
-      setSummaryData(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+     ────────────────────────────────────────────────────────────────────── *
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/personaPrompt?email=...
@@ -226,6 +213,46 @@ function RAG() {
   };
 
   /* ──────────────────────────────────────────────────────────────────────
+     POST /RAG/analyzeContentStrategy
+     ────────────────────────────────────────────────────────────────────── */
+  const handleAnalyzeStrategy = async (e) => {
+    e.preventDefault();
+    if (!contentTopic.trim()) {
+      setError("Please enter a topic");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        "https://ai.1upmedia.com:443/RAG/analyzeContentStrategy",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            topic: contentTopic,
+            contentPrompt: contentTopic,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error(`Strategy analysis error: ${res.status}`);
+      const data = await res.json();
+      setContentStrategy({
+        ...data.strategy,
+        contributingChunks: data.contributingChunks, // Add contributingChunks to the strategy object
+      });
+      setIsEditingStrategy(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /* ──────────────────────────────────────────────────────────────────────
      POST /RAG/generateContent
      ────────────────────────────────────────────────────────────────────── */
   const handleGenerateContent = async (e) => {
@@ -247,6 +274,8 @@ function RAG() {
           body: JSON.stringify({
             email,
             topic: contentTopic,
+            contentPrompt: contentTopic,
+            wordCount: parseInt(wordCount), // Add this line
           }),
         }
       );
@@ -258,6 +287,13 @@ function RAG() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Add this function with your other handlers
+  const clearStrategy = () => {
+    setContentStrategy(null);
+    setIsEditingStrategy(false);
+    setGeneratedContent(null);
   };
 
   /* ──────────────────────────────────────────────────────────────────────
@@ -321,36 +357,6 @@ function RAG() {
         </div>
       )}
 
-      {/* Chunks Overview */}
-      {/* <div className="rag-chunks-overview">
-        <div className="chunks-chart">
-          <div
-            style={{ width: "200px", height: "200px", position: "relative" }}
-          >
-            <Doughnut data={chunksChartData} options={chartOptions} />
-            <div className="chart-center-text">
-              <strong>{chunksData.totalChunks}</strong>
-              <span>/{chunksData.maxRecommendedChunks}</span>
-            </div>
-          </div>
-          <div className="chunks-info">
-            <h3>RAG Chunks Status</h3>
-            <p>
-              Current chunks: <strong>{chunksData.totalChunks}</strong>
-            </p>
-            <p className="chunks-recommendation">
-              More chunks = More accurate results
-              {chunksData.totalChunks < chunksData.maxRecommendedChunks && (
-                <span className="recommendation-text">
-                  Add {chunksData.maxRecommendedChunks - chunksData.totalChunks}{" "}
-                  more documents for optimal performance
-                </span>
-              )}
-            </p>
-          </div> 
-        </div>
-      </div> */}
-
       {/* Rest of the component */}
       {isLoading ? (
         <div className="rag-loader-wrap">
@@ -358,76 +364,98 @@ function RAG() {
           <p className="rag-processing-text">System is processing...</p>
         </div>
       ) : (
-        <form className="rag-form" onSubmit={handleSubmit}>
-          <h1>Upload to RAG</h1>
-          <p className="rag-welcome">
-            Logged in as <strong>{email}</strong>
-          </p>
-
-          {/* Links */}
-          <label className="rag-label">Add Site Links:</label>
-          {links.map((val, i) => (
-            <input
-              key={i}
-              className="rag-input"
-              type="text"
-              placeholder="https://example.com"
-              value={val}
-              onChange={(e) => handleLinkChange(i, e.target.value)}
-            />
-          ))}
+        <div className="rag-upload-section-wrapper">
           <button
-            type="button"
-            onClick={handleAddLink}
-            className="rag-button-secondary"
+            className="rag-expand-button"
+            onClick={() => setIsUploadExpanded(!isUploadExpanded)}
           >
-            Add Another Link
+            <h1>Upload to RAG {isUploadExpanded ? "▼" : "▶"}</h1>
           </button>
 
-          {/* Files */}
-          <label className="rag-label">Upload Files (PDF/Word/Images):</label>
+          {isUploadExpanded && (
+            <form className="rag-form" onSubmit={handleSubmit}>
+              <p className="rag-welcome">
+                Logged in as <strong>{email}</strong>
+              </p>
 
-          {/* Display uploaded files */}
-          <div className="rag-files-list">
-            {uploadedFiles.map((file, index) => (
-              <div key={index} className="rag-file-item">
-                <span>{file.name}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveFile(index)}
-                  className="rag-file-remove"
-                >
-                  ✕
-                </button>
+              {/* Links */}
+              <label className="rag-label">Add Site Links:</label>
+              {links.map((val, i) => (
+                <input
+                  key={i}
+                  className="rag-input"
+                  type="text"
+                  placeholder="https://example.com"
+                  value={val}
+                  onChange={(e) => handleLinkChange(i, e.target.value)}
+                />
+              ))}
+              <button
+                type="button"
+                onClick={handleAddLink}
+                className="rag-button-secondary"
+              >
+                Add Another Link
+              </button>
+
+              {/* Files */}
+              <label className="rag-label">
+                Upload Files (PDF/Word/Images):
+              </label>
+
+              {/* Display uploaded files */}
+              <div className="rag-files-list">
+                {uploadedFiles.map((file, index) => (
+                  <div key={index} className="rag-file-item">
+                    <span>{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="rag-file-remove"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Upload button or Add more */}
-          <div className="rag-upload-section">
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.doc,.docx,image/*"
-              onChange={(e) => {
-                const files = Array.from(e.target.files);
-                setUploadedFiles((prev) => [...prev, ...files]);
-                setFilesArray((prev) => [...prev, e.target.files]);
-              }}
-              style={{ display: "none" }}
-              id="file-upload"
-            />
-            <label htmlFor="file-upload" className="rag-button-secondary">
-              {uploadedFiles.length === 0
-                ? "Upload Documents"
-                : "Add More Documents"}
-            </label>
-          </div>
+              {/* Upload button or Add more */}
+              <div className="rag-upload-section">
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,image/*"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files);
+                    setUploadedFiles((prev) => [...prev, ...files]);
+                    setFilesArray((prev) => [...prev, e.target.files]);
+                  }}
+                  style={{ display: "none" }}
+                  id="file-upload"
+                />
+                <label htmlFor="file-upload" className="rag-button-secondary">
+                  {uploadedFiles.length === 0
+                    ? "Upload Documents"
+                    : "Add More Documents"}
+                </label>
+              </div>
 
-          <button type="submit" className="rag-button-submit">
-            Submit
-          </button>
-        </form>
+              <button
+                type="submit"
+                className="rag-button-submit"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    Processing<span className="button-spinner"></span>
+                  </>
+                ) : (
+                  "Submit"
+                )}
+              </button>
+            </form>
+          )}
+        </div>
       )}
       {/* Error message */}
       {error && <div style={{ color: "red", marginTop: "1rem" }}>{error}</div>}
@@ -435,15 +463,9 @@ function RAG() {
       {analysisResponse && (
         <div className="rag-success">
           <p>✅ RAG processing successful!</p>
-          <button
-            type="button"
-            onClick={handlePersonaPrompt}
-            className="rag-button-secondary"
-          >
-            Get Persona Prompt
-          </button>
         </div>
       )}
+
       {/* Show persona prompt */}
       {personaPrompt && (
         <div className="rag-persona">
@@ -454,7 +476,11 @@ function RAG() {
       {/* Content Generation Form */}
       <div className="rag-content-generation">
         <h3>Generate Content to Test your RAG!</h3>
-        <form onSubmit={handleGenerateContent}>
+        <form
+          onSubmit={
+            !contentStrategy ? handleAnalyzeStrategy : handleGenerateContent
+          }
+        >
           <input
             type="text"
             className="rag-input"
@@ -462,9 +488,194 @@ function RAG() {
             value={contentTopic}
             onChange={(e) => setContentTopic(e.target.value)}
           />
-          <button type="submit" className="rag-button-submit">
-            Generate Content
-          </button>
+
+          {contentStrategy && isEditingStrategy && (
+            <div className="content-strategy-editor">
+              <h4>Content Strategy</h4>
+              <div className="strategy-field">
+                <label>Content Goal:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.contentGoal}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      contentGoal: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="strategy-field">
+                <label>Target Audience:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.targetAudience}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      targetAudience: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="strategy-field">
+                <label>Audience Needs:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.audienceNeeds}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      audienceNeeds: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="strategy-field">
+                <label>Recommended Tone:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.recommendedTone}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      recommendedTone: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="strategy-field">
+                <label>Core Truth:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.coreTruth}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      coreTruth: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="strategy-field">
+                <label>Call to Action:</label>
+                <input
+                  type="text"
+                  value={contentStrategy.callToAction}
+                  onChange={(e) =>
+                    setContentStrategy({
+                      ...contentStrategy,
+                      callToAction: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          {contentStrategy && (
+            <div className="content-strategy-editor">
+              {/* Contributing Chunks Section */}
+              <div className="contributing-chunks">
+                <h4>Top Contributors for Writing Style</h4>
+                <div className="chunks-list">
+                  {contentStrategy.contributingChunks
+                    ?.sort(
+                      (a, b) => b.similarityPercentage - a.similarityPercentage
+                    )
+                    .slice(0, 4) // Show only top 4 contributors
+                    .map((chunk, index) => (
+                      <div key={index} className="chunk-item">
+                        <span className="chunk-name">{chunk.sourceName}</span>
+                        <span className="chunk-percentage">
+                          {chunk.similarityPercentage}%
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {contentStrategy && (
+            <div className="word-count-selector">
+              <label>Select Word Count:</label>
+              <div className="word-count-options">
+                {[500, 750, 1000, 2000].map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    className={`word-count-btn ${
+                      wordCount === count ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setWordCount(count);
+                      setIsCustomWordCount(false);
+                    }}
+                  >
+                    {count}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={`word-count-btn ${
+                    isCustomWordCount ? "active" : ""
+                  }`}
+                  onClick={() => setIsCustomWordCount(true)}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {isCustomWordCount && (
+                <input
+                  type="number"
+                  min="1"
+                  max="10000"
+                  value={wordCount}
+                  onChange={(e) =>
+                    setWordCount(
+                      Math.min(
+                        10000,
+                        Math.max(1, parseInt(e.target.value) || 0)
+                      )
+                    )
+                  }
+                  className="custom-word-count"
+                  placeholder="Enter word count (max 10,000)"
+                />
+              )}
+            </div>
+          )}
+
+          <div className="button-group">
+            <button
+              type="submit"
+              className="rag-button-submit"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  {!contentStrategy ? "Analyzing" : "Generating"}
+                  <span className="button-spinner"></span>
+                </>
+              ) : !contentStrategy ? (
+                "Analyze Strategy"
+              ) : (
+                "Generate Content"
+              )}
+            </button>
+
+            {contentStrategy && (
+              <button
+                type="button"
+                className="rag-button-clear"
+                onClick={clearStrategy}
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </form>
       </div>
       {/* Show generated content */}

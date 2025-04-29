@@ -1,10 +1,13 @@
 /* Container for everything */
 .rag-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: #f8fafc;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
   flex-direction: column;
 }
 
@@ -12,8 +15,8 @@
 .rag-form {
   background-color: #fff;
   padding: 2rem;
-  width: 100%;
-  max-width: 450px;
+  width: 80%;
+
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
@@ -39,49 +42,91 @@
 }
 
 .rag-input {
-  display: block;
   width: 100%;
-  padding: 0.7rem;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
+  transition: all 0.2s;
+  background: #f8fafc;
+  margin-bottom: 1rem;
+}
+
+.rag-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
 }
 
 /* Buttons */
 .rag-button-secondary {
-  display: inline-block;
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.6rem 1rem;
-  font-size: 0.9rem;
-  background-color: #e2e2e2;
-  border: none;
-  border-radius: 4px;
+  background: white;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s;
   margin-right: 1rem;
 }
 
 .rag-button-secondary:hover {
-  background-color: #ccc;
+  background: #f0f7ff;
 }
 
 .rag-button-submit {
-  display: block;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
   width: 100%;
   margin-top: 1rem;
-  padding: 0.7rem;
-  font-size: 1rem;
-  font-weight: 600;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 
 .rag-button-submit:hover {
-  background-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+.rag-button-submit:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.rag-button-clear {
+  background-color: #dc3545;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.rag-button-clear:hover {
+  background-color: #c82333;
+}
+
+.button-group {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.button-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
 }
 
 /* Loader View */
@@ -89,6 +134,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 3rem;
   justify-content: center;
 }
 
@@ -96,14 +142,22 @@
 .rag-spinner {
   width: 50px;
   height: 50px;
-  border: 6px solid #ccc;
-  border-top-color: #007bff;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3b82f6;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
   margin-bottom: 1rem;
 }
 
 @keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+
   to {
     transform: rotate(360deg);
   }
@@ -139,30 +193,32 @@
 
 /* File List Section */
 .rag-files-list {
+  display: grid;
+  gap: 1rem;
   margin: 1rem 0;
 }
 
 .rag-file-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
-  margin: 0.5rem 0;
-  background: #f5f5f5;
-  border-radius: 4px;
+  justify-content: space-between;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .rag-file-remove {
   background: none;
   border: none;
-  color: #ff4444;
+  color: #ef4444;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
 .rag-file-remove:hover {
-  color: #cc0000;
+  background: #fee2e2;
 }
 
 .rag-upload-section {
@@ -194,17 +250,16 @@
 }
 
 .rag-strength-overview {
-  margin-bottom: 2rem;
-  background: white;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  width: 80%
 }
 
 .strength-chart {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .chart-center-text {
@@ -212,18 +267,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.chart-center-text strong {
-  font-size: 2rem;
-  display: block;
-  color: #333;
-}
-
-.chart-center-text span {
-  font-size: 1rem;
-  color: #666;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 .strength-level {
@@ -246,23 +291,23 @@
 }
 
 .rec-card {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
   position: relative;
-  border-left: 4px solid;
+  border: 1px solid #e2e8f0;
 }
 
 .rec-card.priority-high {
-  border-left-color: #dc3545;
+  border-left: 4px solid #ef4444;
 }
 
 .rec-card.priority-medium {
-  border-left-color: #ffc107;
+  border-left: 4px solid #f59e0b;
 }
 
 .rec-card.priority-low {
-  border-left-color: #28a745;
+  border-left: 4px solid #10b981;
 }
 
 .rec-metrics {
@@ -276,30 +321,31 @@
 
 .priority-badge {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  top: 1rem;
+  right: 1rem;
+  padding: 4px 8px;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 500;
 }
 
 /* Content Generation Section */
 .rag-content-generation {
+  width: 80%;
   margin: 2rem 0;
 }
 
 .rag-generated-content {
-  margin: 2rem 0;
-  padding: 1rem;
-  background: #f5f5f5;
-  border-radius: 8px;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
 }
 
 .content-text {
-  background: white;
-  padding: 1rem;
-  border-radius: 4px;
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
   margin: 1rem 0;
 }
 
@@ -349,6 +395,101 @@
   font-weight: 500;
 }
 
+/* Contributing Chunks Section */
+.contributing-chunks {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.chunks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.chunk-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chunk-name {
+  font-weight: 500;
+}
+
+.chunk-percentage {
+  color: #666;
+  font-weight: 600;
+}
+
+/* Content Strategy Editor Section */
+.content-strategy-editor {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+}
+
+.strategy-field {
+  margin-bottom: 1.5rem;
+}
+
+.strategy-field label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #4b5563;
+}
+
+.strategy-field input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Word Count Selector Section */
+.word-count-selector {
+  margin: 1rem 0;
+}
+
+.word-count-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.word-count-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.word-count-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #0056b3;
+}
+
+.custom-word-count {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  width: 150px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .rag-form {
@@ -362,5 +503,19 @@
   .rag-button-secondary,
   .rag-button-submit {
     font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .rag-container {
+    padding: 1rem;
+  }
+
+  .recommendation-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .rag-strength-overview {
+    grid-template-columns: 1fr;
   }
 }
