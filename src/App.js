@@ -121,6 +121,7 @@ const AppWrapper = () => {
           <Route path="/site-stats" element={<SiteStats />} />
           <Route path="/post-details" element={<Dashboard />} />
           <Route path="/edit-post/:postId" element={<EditPost />} />
+          <Route path="/post-details/:postId" element={<PostDetails />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/agents/strategy" element={<StrategyAnalysis />} />
