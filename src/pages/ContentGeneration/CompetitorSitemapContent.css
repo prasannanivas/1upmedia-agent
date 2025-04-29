@@ -235,3 +235,19 @@
 .fromcomp-sitemap__btn--primary:hover {
   background: #2f855a;
 }
+
+.fromcomp-sitemap__status {
+  margin: 1rem 0;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.fromcomp-sitemap__status--success {
+  background-color: #e6ffe6;
+  color: #006600;
+}
+
+.fromcomp-sitemap__status--error {
+  background-color: #ffe6e6;
+  color: #cc0000;
+}

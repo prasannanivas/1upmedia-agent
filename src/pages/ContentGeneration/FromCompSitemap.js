@@ -1,7 +1,17 @@
 import React, { useState } from "react";
+import axios from "axios";
+import { useAuth } from "../../context/AuthContext";
+import { usePoll } from "../../context/PollContext";
+import { useOnboarding } from "../../context/OnboardingContext";
 import "./CompetitorSitemapContent.css"; // optional -- add your own styles
 
 const CompetitorSitemapContent = () => {
+  const { authState } = useAuth();
+  const { startPolling } = usePoll();
+  const { onboardingData } = useOnboarding();
+  const [generatingContent, setGeneratingContent] = useState(false);
+  const [contentGenerationStatus, setContentGenerationStatus] = useState(null);
+
   /* ── state ─────────────────────────────────────────────────── */
   const [competitor, setCompetitor] = useState("");
   const [isFetchingXML, setIsFetchingXML] = useState(false);
@@ -125,6 +135,64 @@ const CompetitorSitemapContent = () => {
       next.has(url) ? next.delete(url) : next.add(url);
       return next;
     });
+  };
+
+  /* ── 5. generate content for selected URLs ────────────────── */
+  const handleGenerateContent = async () => {
+    if (selectedLinks.size === 0) {
+      setContentGenerationStatus("Please select at least one URL first.");
+      setTimeout(() => setContentGenerationStatus(null), 3000);
+      return;
+    }
+
+    setGeneratingContent(true);
+    setContentGenerationStatus(
+      `Generating content for ${selectedLinks.size} selected URLs...`
+    );
+
+    try {
+      startPolling();
+      const response = await axios.post(
+        "https://ai.1upmedia.com:443/aiagent/generateContentFromSitemap",
+        {
+          email: authState.email,
+          sitemapUrls: Array.from(selectedLinks),
+          businessDetails: onboardingData.businessDetails,
+          domain: onboardingData.domain,
+        },
+        {
+          timeout: 120000, // 2 minute timeout
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (response.data.status === "success") {
+        setContentGenerationStatus(
+          `Successfully started content generation for ${selectedLinks.size} URLs!`
+        );
+        setTimeout(() => setContentGenerationStatus(null), 3000);
+      } else {
+        throw new Error(response.data.error || "Failed to generate content");
+      }
+    } catch (error) {
+      let errorMessage = "Failed to generate content. ";
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ECONNABORTED") {
+          errorMessage += "Request timed out. Please try again.";
+        } else if (!error.response) {
+          errorMessage += "Network error. Please check your connection.";
+        } else {
+          errorMessage += error.response?.data?.error || error.message;
+        }
+      } else {
+        errorMessage += error.message;
+      }
+      setContentGenerationStatus(errorMessage);
+      setTimeout(() => setContentGenerationStatus(null), 5000);
+      console.error("Error generating content:", error);
+    } finally {
+      setGeneratingContent(false);
+    }
   };
 
   /* ── render ───────────────────────────────────────────────── */
@@ -287,12 +355,25 @@ const CompetitorSitemapContent = () => {
           </span>
           <button
             className="fromcomp-sitemap__btn fromcomp-sitemap__btn--primary"
-            onClick={() =>
-              console.log("Selected URLs:", Array.from(selectedLinks))
-            }
+            onClick={handleGenerateContent}
+            disabled={generatingContent}
           >
-            Continue with Selection
+            {generatingContent
+              ? "Generating Content..."
+              : `Generate Content (${selectedLinks.size})`}
           </button>
+        </div>
+      )}
+
+      {contentGenerationStatus && (
+        <div
+          className={`fromcomp-sitemap__status ${
+            contentGenerationStatus.includes("Failed")
+              ? "fromcomp-sitemap__status--error"
+              : "fromcomp-sitemap__status--success"
+          }`}
+        >
+          {contentGenerationStatus}
         </div>
       )}
     </div>
