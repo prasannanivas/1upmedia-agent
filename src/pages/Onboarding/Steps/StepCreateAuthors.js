@@ -28,6 +28,7 @@ const StepCreateAuthors = () => {
   const { authState } = useAuth();
   const { email } = authState;
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("manual");
 
   useEffect(() => {
     const fetchPersonas = async () => {
@@ -103,230 +104,248 @@ const StepCreateAuthors = () => {
   };
 
   return (
-    <>
+    <div className="authors-container">
+      <div className="authors-tabs">
+        <button
+          className={`tab-button ${activeTab === "automated" ? "active" : ""}`}
+          onClick={() => setActiveTab("automated")}
+        >
+          Automated Author Creation
+        </button>
+        <button
+          className={`tab-button ${activeTab === "manual" ? "active" : ""}`}
+          onClick={() => setActiveTab("manual")}
+        >
+          Manual Author Creation
+        </button>
+      </div>
+
       {loading ? (
-        <Loader />
+        <div className="tab-content">
+          <Loader />
+        </div>
       ) : (
-        <div className="split-layout-container">
-          {/* Left half - Authors section */}
-          <div className="split-layout-left">
-            <div className="step-create-authors-container">
-              <h2 className="step-create-authors-title">Create Authors</h2>
+        <div className="tab-content">
+          {activeTab === "automated" ? (
+            <div className="tab-pane">
+              <RAG />
+            </div>
+          ) : (
+            <div className="tab-pane">
+              <div className="step-create-authors-container">
+                <h2 className="step-create-authors-title">Create Authors</h2>
 
-              <div className="step-create-authors-input-group">
-                <input
-                  type="text"
-                  placeholder="Enter Author's Name"
-                  className="step-create-authors-input"
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                />
-              </div>
-
-              {selectedPersona && (
-                <div className="step-create-authors-selected-persona">
-                  <FaCheckCircle className="step-create-authors-check-icon" />
-                  <span>{selectedPersona.persona}</span>
-                </div>
-              )}
-
-              {/* Expandable Section: Create a New Persona */}
-              <div className="step-create-authors-expand-card">
-                <div
-                  className="step-create-authors-card-header"
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "create" ? null : "create"
-                    )
-                  }
-                >
-                  <strong>Create a New Persona</strong>
-                  {expandedSection === "create" ? (
-                    <FaChevronUp className="step-create-authors-icon" />
-                  ) : (
-                    <FaChevronDown className="step-create-authors-icon" />
-                  )}
+                <div className="step-create-authors-input-group">
+                  <input
+                    type="text"
+                    placeholder="Enter Author's Name"
+                    className="step-create-authors-input"
+                    value={authorName}
+                    onChange={(e) => setAuthorName(e.target.value)}
+                  />
                 </div>
 
-                {expandedSection === "create" && (
-                  <div className="step-create-authors-card-body">
-                    {Object.keys(customPersona).map((key) => (
-                      <input
-                        key={key}
-                        type="text"
-                        placeholder={`Enter ${key
-                          .replace(/_/g, " ")
-                          .toUpperCase()} (e.g., ${
-                          key === "persona"
-                            ? "Tech Enthusiast"
-                            : key === "writing_style"
-                            ? "Conversational, Storytelling"
-                            : key === "tone"
-                            ? "Formal, Friendly"
-                            : key === "emotions"
-                            ? "Excitement, Inspiration"
-                            : key === "experience"
-                            ? "5+ years in blogging"
-                            : key === "expertise"
-                            ? "Bachelor's degree in Journalism"
-                            : key === "authoritativeness"
-                            ? "Published in Forbes, TechCrunch"
-                            : key === "trustworthiness"
-                            ? "Verified Testimonials, Secure Platform"
-                            : ""
-                        })`}
-                        className="step-create-authors-input"
-                        value={customPersona[key]}
-                        required
-                        onChange={(e) =>
-                          setCustomPersona({
-                            ...customPersona,
-                            [key]: e.target.value,
-                          })
-                        }
-                      />
-                    ))}
-                    <button
-                      className="step-create-authors-create-btn"
-                      onClick={handleCreatePersona}
-                    >
-                      Save Persona
-                    </button>
+                {selectedPersona && (
+                  <div className="step-create-authors-selected-persona">
+                    <FaCheckCircle className="step-create-authors-check-icon" />
+                    <span>{selectedPersona.persona}</span>
                   </div>
                 )}
-              </div>
 
-              {/* Expandable Section: Choose from Existing Personas */}
-              <div className="step-create-authors-expand-card">
-                <div
-                  className="step-create-authors-card-header"
-                  onClick={() =>
-                    setExpandedSection(
-                      expandedSection === "existing" ? null : "existing"
-                    )
-                  }
-                >
-                  <strong>Choose from Existing Personas</strong>
-                  {expandedSection === "existing" ? (
-                    <FaChevronUp className="step-create-authors-icon" />
-                  ) : (
-                    <FaChevronDown className="step-create-authors-icon" />
+                {/* Expandable Section: Create a New Persona */}
+                <div className="step-create-authors-expand-card">
+                  <div
+                    className="step-create-authors-card-header"
+                    onClick={() =>
+                      setExpandedSection(
+                        expandedSection === "create" ? null : "create"
+                      )
+                    }
+                  >
+                    <strong>Create a New Persona</strong>
+                    {expandedSection === "create" ? (
+                      <FaChevronUp className="step-create-authors-icon" />
+                    ) : (
+                      <FaChevronDown className="step-create-authors-icon" />
+                    )}
+                  </div>
+
+                  {expandedSection === "create" && (
+                    <div className="step-create-authors-card-body">
+                      {Object.keys(customPersona).map((key) => (
+                        <input
+                          key={key}
+                          type="text"
+                          placeholder={`Enter ${key
+                            .replace(/_/g, " ")
+                            .toUpperCase()} (e.g., ${
+                            key === "persona"
+                              ? "Tech Enthusiast"
+                              : key === "writing_style"
+                              ? "Conversational, Storytelling"
+                              : key === "tone"
+                              ? "Formal, Friendly"
+                              : key === "emotions"
+                              ? "Excitement, Inspiration"
+                              : key === "experience"
+                              ? "5+ years in blogging"
+                              : key === "expertise"
+                              ? "Bachelor's degree in Journalism"
+                              : key === "authoritativeness"
+                              ? "Published in Forbes, TechCrunch"
+                              : key === "trustworthiness"
+                              ? "Verified Testimonials, Secure Platform"
+                              : ""
+                          })`}
+                          className="step-create-authors-input"
+                          value={customPersona[key]}
+                          required
+                          onChange={(e) =>
+                            setCustomPersona({
+                              ...customPersona,
+                              [key]: e.target.value,
+                            })
+                          }
+                        />
+                      ))}
+                      <button
+                        className="step-create-authors-create-btn"
+                        onClick={handleCreatePersona}
+                      >
+                        Save Persona
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                {expandedSection === "existing" && (
-                  <div className="step-create-authors-card-body scrollable">
-                    {personas.map((persona, index) => (
-                      <div
-                        key={index}
-                        className="step-create-authors-persona-container"
-                      >
+                {/* Expandable Section: Choose from Existing Personas */}
+                <div className="step-create-authors-expand-card">
+                  <div
+                    className="step-create-authors-card-header"
+                    onClick={() =>
+                      setExpandedSection(
+                        expandedSection === "existing" ? null : "existing"
+                      )
+                    }
+                  >
+                    <strong>Choose from Existing Personas</strong>
+                    {expandedSection === "existing" ? (
+                      <FaChevronUp className="step-create-authors-icon" />
+                    ) : (
+                      <FaChevronDown className="step-create-authors-icon" />
+                    )}
+                  </div>
+
+                  {expandedSection === "existing" && (
+                    <div className="step-create-authors-card-body scrollable">
+                      {personas.map((persona, index) => (
                         <div
-                          className={`step-create-authors-persona-card ${
-                            selectedPersona === persona ? "selected" : ""
-                          }`}
-                          onClick={() =>
-                            setExpandedPersona(
-                              expandedPersona === index ? null : index
-                            )
-                          }
+                          key={index}
+                          className="step-create-authors-persona-container"
                         >
-                          <strong>{persona.persona}</strong>
-                          {expandedPersona === index ? (
-                            <FaChevronUp className="step-create-authors-icon" />
-                          ) : (
-                            <FaChevronDown className="step-create-authors-icon" />
+                          <div
+                            className={`step-create-authors-persona-card ${
+                              selectedPersona === persona ? "selected" : ""
+                            }`}
+                            onClick={() =>
+                              setExpandedPersona(
+                                expandedPersona === index ? null : index
+                              )
+                            }
+                          >
+                            <strong>{persona.persona}</strong>
+                            {expandedPersona === index ? (
+                              <FaChevronUp className="step-create-authors-icon" />
+                            ) : (
+                              <FaChevronDown className="step-create-authors-icon" />
+                            )}
+                          </div>
+
+                          {expandedPersona === index && (
+                            <div className="step-create-authors-persona-details">
+                              <p>
+                                <strong>Writing Style:</strong>{" "}
+                                {persona.writing_style}
+                              </p>
+                              <p>
+                                <strong>Tone:</strong> {persona.tone}
+                              </p>
+                              <p>
+                                <strong>Emotions:</strong>{" "}
+                                {persona.emotions.join(", ")}
+                              </p>
+                              <h4>E-E-A-T:</h4>
+                              <p>
+                                <strong>Experience:</strong>{" "}
+                                {persona["E-E-A-T"].Experience}
+                              </p>
+                              <p>
+                                <strong>Expertise:</strong>{" "}
+                                {persona["E-E-A-T"].Expertise}
+                              </p>
+                              <p>
+                                <strong>Authoritativeness:</strong>{" "}
+                                {persona["E-E-A-T"].Authoritativeness}
+                              </p>
+                              <p>
+                                <strong>Trustworthiness:</strong>{" "}
+                                {persona["E-E-A-T"].Trustworthiness}
+                              </p>
+                              <button
+                                className="step-create-authors-choose-btn"
+                                onClick={() => handleSelectPersona(persona)}
+                              >
+                                Choose this Persona
+                              </button>
+                            </div>
                           )}
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-                        {expandedPersona === index && (
-                          <div className="step-create-authors-persona-details">
-                            <p>
-                              <strong>Writing Style:</strong>{" "}
-                              {persona.writing_style}
-                            </p>
-                            <p>
-                              <strong>Tone:</strong> {persona.tone}
-                            </p>
-                            <p>
-                              <strong>Emotions:</strong>{" "}
-                              {persona.emotions.join(", ")}
-                            </p>
-                            <h4>E-E-A-T:</h4>
-                            <p>
-                              <strong>Experience:</strong>{" "}
-                              {persona["E-E-A-T"].Experience}
-                            </p>
-                            <p>
-                              <strong>Expertise:</strong>{" "}
-                              {persona["E-E-A-T"].Expertise}
-                            </p>
-                            <p>
-                              <strong>Authoritativeness:</strong>{" "}
-                              {persona["E-E-A-T"].Authoritativeness}
-                            </p>
-                            <p>
-                              <strong>Trustworthiness:</strong>{" "}
-                              {persona["E-E-A-T"].Trustworthiness}
-                            </p>
-                            <button
-                              className="step-create-authors-choose-btn"
-                              onClick={() => handleSelectPersona(persona)}
-                            >
-                              Choose this Persona
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                <button
+                  onClick={handleAddAuthor}
+                  className={`step-create-authors-add-btn ${
+                    !authorName || !selectedPersona ? "disabled" : ""
+                  }`}
+                  disabled={!authorName || !selectedPersona}
+                >
+                  Add Author
+                </button>
+
+                {/* Display Added Authors */}
+                {authorsList.length > 0 && (
+                  <div className="step-create-authors-list">
+                    <h3>Added Authors:</h3>
+                    <ul>
+                      {authorsList.map((author, index) => (
+                        <li key={index} className="step-create-authors-item">
+                          <strong>{author.name}</strong> -{" "}
+                          {author.persona.persona}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={handleAddAuthor}
-                className={`step-create-authors-add-btn ${
-                  !authorName || !selectedPersona ? "disabled" : ""
-                }`}
-                disabled={!authorName || !selectedPersona}
-              >
-                Add Author
-              </button>
-
-              {/* Display Added Authors */}
-              {authorsList.length > 0 && (
-                <div className="step-create-authors-list">
-                  <h3>Added Authors:</h3>
-                  <ul>
-                    {authorsList.map((author, index) => (
-                      <li key={index} className="step-create-authors-item">
-                        <strong>{author.name}</strong> -{" "}
-                        {author.persona.persona}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              <button
-                onClick={handleNext}
-                className={`step-create-authors-next-btn ${
-                  authorsList.length === 0 ? "disabled" : ""
-                }`}
-                disabled={authorsList.length === 0}
-              >
-                Next
-              </button>
             </div>
-          </div>
-
-          {/* Right half - RAG section */}
-          <div className="split-layout-right">
-            <RAG />
-          </div>
+          )}
         </div>
       )}
-    </>
+
+      {/* Moved Next button outside of tabs */}
+      <button
+        onClick={handleNext}
+        className={`step-create-authors-next-btn ${
+          authorsList.length === 0 ? "disabled" : ""
+        }`}
+        disabled={authorsList.length === 0}
+      >
+        Next
+      </button>
+    </div>
   );
 };
 

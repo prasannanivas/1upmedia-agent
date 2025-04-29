@@ -40,10 +40,19 @@ const ContentReview = () => {
   // 2) Fetch classification once domain + keywords are ready
   useEffect(() => {
     if (domain && keywordData.length > 0) {
-      const encodedKeywords = encodeURIComponent(JSON.stringify(keywordData));
-      const url = `https://ai.1upmedia.com:443/aiagent/keyword-classify?email=${email}&domain=${domain}&keywords=${encodedKeywords}`;
+      const url = `https://ai.1upmedia.com:443/aiagent/keyword-classify`;
 
-      fetch(url)
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          keywords: keywordData,
+          domain,
+          email,
+        }),
+      })
         .then((res) => {
           if (!res.ok) {
             throw new Error(`Server returned status ${res.status}`);

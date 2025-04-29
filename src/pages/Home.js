@@ -9,7 +9,7 @@ const quickLinks = [
   { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
   {
     name: "Create Content",
-    path: "/agents/content-creation/by-seo-ideas",
+    path: "/agents/content-creation",
     icon: <User size={24} />,
   },
   {
@@ -140,7 +140,7 @@ const HomePage = () => {
                   |{" "}
                   <Link
                     className="homepage-create-content-link"
-                    to="/agents/content-creation/by-seo-ideas"
+                    to="/agents/content-creation"
                   >
                     Create Content
                   </Link>

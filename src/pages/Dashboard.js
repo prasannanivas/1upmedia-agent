@@ -228,7 +228,7 @@ function PostsList() {
       <div>
         <div className="top-actions">{renderFilterControls()}</div>
         <button
-          onClick={() => navigate("/agents/content-creation/by-seo-ideas")}
+          onClick={() => navigate("/agents/content-creation")}
           className="generate-button"
         >
           Generate Post
@@ -242,7 +242,7 @@ function PostsList() {
     <div className="posts-table-container">
       <div className="top-actions">
         <button
-          onClick={() => navigate("/agents/content-creation/by-seo-ideas")}
+          onClick={() => navigate("/agents/content-creation")}
           className="generate-button"
         >
           Generate Post

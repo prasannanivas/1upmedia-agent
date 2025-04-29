@@ -1,9 +1,19 @@
 // SideNavBar.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DropdownMenu from "./DropdownMenu";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FiHome,
+  FiFileText,
+  FiSettings,
+  FiBox,
+  FiActivity,
+  FiBell,
+  FiLogOut,
+} from "react-icons/fi";
 
 export const agentLinks = [
   { path: "/agents/ideation", label: "Keyword Strategy" },
@@ -34,6 +44,29 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const [dropdowns, setDropdowns] = useState({});
   const { unreadCount } = useNotification();
   const { logout } = useAuth();
+  const location = useLocation();
+
+  const menuItems = [
+    { path: "/", label: "Dashboard", icon: FiHome },
+    { path: "/dashboard", label: "Posts", icon: FiFileText },
+    { path: "/onboarding", label: "Setup", icon: FiBox },
+    { path: "/analytics", label: "Analytics", icon: FiActivity },
+  ];
+
+  const isActive = (path) => location.pathname === path;
+
+  const menuVariants = {
+    open: { x: 0, opacity: 1 },
+    closed: { x: -300, opacity: 0 },
+  };
+
+  const itemVariants = {
+    open: (i) => ({
+      opacity: 1,
+      x: 0,
+    }),
+    closed: { opacity: 0, x: -20 },
+  };
 
   const toggleDropdown = (menu) => {
     setDropdowns((prev) => ({
@@ -47,83 +80,96 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   };
 
   return (
-    <div
+    <motion.div
       ref={navBarRef}
       className={`NavBar ${isMenuOpen ? "NavBar-open" : ""}`}
-      style={{ transition: "left 0.5s ease-in-out" }}
+      initial="closed"
+      animate={isMenuOpen ? "open" : "closed"}
+      variants={menuVariants}
     >
-      <ul>
-        <li>
-          <Link to="/" onClick={handleLinkClick}>
-            Dashboard
-          </Link>
-        </li>
-        <li>
-          <Link to="/dashboard" onClick={handleLinkClick}>
-            Posts
-          </Link>
-        </li>
-        <li>
-          <Link to="/onboarding" onClick={handleLinkClick}>
-            Setup
-          </Link>
-        </li>
-        <li>
-          <Link to="/analytics" onClick={handleLinkClick}>
-            Analytics
-          </Link>
-        </li>
+      <div className="nav-header">
+        <motion.div
+          className="logo-container"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <h2>AI Agent</h2>
+        </motion.div>
+      </div>
 
-        <DropdownMenu
-          title="Agents"
-          isOpen={dropdowns.agents}
-          toggle={() => toggleDropdown("agents")}
-          handleLinkClick={handleLinkClick}
-          links={agentLinks}
-        />
-        {/* <DropdownMenu
-          title="Boards"
-          isOpen={dropdowns.boards}
-          toggle={() => toggleDropdown("boards")}
-          handleLinkClick={handleLinkClick}
-          links={boardLinks}
-        /> */}
+      <ul className="nav-items">
+        <AnimatePresence>
+          {menuItems.map((item, index) => (
+            <motion.li
+              key={item.path}
+              custom={index}
+              variants={itemVariants}
+              initial="closed"
+              animate="open"
+              exit="closed"
+              whileHover={{ scale: 1.02, x: 5 }}
+            >
+              <Link
+                to={item.path}
+                className={`nav-link ${isActive(item.path) ? "active" : ""}`}
+                onClick={handleLinkClick}
+              >
+                <item.icon className="nav-icon" />
+                <span>{item.label}</span>
+                {isActive(item.path) && (
+                  <motion.div
+                    className="active-indicator"
+                    layoutId="activeIndicator"
+                  />
+                )}
+              </Link>
+            </motion.li>
+          ))}
 
-        {/* <DropdownMenu
-          title="Integrations & Connections"
-          isOpen={dropdowns.integrations}
-          handleLinkClick={handleLinkClick}
-          toggle={() => toggleDropdown("integrations")}
-          links={integrationLinks}
-        /> */}
-        <DropdownMenu
-          title="Settings"
-          isOpen={dropdowns.settings}
-          toggle={() => toggleDropdown("settings")}
-          handleLinkClick={handleLinkClick}
-          links={settingsLinks}
-          // nestedDropdown={{
-          //   title: "Advanced Config",
-          //   isOpen: dropdowns.advancedConfig,
-          //   toggle: () => toggleDropdown("advancedConfig"),
-          //   links: advancedConfigLinks,
-          // }}
-        />
-        <li>
-          <Link to="/notifications" onClick={handleLinkClick}>
-            Notifications{" "}
-            {unreadCount > 0 && (
-              <span style={{ fontWeight: "bold" }}>{unreadCount}</span>
-            )}
-          </Link>
-        </li>
-        <li>
-          <Link to="/login" onClick={logout}>
-            Logout
-          </Link>
-        </li>
+          <DropdownMenu
+            title="Agents"
+            icon={<FiBox />}
+            isOpen={dropdowns.agents}
+            toggle={() => toggleDropdown("agents")}
+            handleLinkClick={handleLinkClick}
+            links={agentLinks}
+          />
+
+          <DropdownMenu
+            title="Settings"
+            icon={<FiSettings />}
+            isOpen={dropdowns.settings}
+            toggle={() => toggleDropdown("settings")}
+            handleLinkClick={handleLinkClick}
+            links={settingsLinks}
+          />
+
+          <motion.li whileHover={{ scale: 1.02, x: 5 }}>
+            <Link to="/notifications" className="nav-link notification-link">
+              <FiBell className="nav-icon" />
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <motion.span
+                  className="notification-badge"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  whileHover={{ scale: 1.1 }}
+                >
+                  {unreadCount}
+                </motion.span>
+              )}
+            </Link>
+          </motion.li>
+
+          <motion.li whileHover={{ scale: 1.02, x: 5 }} className="logout-item">
+            <Link to="/login" onClick={logout} className="nav-link">
+              <FiLogOut className="nav-icon" />
+              <span>Logout</span>
+            </Link>
+          </motion.li>
+        </AnimatePresence>
       </ul>
-    </div>
+    </motion.div>
   );
 }
 
