@@ -4,6 +4,7 @@ import { useOnboarding } from "../../../context/OnboardingContext";
 import { useAuth } from "../../../context/AuthContext";
 import "./StepMainDomain.css";
 import Loader from "../../../components/Loader";
+import { LinearProgress, CircularProgress } from "@mui/material";
 
 // ───────────────────────────────────────────────────────────
 // Did-You-Know facts (unchanged)
@@ -94,11 +95,48 @@ const StepMainDomain = () => {
   const [isSitemapValidated, setIsSitemapValidated] = useState(false);
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [businessDetails, setBusinessDetails] = useState(
+    onboardingData.businessDetails || ""
+  );
+
+  const [analysisSteps, setAnalysisSteps] = useState([
+    {
+      label: "Domain Validation",
+      status: "pending",
+      successMessage: "Domain validated successfully",
+      errorMessage: "Failed to validate domain",
+    },
+    {
+      label: "Sitemap Analysis",
+      status: "pending",
+      successMessage: "Sitemaps retrieved successfully",
+      errorMessage: "Failed to fetch sitemaps",
+    },
+    {
+      label: "Metrics Analysis",
+      status: "pending",
+      successMessage: "Site metrics analyzed",
+      errorMessage: "Failed to analyze metrics",
+    },
+    {
+      label: "Location Detection",
+      status: "pending",
+      successMessage: "Business location detected",
+      errorMessage: "Could not detect location",
+    },
+    {
+      label: "Business Details",
+      status: "pending",
+      successMessage: "Business details retrieved",
+      errorMessage: "Failed to fetch business details",
+    },
+  ]);
 
   useEffect(() => {
     setDomain(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
     setAnalysisData(onboardingData.initialAnalysisState);
+    setBusinessDetails(onboardingData.businessDetails || "");
   }, [onboardingData]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -107,61 +145,180 @@ const StepMainDomain = () => {
   const [isValidated, setIsValidated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
+  const updateStepStatus = (index, status, message = "") => {
+    setAnalysisSteps((prev) =>
+      prev.map((step, i) =>
+        i === index
+          ? {
+              ...step,
+              status,
+              ...(message ? { errorMessage: message } : {}),
+            }
+          : step
+      )
+    );
+  };
+
   /* ────────────────────────────────
      1. Validate domain ⟵ **updated**
   ──────────────────────────────── */
   const handleValidateDomain = async () => {
-    if (!domain) return;
+    if (!domain || isSaving) return;
 
     setIsValidating(true);
     setError("");
     setSitemapError("");
 
-    try {
-      // 1. First validate the domain
-      const domainValidation = await formatAndValidateDomain(domain);
+    // Reset all steps
+    setAnalysisSteps((prev) =>
+      prev.map((step) => ({ ...step, status: "pending" }))
+    );
 
+    try {
+      // Update domain validation step
+      updateStepStatus(0, "loading");
+      const domainValidation = await formatAndValidateDomain(domain);
       if (!domainValidation.success) {
+        updateStepStatus(0, "error", domainValidation.error);
         throw new Error(domainValidation.error);
       }
-
-      console.log("Domain validation successful:", domainValidation);
+      updateStepStatus(0, "completed");
       setDomain(domainValidation.formattedDomain);
 
-      // 2. Then fetch sitemaps
-      const res = await fetch(
-        `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(
-          domainValidation.formattedDomain
-        )}`,
-        { headers: { Accept: "application/json" } }
-      );
+      // Start parallel operations with visual feedback
+      updateStepStatus(1, "loading");
+      updateStepStatus(2, "loading");
+      updateStepStatus(3, "loading");
+      updateStepStatus(4, "loading");
 
-      if (!res.ok) {
-        const { error } = await res.json();
-        throw new Error(error || "Failed to fetch sitemaps");
+      const [
+        sitemapResponse,
+        metricsResponse,
+        locationResponse,
+        businessDetailsResponse,
+      ] = await Promise.all([
+        // Fetch sitemaps
+        fetch(
+          `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(
+            domainValidation.formattedDomain
+          )}`,
+          { headers: { Accept: "application/json" } }
+        ),
+
+        // Fetch domain metrics
+        fetch("https://ai.1upmedia.com:443/get-domain-authority", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            site_url: `https://${domainValidation.formattedDomain}`,
+            include_majestic: true,
+          }),
+        }),
+
+        // Fetch business location
+        fetch(
+          `https://ai.1upmedia.com:443/get-business-location?url=${encodeURIComponent(
+            domainValidation.formattedDomain
+          )}`
+        ),
+
+        // Fetch business details
+        fetch("https://ai.1upmedia.com:443/get-business-details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: domainValidation.formattedDomain,
+          }),
+        }),
+      ]);
+
+      // Update status for each completed operation
+      if (sitemapResponse.ok) {
+        updateStepStatus(1, "completed");
+      } else {
+        updateStepStatus(1, "error");
       }
 
-      const { data } = await res.json();
-      const xmlList = [...(data.mainXML || []), ...(data.blindXML || [])];
-
-      if (xmlList.length) {
-        setSitemaps(xmlList);
-        setIsSitemapValidated(true);
+      if (metricsResponse.ok) {
+        updateStepStatus(2, "completed");
       } else {
+        updateStepStatus(2, "error");
+      }
+
+      if (locationResponse.ok) {
+        updateStepStatus(3, "completed");
+      } else {
+        updateStepStatus(3, "error");
+      }
+
+      if (businessDetailsResponse.ok) {
+        updateStepStatus(4, "completed");
+      } else {
+        updateStepStatus(4, "error");
+      }
+
+      // Process sitemap response
+      const sitemapData = await sitemapResponse.json();
+      if (!sitemapResponse.ok) {
+        throw new Error(sitemapData.error || "Failed to fetch sitemaps");
+      }
+      const xmlList = [
+        ...(sitemapData.data.mainXML || []),
+        ...(sitemapData.data.blindXML || []),
+      ];
+      setSitemaps(xmlList);
+      setIsSitemapValidated(xmlList.length > 0);
+      if (!xmlList.length) {
         setSitemapError("No sitemaps found. Please provide manually.");
       }
+
+      // Process metrics response
+      const metricsData = await metricsResponse.json();
+      if (!metricsResponse.ok) {
+        throw new Error(
+          metricsData.detail?.message || "Failed to analyze domain"
+        );
+      }
+      const analysisResult = {
+        domainAuthority: metricsData.detail.domain_authority,
+        pageAuthority: metricsData.detail.page_authority,
+        trustFlow: metricsData.detail.majestic?.majesticTF || 5,
+        citationFlow: metricsData.detail.majestic?.majesticCF || 32,
+      };
+      setAnalysisData(analysisResult);
+      onboardingData.initialAnalysisState = analysisResult;
+
+      // Process location response
+      if (locationResponse.ok) {
+        const locationData = await locationResponse.json();
+        if (locationData.detail) {
+          setLocation(locationData.detail);
+        }
+      }
+
+      // Process business details response
+      if (businessDetailsResponse.ok) {
+        const businessData = await businessDetailsResponse.json();
+        const details =
+          typeof businessData.detail === "string"
+            ? businessData.detail
+            : JSON.stringify(businessData.detail || "");
+        setBusinessDetails(details);
+      }
+
       setIsValidated(true);
 
       // Show success notification
       const notification = document.createElement("div");
       notification.className =
         "step-main-domain__notification step-main-domain__notification--success";
-      notification.textContent = "Domain validated successfully!";
+      notification.textContent =
+        "Site validation and analysis completed successfully!";
       document.body.appendChild(notification);
       setTimeout(() => notification.remove(), 3000);
     } catch (error) {
-      setError(error.message || "Failed to validate domain. Please try again.");
-      console.error("Error validating domain:", error);
+      setError(error.message || "Validation process failed. Please try again.");
+      console.error("Error in validation process:", error);
       setIsValidated(false);
       setIsSitemapValidated(false);
     } finally {
@@ -271,42 +428,6 @@ const StepMainDomain = () => {
   /* ────────────────────────────────
      Save + next (updated)
   ──────────────────────────────── */
-  const handleSave = async () => {
-    if (isSaving) return;
-
-    setIsSaving(true);
-    try {
-      const filteredSiteData = {
-        URL: domain,
-        location,
-        dynamic_fields: { ...analysisData },
-        sitemaps: selectedSitemaps,
-      };
-
-      const response = await fetch(
-        "https://ai.1upmedia.com:443/aiagent/updateBusinessdetails",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, siteData: filteredSiteData }),
-        }
-      );
-
-      if (!response.ok) throw new Error("Failed to save domain details");
-
-      const notification = document.createElement("div");
-      notification.className =
-        "step-main-domain__notification step-main-domain__notification--success";
-      notification.textContent = "Domain details saved successfully!";
-      document.body.appendChild(notification);
-      setTimeout(() => notification.remove(), 3000);
-    } catch (error) {
-      console.error("Error saving domain details:", error);
-      setError("Failed to save domain details. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleNext = () => {
     setOnboardingData((prev) => ({
@@ -314,6 +435,7 @@ const StepMainDomain = () => {
       domain,
       location,
       siteAnalysis: analysisData,
+      businessDetails,
     }));
     navigate("/onboarding/step-keywords");
   };
@@ -330,286 +452,454 @@ const StepMainDomain = () => {
     );
   }
 
-  const MetricInput = ({ label, value, onChange }) => (
+  const MetricInput = ({ label, value }) => (
     <div className="step-main-domain__metric">
       <label className="step-main-domain__metric-label">
         <strong>{label}:</strong>
-        <div className="step-main-domain__metric-input-wrapper">
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="step-main-domain__metric-input"
-            min="0"
-            max="100"
-          />
-          <div className="step-main-domain__metric-bar">
-            <div
-              className="step-main-domain__metric-progress"
-              style={{ width: `${value}%` }}
-            />
-          </div>
-        </div>
+        <input
+          type="number"
+          value={value}
+          className="step-main-domain__metric-input"
+        />
       </label>
     </div>
   );
 
-  return (
-    <div className="step-main-domain">
-      <h2 className="step-main-domain__title">Main Domain Setup</h2>
-
-      {error && <div className="step-main-domain__error">{error}</div>}
-
-      {/* ── domain input + buttons ⟵ **updated** ─────────────────── */}
-      <div className="step-main-domain__input-group">
-        <div className="step-main-domain__input-wrapper">
-          <label className="step-main-domain__label">
-            <strong>Domain:</strong>
-            <div className="step-main-domain__input-container">
-              <input
-                type="text"
-                value={domain}
-                onChange={(e) => {
-                  setDomain(e.target.value);
-                  setIsValidated(false);
-                  setIsSitemapValidated(false);
-                }}
-                placeholder="Enter your domain (e.g., example.com)"
-                className={`step-main-domain__input ${
-                  isValidated ? "step-main-domain__input--validated" : ""
-                }`}
-                disabled={isValidating || isAnalyzing}
-              />
-              {isValidated && (
-                <div className="step-main-domain__validation-success">
-                  <CheckMarkIcon />
-                  <span>Site validated successfully!</span>
-                </div>
-              )}
-              {isSitemapValidated && (
-                <div className="step-main-domain__validation-success">
-                  <CheckMarkIcon />
-                  <span>Sitemaps found successfully!</span>
-                </div>
-              )}
-
-              {(sitemaps.length > 0 || sitemapError) && (
-                <div className="step-main-domain__sitemaps">
-                  <h4>Sitemaps</h4>
-                  {sitemapError ? (
-                    <div className="step-main-domain__sitemap-error">
-                      {sitemapError}
-                    </div>
-                  ) : (
-                    <div className="step-main-domain__sitemap-container">
-                      <div className="step-main-domain__sitemap-header">
-                        <label className="step-main-domain__checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={
-                              selectedSitemaps.length === sitemaps.length
-                            }
-                            onChange={(e) => {
-                              setSelectedSitemaps(
-                                e.target.checked ? [...sitemaps] : []
-                              );
-                            }}
-                          />
-                          Select All
-                        </label>
-                      </div>
-                      <ul className="step-main-domain__sitemap-list">
-                        {sitemaps.map((sitemap, index) => (
-                          <li
-                            key={index}
-                            className="step-main-domain__sitemap-item"
-                          >
-                            <label className="step-main-domain__checkbox-label">
-                              <input
-                                type="checkbox"
-                                checked={selectedSitemaps.includes(sitemap)}
-                                onChange={(e) => {
-                                  setSelectedSitemaps((prev) =>
-                                    e.target.checked
-                                      ? [...prev, sitemap]
-                                      : prev.filter((s) => s !== sitemap)
-                                  );
-                                }}
-                              />
-                              <a
-                                href={sitemap}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                {sitemap}
-                              </a>
-                            </label>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </label>
-        </div>
-
-        <div className="step-main-domain__action-container">
-          {!isValidated ? (
-            <button
-              onClick={handleValidateDomain}
-              disabled={!domain || isValidating}
-              className={`step-main-domain__validate-btn ${
-                isValidating ? "step-main-domain__validate-btn--validating" : ""
-              }`}
-            >
-              {isValidating ? (
-                <>
-                  <span className="step-main-domain__spinner-small" />
-                  Validating Site...
-                </>
-              ) : (
-                "Validate Site"
-              )}
-            </button>
-          ) : (
-            <button
-              onClick={handleAnalyzeDomain}
-              disabled={!domain || isAnalyzing}
-              className={`step-main-domain__analyze-btn ${
-                isAnalyzing ? "step-main-domain__analyze-btn--analyzing" : ""
-              }`}
-            >
-              {isAnalyzing ? (
-                <>
-                  <span className="step-main-domain__spinner-small" />
-                  Fetching Site Metrics...
-                </>
-              ) : (
-                "Get Site Metrics"
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── analysis metrics ───────────────────────── */}
-      {analysisData.domainAuthority && (
-        <div className="step-main-domain__analysis">
-          <h3 className="step-main-domain__subtitle">Site Analysis Results</h3>
-          <div className="step-main-domain__metrics-grid">
-            <MetricInput
-              label="Domain Authority (DA)"
-              value={analysisData.domainAuthority}
-              onChange={(value) =>
-                setAnalysisData((prev) => ({ ...prev, domainAuthority: value }))
-              }
-            />
-            <MetricInput
-              label="Page Authority (PA)"
-              value={analysisData.pageAuthority}
-              onChange={(value) =>
-                setAnalysisData((prev) => ({ ...prev, pageAuthority: value }))
-              }
-            />
-            <MetricInput
-              label="Trust Flow"
-              value={analysisData.trustFlow}
-              onChange={(value) =>
-                setAnalysisData((prev) => ({ ...prev, trustFlow: value }))
-              }
-            />
-            <MetricInput
-              label="Citation Flow"
-              value={analysisData.citationFlow}
-              onChange={(value) =>
-                setAnalysisData((prev) => ({ ...prev, citationFlow: value }))
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {/* ── location input ─────────────────────────── */}
-      <div className="step-main-domain__input-group">
-        <label className="step-main-domain__label">
-          <strong>Location:</strong>
-          <div className="step-main-domain__input-container">
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Enter your location (e.g., New York, USA)"
-              className="step-main-domain__input"
-              disabled={isLocationLoading}
-            />
-            <button
-              onClick={async () => {
-                setIsLocationLoading(true);
-                try {
-                  const response = await fetch(
-                    `https://ai.1upmedia.com:443/get-business-location?url=${encodeURIComponent(
-                      domain
-                    )}`
-                  );
-                  if (response.ok) {
-                    const data = await response.json();
-                    if (data.detail) {
-                      setLocation(data.detail);
-                    }
-                  }
-                } catch (error) {
-                  console.error("Error fetching location:", error);
-                  setError("Failed to fetch location");
-                } finally {
-                  setIsLocationLoading(false);
-                }
-              }}
-              className="step-main-domain__get-location-btn"
-              disabled={!domain || isLocationLoading}
-            >
-              {isLocationLoading ? (
-                <>
-                  <span className="step-main-domain__spinner-small" />
-                  Loading...
-                </>
-              ) : (
-                "Get Location"
-              )}
-            </button>
-          </div>
-        </label>
-      </div>
-
-      {/* ── action buttons ─────────────────────────── */}
-      <div className="step-main-domain__button-group">
+  const DomainSection = () => (
+    <div className="step-main-domain__section">
+      <div className="step-main-domain__input-container">
+        <input
+          type="text"
+          value={domain}
+          onChange={(e) => setDomain(e.target.value)}
+          placeholder="Enter your website domain (e.g., example.com)"
+          className="step-main-domain__input"
+          disabled={isValidating}
+        />
         <button
-          onClick={handleSave}
-          disabled={!domain || !location || isSaving}
-          className={`step-main-domain__save-btn ${
-            isSaving ? "step-main-domain__save-btn--saving" : ""
+          onClick={handleValidateDomain}
+          className={`step-main-domain__primary-btn ${
+            isValidating ? "step-main-domain__primary-btn--loading" : ""
           }`}
+          disabled={!domain || isValidating}
         >
-          {isSaving ? (
-            <>
-              <span className="step-main-domain__spinner-small" />
-              Saving...
-            </>
+          {isValidating ? (
+            <div className="step-main-domain__loading-state">
+              <CircularProgress size={20} color="inherit" />
+              <span>Analyzing...</span>
+            </div>
           ) : (
-            "Save"
+            <>
+              <span className="step-main-domain__btn-icon">🔍</span>
+              <span>Analyze Site</span>
+            </>
           )}
         </button>
-        <button
-          onClick={handleNext}
-          disabled={!domain || !location || isSaving}
-          className="step-main-domain__next-btn"
-        >
-          Next
+      </div>
+      {isValidating && <AnalysisProgress steps={analysisSteps} />}
+    </div>
+  );
+
+  const MetricsDisplay = () =>
+    analysisData.domainAuthority && (
+      <div className="step-main-domain__section">
+        <h3 className="step-main-domain__subtitle">
+          <span role="img" aria-label="metrics">
+            📊
+          </span>{" "}
+          Site Metrics
+        </h3>
+        <div className="step-main-domain__metrics-grid">
+          {[
+            {
+              label: "Domain Authority",
+              key: "domainAuthority",
+              icon: "🏆",
+              description:
+                "Predicts how well a website will rank on search engines",
+              color: "#4CAF50",
+            },
+            {
+              label: "Page Authority",
+              key: "pageAuthority",
+              icon: "📈",
+              description: "Indicates the strength of individual pages",
+              color: "#2196F3",
+            },
+            {
+              label: "Trust Flow",
+              key: "trustFlow",
+              icon: "🔒",
+              description:
+                "Measures the quality of links pointing to your site",
+              color: "#9C27B0",
+            },
+            {
+              label: "Citation Flow",
+              key: "citationFlow",
+              icon: "🔗",
+              description: "Indicates how influential the site might be",
+              color: "#FF9800",
+            },
+          ].map(({ label, key, icon, description, color }) => (
+            <div
+              key={key}
+              className="step-main-domain__metric-card"
+              style={{ borderTop: `3px solid ${color}` }}
+            >
+              <div className="step-main-domain__metric-header">
+                <span className="step-main-domain__metric-icon">{icon}</span>
+                <h4 className="step-main-domain__metric-title">{label}</h4>
+              </div>
+              <p className="step-main-domain__metric-description">
+                {description}
+              </p>
+              <div className="step-main-domain__metric-value-container">
+                <input
+                  type="number"
+                  className="step-main-domain__metric-input"
+                  value={analysisData[key]}
+                  onChange={(e) => {
+                    const value = Math.min(
+                      100,
+                      Math.max(0, Number(e.target.value))
+                    );
+                    setAnalysisData((prev) => ({
+                      ...prev,
+                      [key]: value,
+                    }));
+                  }}
+                  min="0"
+                  max="100"
+                />
+                <div
+                  className="step-main-domain__metric-progress"
+                  style={{
+                    "--progress": `${analysisData[key]}%`,
+                    "--color": color,
+                  }}
+                ></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+  const SitemapsDisplay = () =>
+    sitemaps.length > 0 && (
+      <div className="step-main-domain__sitemap-section">
+        <h3 className="step-main-domain__subtitle">
+          <span role="img" aria-label="sitemap">
+            🗺️
+          </span>{" "}
+          Sitemaps
+        </h3>
+        {isFetchingSitemaps ? (
+          <div className="step-main-domain__loading-pulse" />
+        ) : (
+          <>
+            <div className="step-main-domain__sitemap-header">
+              <button
+                className="step-main-domain__select-all"
+                onClick={() => {
+                  if (selectedSitemaps.length === sitemaps.length) {
+                    setSelectedSitemaps([]);
+                  } else {
+                    setSelectedSitemaps([...sitemaps]);
+                  }
+                }}
+              >
+                {selectedSitemaps.length === sitemaps.length
+                  ? "Deselect All"
+                  : "Select All"}
+              </button>
+              <span className="step-main-domain__sitemap-count">
+                {selectedSitemaps.length} of {sitemaps.length} selected
+              </span>
+            </div>
+            <div className="step-main-domain__sitemap-list">
+              {sitemaps.map((sitemap, index) => (
+                <div key={index} className="step-main-domain__sitemap-item">
+                  <label className="step-main-domain__checkbox-container">
+                    <input
+                      type="checkbox"
+                      checked={selectedSitemaps.includes(sitemap)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedSitemaps((prev) => [...prev, sitemap]);
+                        } else {
+                          setSelectedSitemaps((prev) =>
+                            prev.filter((item) => item !== sitemap)
+                          );
+                        }
+                      }}
+                    />
+                    <span className="step-main-domain__checkbox-custom"></span>
+                    <span
+                      className="step-main-domain__sitemap-link"
+                      title={sitemap}
+                    >
+                      {sitemap}
+                    </span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {sitemapError && (
+          <div className="step-main-domain__error">{sitemapError}</div>
+        )}
+      </div>
+    );
+
+  const LocationDisplay = () => (
+    <div className="step-main-domain__section">
+      <h3 className="step-main-domain__subtitle">Business Location</h3>
+      <div className="step-main-domain__location-card">
+        <input
+          type="text"
+          className="step-main-domain__location-input"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Enter business location"
+        />
+      </div>
+    </div>
+  );
+
+  const BusinessDetailsDisplay = () => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [tempDetails, setTempDetails] = useState(businessDetails);
+
+    const handleSave = () => {
+      setBusinessDetails(tempDetails);
+      setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+      setTempDetails(businessDetails);
+      setIsEditing(false);
+    };
+
+    return (
+      <div className="step-main-domain__side-section">
+        <div className="step-main-domain__business-header">
+          <h3 className="step-main-domain__subtitle">
+            <span role="img" aria-label="business">
+              💼
+            </span>{" "}
+            Business Profile
+          </h3>
+          {!isEditing && (
+            <button
+              className="step-main-domain__edit-btn"
+              onClick={() => setIsEditing(true)}
+            >
+              <span role="img" aria-label="edit">
+                ✏️
+              </span>
+              Edit
+            </button>
+          )}
+        </div>
+        <div className="step-main-domain__business-card">
+          {isEditing ? (
+            <>
+              <textarea
+                className="step-main-domain__business-textarea"
+                value={tempDetails}
+                onChange={(e) => setTempDetails(e.target.value)}
+                placeholder="Enter your business description, products/services offered, and key information about your company..."
+                spellCheck="true"
+              />
+              <div className="step-main-domain__edit-actions">
+                <button
+                  className="step-main-domain__save-btn"
+                  onClick={handleSave}
+                >
+                  Save Changes
+                </button>
+                <button
+                  className="step-main-domain__cancel-btn"
+                  onClick={handleCancel}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="step-main-domain__business-content">
+              {businessDetails ? (
+                <p>{businessDetails}</p>
+              ) : (
+                <p className="step-main-domain__business-placeholder">
+                  No business description added yet. Click edit to add your
+                  business details.
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="step-main-domain">
+      <h2 className="step-main-domain__title">Site Analysis</h2>
+      {error && <div className="step-main-domain__error">{error}</div>}
+
+      <div className="step-main-domain__split-container">
+        <div className="step-main-domain__main-content">
+          <DomainSection />
+          <MetricsDisplay />
+          <SitemapsDisplay />
+          <LocationDisplay />
+        </div>
+
+        {businessDetails && (
+          <div className="step-main-domain__side-content">
+            <BusinessDetailsDisplay />
+          </div>
+        )}
+      </div>
+
+      <div className="step-main-domain__footer">
+        <button onClick={handleNext} className="step-main-domain__next-btn">
+          Continue to Keywords
+          <span className="step-main-domain__next-icon">→</span>
         </button>
       </div>
     </div>
   );
+};
+
+const ProgressSteps = ({ currentStep }) => {
+  const steps = [
+    { label: "Domain", icon: "🌐" },
+    { label: "Sitemaps", icon: "🗺️" },
+    { label: "Metrics", icon: "📊" },
+    { label: "Location", icon: "📍" },
+  ];
+
+  return (
+    <div className="step-main-domain__progress-container">
+      <div className="step-main-domain__progress-header">
+        <CircularProgress size={20} />
+        <h4 className="step-main-domain__progress-title">
+          Analysis in Progress
+        </h4>
+      </div>
+
+      <div className="step-main-domain__progress-steps">
+        <div className="step-main-domain__progress-line">
+          <div
+            className="step-main-domain__progress-line-fill"
+            style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
+          />
+        </div>
+
+        {steps.map((step, index) => (
+          <div key={index} className="step-main-domain__progress-step">
+            <div
+              className={`step-main-domain__step-indicator ${
+                index < currentStep
+                  ? "complete"
+                  : index === currentStep
+                  ? "active"
+                  : ""
+              }`}
+            >
+              {index < currentStep ? "✓" : step.icon}
+            </div>
+            <span className="step-main-domain__step-label">{step.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AnalysisProgress = ({ steps }) => (
+  <div className="step-main-domain__analysis-stepper">
+    {steps.map((step, index) => (
+      <div key={index} className="step-main-domain__step-container">
+        {/* Step Icon with Status */}
+        <div className={`step-main-domain__step-icon ${step.status}`}>
+          {step.status === "completed" ? (
+            <i className="material-icons success">
+              {getStepIcon(step.label, true)}
+            </i>
+          ) : step.status === "loading" ? (
+            <CircularProgress size={24} thickness={3} />
+          ) : step.status === "error" ? (
+            <i className="material-icons error">
+              {getStepIcon(step.label, false)}
+            </i>
+          ) : (
+            <i className="material-icons pending">
+              {getStepIcon(step.label, false)}
+            </i>
+          )}
+        </div>
+
+        {/* Connector Line */}
+        {index < steps.length - 1 && (
+          <div className="step-main-domain__step-connector">
+            <span
+              className={`step-main-domain__connector-line ${
+                steps[index].status === "completed"
+                  ? "completed"
+                  : steps[index].status === "loading"
+                  ? "active"
+                  : ""
+              }`}
+            />
+          </div>
+        )}
+
+        {/* Step Content */}
+        <div className="step-main-domain__step-content">
+          <span className={`step-main-domain__step-label ${step.status}`}>
+            {step.label}
+          </span>
+          <span className="step-main-domain__step-message">
+            {step.status === "completed" && step.successMessage}
+            {step.status === "error" && (
+              <span className="step-main-domain__error-message">
+                {step.errorMessage}
+              </span>
+            )}
+            {step.status === "loading" && (
+              <span className="step-main-domain__loading-message">
+                Processing<span className="step-main-domain__dots">...</span>
+              </span>
+            )}
+          </span>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// Helper function to get appropriate icon for each step
+const getStepIcon = (stepLabel, isComplete) => {
+  switch (stepLabel) {
+    case "Domain Validation":
+      return isComplete ? "domain_verified" : "domain";
+    case "Sitemap Analysis":
+      return isComplete ? "map" : "map_outlined";
+    case "Metrics Analysis":
+      return isComplete ? "analytics" : "monitoring";
+    case "Location Detection":
+      return isComplete ? "location_on" : "location_searching";
+    case "Business Details":
+      return isComplete ? "business_center" : "store";
+    default:
+      return isComplete ? "check_circle" : "radio_button_unchecked";
+  }
 };
 
 export default StepMainDomain;
