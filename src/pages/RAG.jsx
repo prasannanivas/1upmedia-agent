@@ -749,6 +749,22 @@ function RAG() {
         </form>
       </div>
       {/* Show generated content */}
+      {generatedContent.post_id && (
+        <div className="post-link success-message">
+          <p>
+            Post generated -{" "}
+            <a
+              href={`/1upmedia-agent#/post-details/${generatedContent.post_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="success-link"
+            >
+              View it here ✨
+            </a>
+          </p>
+        </div>
+      )}
+
       {generatedContent && (
         <div className="rag-generated-content">
           <h3>Generated Content</h3>
@@ -758,20 +774,7 @@ function RAG() {
               {generatedContent.content}
             </pre>
           </div>
-          {generatedContent.post_id && (
-            <div className="post-link">
-              <p>
-                Post generated -{" "}
-                <a
-                  href={`/1upmedia-agent#/post-details/${generatedContent.post_id}`}
-                  // target="_blank"
-                  // rel="noopener noreferrer"
-                >
-                  View it here
-                </a>
-              </p>
-            </div>
-          )}
+
           <div className="style-profile">
             <h4>Style Profile</h4>
             <p>Tone: {generatedContent.styleProfile.tone}</p>

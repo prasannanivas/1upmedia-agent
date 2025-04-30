@@ -11,6 +11,43 @@
   flex-direction: column;
 }
 
+.success-message {
+  background-color: #e6f4ea;
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin: 20px 0;
+  border-left: 4px solid #34a853;
+  animation: fadeIn 0.5s ease-in;
+}
+
+.success-link {
+  color: #34a853;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.success-link:hover {
+  background-color: #34a853;
+  color: white;
+  box-shadow: 0 2px 4px rgba(52, 168, 83, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* The form "card" styling */
 .rag-form {
   background-color: #fff;

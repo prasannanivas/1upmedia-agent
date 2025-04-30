@@ -7,10 +7,10 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState(() => {
-    const token = sessionStorage.getItem("accessToken");
-    const name = sessionStorage.getItem("name");
-    const profilePicture = sessionStorage.getItem("profilePicture");
-    const email = sessionStorage.getItem("email");
+    const token = localStorage.getItem("accessToken");
+    const name = localStorage.getItem("name");
+    const profilePicture = localStorage.getItem("profilePicture");
+    const email = localStorage.getItem("email");
 
     return {
       isLoggedIn: !!token && !!email,
@@ -51,12 +51,12 @@ export const AuthProvider = ({ children }) => {
       profilePicture,
       email,
     });
-    sessionStorage.setItem("accessToken", token);
-    sessionStorage.setItem("name", name);
-    sessionStorage.setItem("profilePicture", profilePicture);
-    sessionStorage.setItem("email", email);
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("name", name);
+    localStorage.setItem("profilePicture", profilePicture);
+    localStorage.setItem("email", email);
 
-    console.log(sessionStorage.getItem("email"));
+    console.log(localStorage.getItem("email"));
 
     // Redirect to the saved redirect path if it exists
     if (redirectPath) {
@@ -74,10 +74,10 @@ export const AuthProvider = ({ children }) => {
       profilePicture: null,
       email: null,
     });
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("name");
-    sessionStorage.removeItem("profilePicture");
-    sessionStorage.removeItem("email");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("name");
+    localStorage.removeItem("profilePicture");
+    localStorage.removeItem("email");
   };
 
   const getUserLoginDetails = () => {

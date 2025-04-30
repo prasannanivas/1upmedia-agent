@@ -66,8 +66,8 @@ const AppWrapper = () => {
 
   // Show a loading indicator while loading session data
   if (loading) {
-    const token = sessionStorage.getItem("accessToken");
-    const email = sessionStorage.getItem("email");
+    const token = localStorage.getItem("accessToken");
+    const email = localStorage.getItem("email");
 
     if (token && email) {
       return <Loader />;
