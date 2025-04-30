@@ -749,7 +749,7 @@ function RAG() {
         </form>
       </div>
       {/* Show generated content */}
-      {generatedContent.post_id && (
+      {generatedContent && generatedContent?.post_id && (
         <div className="post-link success-message">
           <p>
             Post generated -{" "}
