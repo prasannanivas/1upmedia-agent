@@ -1,18 +1,55 @@
-import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
-import "./PostDetails.css"; // Import the file-specific CSS
+import React, { useState, useEffect } from "react";
+import { useLocation, useParams } from "react-router-dom";
+import "./PostDetails.css";
 import FloatingOptions from "../components/FloatingOptions";
+import { useAuth } from "../context/AuthContext";
 
 function PostDetails() {
   const { state } = useLocation();
-  const { post } = state || {};
+  const { postId } = useParams();
+  const [post, setPost] = useState(state?.post || null);
+  const [loading, setLoading] = useState(!state?.post);
+  const [error, setError] = useState(null);
   const [showShareHistory, setShowShareHistory] = useState(false);
 
-  if (!post) {
-    return <div className="post-details__not-found">Post not found.</div>;
+  const { authState } = useAuth();
+  const email = authState.email;
+
+  useEffect(() => {
+    const fetchPost = async () => {
+      if (!post && email && postId) {
+        try {
+          const response = await fetch(
+            `https://ai.1upmedia.com:443/aiagent/posts/${email}/${postId}`
+          );
+          if (!response.ok) {
+            throw new Error("Failed to fetch post");
+          }
+          const data = await response.json();
+          setPost(data);
+        } catch (err) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchPost();
+  }, [email, postId, post]);
+
+  if (loading) {
+    return (
+      <div className="post-details__loading">
+        <div className="post-details__loading-spinner"></div>
+        <div>Loading your post...</div>
+      </div>
+    );
   }
 
-  console.log(post);
+  if (error || !post) {
+    return <div className="post-details__not-found">Post not found.</div>;
+  }
 
   return (
     <>

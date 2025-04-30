@@ -32,6 +32,7 @@ function RAG() {
   const [isUploadExpanded, setIsUploadExpanded] = useState(false);
   const [wordCount, setWordCount] = useState(500); // Add this state
   const [isCustomWordCount, setIsCustomWordCount] = useState(false); // Add this state
+  const [sources, setSources] = useState([]); // Add this state
 
   const [chunksData] = useState({
     totalChunks: 2,
@@ -59,6 +60,7 @@ function RAG() {
   useEffect(() => {
     if (email) {
       handleCheckStrength(); // Add strength check on mount
+      fetchSources(); // Add sources fetch on mount
     }
   }, [email]);
 
@@ -162,7 +164,21 @@ function RAG() {
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/summary?email=...
-     ────────────────────────────────────────────────────────────────────── *
+     ────────────────────────────────────────────────────────────────────── */
+  const fetchSources = async () => {
+    try {
+      const res = await fetch(
+        `https://ai.1upmedia.com:443/RAG/summary?email=${encodeURIComponent(
+          email
+        )}`
+      );
+      if (!res.ok) throw new Error(`Sources fetch error: ${res.status}`);
+      const data = await res.json();
+      setSources(data.sources);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/personaPrompt?email=...
@@ -209,6 +225,34 @@ function RAG() {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  /* ──────────────────────────────────────────────────────────────────────
+     DELETE /RAG/deleteBySource
+     ────────────────────────────────────────────────────────────────────── */
+  const handleDeleteSource = async (sourceName) => {
+    try {
+      const res = await fetch(
+        "https://ai.1upmedia.com:443/RAG/deleteBySource",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            sourceName,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error(`Delete error: ${res.status}`);
+      // Refresh sources list
+      fetchSources();
+      // Refresh strength data
+      handleCheckStrength();
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -304,24 +348,50 @@ function RAG() {
       {/* Strength Overview */}
       {strengthData && (
         <div className="rag-strength-overview">
-          <div className="strength-chart">
-            <div
-              style={{ width: "200px", height: "200px", position: "relative" }}
-            >
-              <Doughnut data={strengthChartData} options={chartOptions} />
-              <div className="chart-center-text">
-                <strong>{strengthData.strengthScore}</strong>
-                <span>/{100}</span>
+          <div className="strength-chart-container">
+            <div className="strength-chart">
+              <div
+                style={{
+                  width: "200px",
+                  height: "200px",
+                  position: "relative",
+                }}
+              >
+                <Doughnut data={strengthChartData} options={chartOptions} />
+                <div className="chart-center-text">
+                  <strong>{strengthData.strengthScore}</strong>
+                  <span>/{100}</span>
+                </div>
+              </div>
+              <div className="strength-level">
+                <h3>{strengthData.strengthLevel}</h3>
+                <button
+                  className="rag-button-secondary"
+                  onClick={() => setShowDetails(!showDetails)}
+                >
+                  {showDetails ? "Hide Details" : "Show Details"}
+                </button>
               </div>
             </div>
-            <div className="strength-level">
-              <h3>{strengthData.strengthLevel}</h3>
-              <button
-                className="rag-button-secondary"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                {showDetails ? "Hide Details" : "Show Details"}
-              </button>
+
+            <div className="sources-list">
+              <h4>Current Sources</h4>
+              {sources.map((source, index) => (
+                <div key={index} className="source-item">
+                  <span>{source}</span>
+                  <button
+                    onClick={() => handleDeleteSource(source)}
+                    className="source-delete"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {sources.length === 0 && (
+                <p style={{ textAlign: "center", color: "#666" }}>
+                  No sources available
+                </p>
+              )}
             </div>
           </div>
 
@@ -475,7 +545,7 @@ function RAG() {
       )}
       {/* Content Generation Form */}
       <div className="rag-content-generation">
-        <h3>Generate Content to Test your RAG!</h3>
+        <h3>Generate Content to Fill Out Brief.</h3>
         <form
           onSubmit={
             !contentStrategy ? handleAnalyzeStrategy : handleGenerateContent
@@ -484,7 +554,7 @@ function RAG() {
           <input
             type="text"
             className="rag-input"
-            placeholder="Enter topic for content generation"
+            placeholder="Enter topic for brief generation"
             value={contentTopic}
             onChange={(e) => setContentTopic(e.target.value)}
           />
@@ -660,7 +730,7 @@ function RAG() {
                   <span className="button-spinner"></span>
                 </>
               ) : !contentStrategy ? (
-                "Analyze Strategy"
+                "Generate brief. "
               ) : (
                 "Generate Content"
               )}
@@ -688,6 +758,20 @@ function RAG() {
               {generatedContent.content}
             </pre>
           </div>
+          {generatedContent.post_id && (
+            <div className="post-link">
+              <p>
+                Post generated -{" "}
+                <a
+                  href={`/1upmedia-agent#/post-details/${generatedContent.post_id}`}
+                  // target="_blank"
+                  // rel="noopener noreferrer"
+                >
+                  View it here
+                </a>
+              </p>
+            </div>
+          )}
           <div className="style-profile">
             <h4>Style Profile</h4>
             <p>Tone: {generatedContent.styleProfile.tone}</p>
