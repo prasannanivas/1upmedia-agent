@@ -71,7 +71,8 @@
 
 /* ✨ Large Textarea for HTML Mode */
 .edit-post__textarea.expanded {
-  min-height: 1000px; /* Larger for better HTML readability */
+  min-height: 1000px;
+  /* Larger for better HTML readability */
 
   white-space: pre-wrap;
   line-height: 1.6;
@@ -86,6 +87,7 @@
 .edit-post__textarea.expanded::-webkit-scrollbar {
   width: 6px;
 }
+
 .edit-post__textarea.expanded::-webkit-scrollbar-thumb {
   background-color: #ccc;
   border-radius: 10px;
@@ -228,4 +230,67 @@
   background: #005ecb;
 }
 
+/* ✨ AI Button */
+.ql-ai {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px 10px;
+  margin: 0 5px;
+  background-color: #4a90e2;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+}
 
+.ql-ai:hover {
+  background-color: #357abd;
+}
+
+/* ✨ Diff Toolbar */
+.diff-toolbar {
+  position: absolute;
+  right: 20px;
+  /* Position on the right side */
+  transform: translateY(-50%);
+  /* Center vertically */
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  /* More rounded corners */
+  padding: 4px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  display: flex;
+  gap: 6px;
+  backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.diff-toolbar button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.diff-toolbar .accept-change {
+  background-color: #4caf50;
+  color: white;
+}
+
+.diff-toolbar .accept-change:hover {
+  background-color: #388e3c;
+}
+
+.diff-toolbar .reject-change {
+  background-color: #f44336;
+  color: white;
+}
+
+.diff-toolbar .reject-change:hover {
+  background-color: #d32f2f;
+}

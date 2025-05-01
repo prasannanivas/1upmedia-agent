@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import ReactQuill from "react-quill";
@@ -6,7 +6,58 @@ import "react-quill/dist/quill.snow.css";
 import beautify from "js-beautify";
 import "./Editpost.css";
 import ChangeImageModal from "../components/ChangeImageModal"; // Import the new component
+import AiPromptModal from "../components/AiPromptModal"; // Import the AiPromptModal component
+import AiDiffPreview from "../components/AiDiffPreview"; // Import AiDiffPreview component
 import { image } from "framer-motion/client";
+import Quill from "quill";
+
+// Register custom formats
+const Inline = Quill.import("blots/inline");
+
+class DiffDeleteBlot extends Inline {
+  static create() {
+    const node = super.create();
+    node.style.backgroundColor = "#ffd7d7";
+    node.style.color = "#c62828";
+    node.style.textDecoration = "line-through";
+    return node;
+  }
+}
+DiffDeleteBlot.blotName = "diff-delete";
+DiffDeleteBlot.tagName = "span";
+Quill.register(DiffDeleteBlot);
+
+class DiffInsertBlot extends Inline {
+  static create() {
+    const node = super.create();
+    node.style.backgroundColor = "#d7ffd7";
+    node.style.color = "#2e7d32";
+    return node;
+  }
+}
+DiffInsertBlot.blotName = "diff-insert";
+DiffInsertBlot.tagName = "span";
+Quill.register(DiffInsertBlot);
+
+// Add this custom format button
+const CustomToolbar = () => (
+  <div id="toolbar">
+    {/* ...existing Quill toolbar options... */}
+    <button className="ql-ai" title="Enhance with AI">
+      <span>AI</span>
+    </button>
+  </div>
+);
+
+// Add this custom module configuration
+const modules = {
+  toolbar: {
+    container: "#toolbar",
+    handlers: {
+      ai: function () {}, // Will be defined in the component
+    },
+  },
+};
 
 function EditPost() {
   const { state } = useLocation();
@@ -32,6 +83,19 @@ function EditPost() {
   const [imageAlt, setImageAlt] = useState(""); // Stores alt text for image
   const [isModalOpen, setIsModalOpen] = useState(false); // Controls the modal visibility
 
+  const quillRef = useRef(null);
+  const [selectedText, setSelectedText] = useState("");
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isAiPromptOpen, setIsAiPromptOpen] = useState(false); // Controls the AI prompt modal visibility
+  const [diffPreview, setDiffPreview] = useState({
+    show: false,
+    original: "",
+    suggested: "",
+  }); // State for diff preview
+
+  // Add a new ref to store the selection range
+  const selectionRangeRef = useRef(null);
+
   // Open modal
   const openImageModal = () => {
     setIsModalOpen(true);
@@ -42,6 +106,150 @@ function EditPost() {
     setImageUrl(newImageUrl);
     setImageAlt(newAltText);
   };
+
+  const handleAiEnhancement = useCallback(async () => {
+    const quillEditor = quillRef.current.getEditor();
+    const range = quillEditor.getSelection();
+
+    if (range) {
+      const text = quillEditor.getText(range.index, range.length);
+      if (text) {
+        try {
+          // const response = await fetch(
+          //   "https://ai.1upmedia.com:443/aiagent/enhance",
+          //   {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json",
+          //     },
+          //     body: JSON.stringify({
+          //       text,
+          //       instruction:
+          //         "Enhance this text while maintaining the same meaning",
+          //     }),
+          //   }
+          // );
+
+          // const { enhancedText } = await response.json();
+          quillEditor.deleteText(range.index, range.length);
+          quillEditor.insertText(
+            range.index,
+            "enhancedText Billa is awesome..."
+          );
+        } catch (error) {
+          console.error("Error enhancing text:", error);
+        }
+      }
+    }
+  }, []);
+
+  // Modify handleKeyDown to store the range
+  const handleKeyDown = useCallback((e) => {
+    if (e.ctrlKey && e.key === "i") {
+      e.preventDefault();
+      console.log("Ctrl+I pressed");
+      const quillEditor = quillRef.current.getEditor();
+      const range = quillEditor.getSelection();
+
+      if (range) {
+        const text = quillEditor.getText(range.index, range.length);
+        console.log("Selected text:", text);
+        if (text) {
+          // Store the range and text
+          selectionRangeRef.current = range;
+          setSelectedText(text);
+          setIsAiPromptOpen(true);
+          console.log("Opening AI prompt modal with range:", range);
+        }
+      }
+    }
+  }, []);
+
+  // Modify handleAiPromptSubmit to use the stored range
+  const handleAiPromptSubmit = async (prompt) => {
+    if (selectionRangeRef.current) {
+      const range = selectionRangeRef.current;
+      const text = selectedText;
+
+      // Mock response for testing
+      const mockResponse = {
+        enhancedText: `I have enhanced this text based on your prompt: "${prompt}".`,
+        reasoning: `This change was made to demonstrate how the AI enhancement works with the prompt: "${prompt}"`,
+        confidence: 0.95,
+      };
+
+      const quillEditor = quillRef.current.getEditor();
+
+      // Show inline diff
+      quillEditor.formatText(range.index, range.length, "diff-delete", true);
+
+      // Insert new text right after the deleted text
+      quillEditor.insertText(
+        range.index + range.length,
+        mockResponse.enhancedText,
+        "diff-insert",
+        true
+      );
+
+      // Create floating toolbar for accept/reject
+      const toolbar = document.createElement("div");
+      toolbar.className = "diff-toolbar";
+      toolbar.style.position = "absolute";
+      toolbar.style.top = "50%";
+      toolbar.style.right = "20px";
+      toolbar.innerHTML = `
+        <button class="accept-change">✓ Accept</button>
+        <button class="reject-change">✕ Reject</button>
+      `;
+
+      quillEditor.container.appendChild(toolbar);
+
+      // Handle accept/reject
+      toolbar.querySelector(".accept-change").onclick = () => {
+        // Remove old text
+        quillEditor.deleteText(range.index, range.length);
+        // Remove the green highlighting from new text
+        quillEditor.removeFormat(range.index, mockResponse.enhancedText.length);
+        // Set the text color back to default
+        quillEditor.formatText(range.index, mockResponse.enhancedText.length);
+        toolbar.remove();
+      };
+
+      toolbar.querySelector(".reject-change").onclick = () => {
+        // Remove new text
+        quillEditor.deleteText(
+          range.index + range.length,
+          mockResponse.enhancedText.length
+        );
+        // Remove formatting from original text
+        quillEditor.removeFormat(range.index, range.length);
+        toolbar.remove();
+      };
+    }
+
+    setIsAiPromptOpen(false);
+  };
+
+  const handleAcceptChange = () => {
+    console.log("Accepting changes");
+    const quillEditor = quillRef.current.getEditor();
+    const { range, suggested } = diffPreview;
+    console.log("Range and suggested text:", { range, suggested });
+
+    quillEditor.deleteText(range.index, range.length);
+    quillEditor.insertText(range.index, suggested);
+    console.log("Text replaced in editor");
+
+    setDiffPreview({ show: false, original: "", suggested: "" });
+    console.log("Diff preview cleared");
+  };
+
+  const handleRejectChange = () => {
+    console.log("Rejecting changes");
+    setDiffPreview({ show: false, original: "", suggested: "" });
+    console.log("Diff preview cleared");
+  };
+
   useEffect(() => {
     const fetchPost = async () => {
       if (!post) {
@@ -74,6 +282,17 @@ function EditPost() {
 
     fetchPost();
   }, [post, email, postId]);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    console.log("diffPreview state changed:", diffPreview);
+  }, [diffPreview]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -164,11 +383,24 @@ function EditPost() {
     return <div>Loading...</div>;
   }
 
+  console.log("Current diffPreview state:", diffPreview);
+
   return (
     <div className="edit-post__container">
       <h2 className="edit-post__title">Edit Post</h2>
       <div className="edit-post__form">
         <div className="edit-post__main">
+          {/* Place the AiDiffPreview at the top of the main content area */}
+          {diffPreview.show && (
+            <AiDiffPreview
+              originalText={diffPreview.original}
+              newText={diffPreview.suggested}
+              onAccept={handleAcceptChange}
+              onReject={handleRejectChange}
+              reasoning={diffPreview.reasoning}
+              confidence={diffPreview.confidence}
+            />
+          )}
           <label className="edit-post__label">
             Title:
             <input
@@ -197,11 +429,36 @@ function EditPost() {
           </div>
 
           {editingMode === "post" ? (
-            <ReactQuill
-              value={formData.content}
-              onChange={handleEditorChange}
-              className="edit-post__wysiwyg"
-            />
+            <>
+              <CustomToolbar />
+              {/* Add this right before your ReactQuill editor */}
+              {diffPreview.show && (
+                <AiDiffPreview
+                  originalText={diffPreview.original}
+                  newText={diffPreview.suggested}
+                  onAccept={handleAcceptChange}
+                  onReject={handleRejectChange}
+                  reasoning={diffPreview.reasoning}
+                  confidence={diffPreview.confidence}
+                />
+              )}
+              <ReactQuill
+                ref={quillRef}
+                value={formData.content}
+                onChange={handleEditorChange}
+                className="edit-post__wysiwyg"
+                modules={{
+                  ...modules,
+                  toolbar: {
+                    ...modules.toolbar,
+                    handlers: {
+                      ...modules.toolbar.handlers,
+                      ai: handleAiEnhancement,
+                    },
+                  },
+                }}
+              />
+            </>
           ) : (
             <textarea
               name="content"
@@ -312,6 +569,12 @@ function EditPost() {
       <button className="edit-post__save-button" onClick={saveChanges}>
         Save Changes
       </button>
+      <AiPromptModal
+        isOpen={isAiPromptOpen}
+        onClose={() => setIsAiPromptOpen(false)}
+        onSubmit={handleAiPromptSubmit}
+        selectedText={selectedText}
+      />
     </div>
   );
 }

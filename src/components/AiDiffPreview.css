@@ -1,0 +1,55 @@
+.ai-diff-preview {
+  position: relative;
+  margin: 20px 0;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.diff-header {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.text-block.removed {
+  background-color: #fee2e2;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+}
+
+.text-block.added {
+  background-color: #dcfce7;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+}
+
+.diff-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.diff-actions button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.accept-btn {
+  background-color: #22c55e;
+  color: white;
+  border: none;
+}
+
+.reject-btn {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+}
