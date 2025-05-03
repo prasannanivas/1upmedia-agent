@@ -403,7 +403,7 @@
 
 .step-main-domain__side-content {
   position: sticky;
-  flex: 3;
+  flex: 2;
   top: 24px;
   height: fit-content;
 }
@@ -1394,111 +1394,186 @@
   gap: 24px;
 }
 
-.step-main-domain__total-analyzed {
-  background: linear-gradient(135deg, #2196F3, #1976D2);
-  color: white;
-  padding: 16px 24px;
-  border-radius: 8px;
+.step-main-domain__funnel-container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.step-main-domain__analysis-header {
+  margin-bottom: 24px;
+}
+
+.step-main-domain__total-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
-}
-
-.step-main-domain__stat-value {
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.step-main-domain__funnel-distribution {
-  display: grid;
   gap: 16px;
   padding: 16px;
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #f6f9fe, #ffffff);
   border-radius: 8px;
+  border: 1px solid #e0e7ff;
 }
 
-.step-main-domain__funnel-stage {
-  background: white;
-  padding: 16px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease;
-}
-
-.step-main-domain__funnel-stage:hover {
-  transform: translateY(-2px);
-}
-
-.step-main-domain__stage-header {
+.step-main-domain__total-icon {
+  font-size: 24px;
+  background: #fff;
+  width: 48px;
+  height: 48px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  justify-content: center;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
-.step-main-domain__stage-name {
-  font-weight: 600;
+.step-main-domain__total-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step-main-domain__total-label {
   font-size: 14px;
-  color: #424242;
+  color: #64748b;
+}
+
+.step-main-domain__total-number {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.step-main-domain__funnel-visualization {
+  display: grid;
+  gap: 16px;
+}
+
+.step-main-domain__funnel-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 12px var(--card-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  animation: slideIn 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-main-domain__card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-main-domain__stage-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-main-domain__stage-icon {
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.step-main-domain__stage-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step-main-domain__stage-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
 }
 
 .step-main-domain__stage-count {
-  background: #f5f5f5;
-  padding: 4px 12px;
-  border-radius: 12px;
   font-size: 14px;
-  font-weight: 600;
-  color: #616161;
+  color: #64748b;
 }
 
-.step-main-domain__progress-bar {
+.step-main-domain__progress-container {
+  margin-top: 8px;
+}
+
+.step-main-domain__progress-track {
   height: 8px;
-  background: #f5f5f5;
+  background: #f1f5f9;
   border-radius: 4px;
   overflow: hidden;
-  margin: 8px 0;
+  position: relative;
 }
 
 .step-main-domain__progress-fill {
   height: 100%;
-  transition: width 0.6s ease-in-out;
+  background: var(--card-gradient);
   border-radius: 4px;
+  transition: width 0.6s ease-in-out;
+  position: relative;
 }
 
-.step-main-domain__progress-fill[data-stage="ToF"] {
-  background: linear-gradient(90deg, #4CAF50, #81C784);
-}
-
-.step-main-domain__progress-fill[data-stage="MoF"] {
-  background: linear-gradient(90deg, #2196F3, #64B5F6);
-}
-
-.step-main-domain__progress-fill[data-stage="BoF"] {
-  background: linear-gradient(90deg, #9C27B0, #BA68C8);
-}
-
-.step-main-domain__progress-fill[data-stage="Unknown"] {
-  background: linear-gradient(90deg, #FF9800, #FFB74D);
-}
-
-.step-main-domain__percentage {
+.step-main-domain__progress-fill::after {
+  content: attr(data-percentage);
+  position: absolute;
+  right: 0;
+  top: -24px;
   font-size: 12px;
-  color: #757575;
-  display: block;
-  text-align: right;
   font-weight: 500;
+  color: #64748b;
+  transform: translateX(50%);
 }
 
-@keyframes spin {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
+/* Hover effects */
+.step-main-domain__funnel-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--card-shadow);
+  transition: all 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+  .step-main-domain__funnel-visualization {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+/* Loading state */
+.step-main-domain__funnel-section.loading .step-main-domain__funnel-card {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Animation for new cards */
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
   }
 
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
+}
+
+.step-main-domain__funnel-card {
+  animation: cardAppear 0.3s ease-out forwards;
 }
 
 /* Loading Pulse Animation */

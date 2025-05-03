@@ -93,11 +93,19 @@ const StepMainDomain = () => {
   const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
   const [selectedSitemaps, setSelectedSitemaps] = useState([]);
   const [isSitemapValidated, setIsSitemapValidated] = useState(false);
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [businessDetails, setBusinessDetails] = useState(
     onboardingData.businessDetails || ""
   );
+  const [funnelAnalysis, setFunnelAnalysis] = useState({
+    totalAnalyzed: 0,
+    funnelDistribution: {
+      ToF: 0,
+      MoF: 0,
+      BoF: 0,
+      Unknown: 0,
+    },
+  });
 
   const [analysisSteps, setAnalysisSteps] = useState([
     {
@@ -132,21 +140,28 @@ const StepMainDomain = () => {
     },
   ]);
 
-  const [funnelAnalysis, setFunnelAnalysis] = useState({
-    totalAnalyzed: 0,
-    funnelDistribution: {
-      ToF: 0,
-      MoF: 0,
-      BoF: 0,
-      Unknown: 0,
-    },
-  });
-
   useEffect(() => {
     setDomain(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
     setAnalysisData(onboardingData.initialAnalysisState);
     setBusinessDetails(onboardingData.businessDetails || "");
+    setFunnelAnalysis(
+      onboardingData.funnelAnalysis || {
+        totalAnalyzed: 0,
+        funnelDistribution: {
+          ToF: 0,
+          MoF: 0,
+          BoF: 0,
+          Unknown: 0,
+        },
+      }
+    );
+    setSitemaps(onboardingData.sitemaps || []);
+    setSelectedSitemaps(onboardingData.selectedSitemaps || []);
+    setIsSitemapValidated(onboardingData.isSitemapValidated || false);
+    if (onboardingData.isSitemapValidated) {
+      updateStepStatus(1, "success");
+    }
   }, [onboardingData]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -289,34 +304,26 @@ const StepMainDomain = () => {
       // Run funnel analysis for selected sitemaps
       await analyzeFunnel(selectedXmls);
 
-      const [metricsResponse, locationResponse, businessDetailsResponse] =
-        await Promise.all([
-          // Fetch domain metrics
-          fetch("https://ai.1upmedia.com:443/get-domain-authority", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              site_url: `https://${domain}`,
-              include_majestic: true,
-            }),
+      const [metricsResponse, businessDetailsResponse] = await Promise.all([
+        // Fetch domain metrics
+        fetch("https://ai.1upmedia.com:443/get-domain-authority", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            site_url: `https://${domain}`,
+            include_majestic: true,
           }),
+        }),
 
-          // Fetch business location
-          fetch(
-            `https://ai.1upmedia.com:443/get-business-location?url=${encodeURIComponent(
-              domain
-            )}`
-          ),
-
-          // Fetch business details
-          fetch("https://ai.1upmedia.com:443/get-business-details", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              url: domain,
-            }),
+        // Fetch business details
+        fetch("https://ai.1upmedia.com:443/get-business-details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            url: domain,
           }),
-        ]);
+        }),
+      ]);
 
       // Process metrics response
       const metricsData = await metricsResponse.json();
@@ -332,17 +339,6 @@ const StepMainDomain = () => {
         onboardingData.initialAnalysisState = analysisResult;
       } else {
         updateStepStatus(2, "error");
-      }
-
-      // Process location response
-      if (locationResponse.ok) {
-        const locationData = await locationResponse.json();
-        if (locationData.detail) {
-          setLocation(locationData.detail);
-          updateStepStatus(3, "completed");
-        } else {
-          updateStepStatus(3, "error");
-        }
       }
 
       // Process business details response
@@ -399,18 +395,71 @@ const StepMainDomain = () => {
   };
 
   /* ────────────────────────────────
-     Save + next (unchanged)
+     Save + next
   ──────────────────────────────── */
+  const handleSave = async () => {
+    try {
+      const filteredSiteData = {
+        ...(domain && { URL: domain }),
+        ...(location && { location }),
+        ...(businessDetails && { businessDetails }),
+        dynamic_fields: {
+          ...analysisData,
+          ...(sitemaps && { sitemaps }),
+          ...(selectedSitemaps && { selectedSitemaps }),
+          ...(funnelAnalysis && { funnelAnalysis }),
+          ...(onboardingData.suggestionsFromAi && {
+            suggestions: {
+              ...onboardingData.suggestionsFromAi,
+            },
+          }),
+        },
+      };
 
-  const handleNext = () => {
-    setOnboardingData((prev) => ({
-      ...prev,
-      domain,
-      location,
-      siteAnalysis: analysisData,
-      businessDetails,
-    }));
-    navigate("/onboarding/step-keywords");
+      if (Object.keys(filteredSiteData.dynamic_fields).length === 0) {
+        delete filteredSiteData.dynamic_fields;
+      }
+
+      // Update the onboarding context
+      const updatedData = {
+        ...onboardingData,
+        domain,
+        location,
+        siteAnalysis: analysisData,
+        businessDetails,
+        sitemaps,
+        selectedSitemaps,
+        isSitemapValidated,
+        funnelAnalysis,
+        lastUpdated: new Date().toISOString(),
+      };
+      setOnboardingData(updatedData);
+
+      // Save to backend
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          siteData: filteredSiteData,
+        }),
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error in handleSave:", error);
+      throw error;
+    }
+  };
+
+  const handleNext = async () => {
+    try {
+      await handleSave();
+      navigate("/onboarding/step-keywords");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      setError("Failed to save your progress. Please try again.");
+    }
   };
 
   /* ────────────────────────────────
@@ -495,74 +544,6 @@ const StepMainDomain = () => {
                 }}
               ></div>
             </>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  const LocationSection = ({ location, setLocation }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [tempLocation, setTempLocation] = useState(location);
-
-    const handleSave = () => {
-      setLocation(tempLocation);
-      setIsEditing(false);
-    };
-
-    return (
-      <div className="step-main-domain__section">
-        <div className="step-main-domain__section-header">
-          <h3 className="step-main-domain__subtitle">
-            <span role="img" aria-label="location">
-              📍
-            </span>{" "}
-            Business Location
-          </h3>
-          {!isEditing && (
-            <button
-              className="step-main-domain__edit-btn"
-              onClick={() => setIsEditing(true)}
-            >
-              <span role="img" aria-label="edit">
-                ✏️
-              </span>
-              Edit
-            </button>
-          )}
-        </div>
-        <div className="step-main-domain__location-card">
-          {isEditing ? (
-            <div className="step-main-domain__edit-container">
-              <input
-                type="text"
-                className="step-main-domain__location-input"
-                value={tempLocation}
-                onChange={(e) => setTempLocation(e.target.value)}
-                placeholder="Enter business location"
-              />
-              <div className="step-main-domain__button-group">
-                <button
-                  className="step-main-domain__save-btn"
-                  onClick={handleSave}
-                >
-                  Save
-                </button>
-                <button
-                  className="step-main-domain__cancel-btn"
-                  onClick={() => {
-                    setTempLocation(location);
-                    setIsEditing(false);
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="step-main-domain__location-display">
-              {location || "No location set"}
-            </div>
           )}
         </div>
       </div>
@@ -783,84 +764,103 @@ const StepMainDomain = () => {
                 Content Funnel Analysis
               </h3>
               <div className="step-main-domain__funnel-container">
-                <div className="step-main-domain__total-analyzed">
-                  <span className="step-main-domain__stat-label">
-                    Total Pages Analyzed:
-                  </span>
-                  <span className="step-main-domain__stat-value">
-                    {funnelAnalysis.totalAnalyzed}
-                  </span>
+                <div className="step-main-domain__analysis-header">
+                  <div className="step-main-domain__total-card">
+                    <div className="step-main-domain__total-icon">📊</div>
+                    <div className="step-main-domain__total-info">
+                      <span className="step-main-domain__total-label">
+                        Pages Analyzed
+                      </span>
+                      <span className="step-main-domain__total-number">
+                        {funnelAnalysis.totalAnalyzed}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="step-main-domain__funnel-distribution">
+
+                <div className="step-main-domain__funnel-visualization">
                   {Object.entries(funnelAnalysis.funnelDistribution).map(
-                    ([stage, count]) => {
+                    ([stage, count], index) => {
                       const percentage = (
                         (count / funnelAnalysis.totalAnalyzed) *
                         100
                       ).toFixed(1);
-                      const getStageColor = (stage) => {
-                        switch (stage) {
-                          case "ToF":
-                            return {
-                              gradient:
-                                "linear-gradient(90deg, #4CAF50, #81C784)",
-                              shadow: "rgba(76, 175, 80, 0.2)",
-                            };
-                          case "MoF":
-                            return {
-                              gradient:
-                                "linear-gradient(90deg, #2196F3, #64B5F6)",
-                              shadow: "rgba(33, 150, 243, 0.2)",
-                            };
-                          case "BoF":
-                            return {
-                              gradient:
-                                "linear-gradient(90deg, #9C27B0, #BA68C8)",
-                              shadow: "rgba(156, 39, 176, 0.2)",
-                            };
-                          default:
-                            return {
-                              gradient:
-                                "linear-gradient(90deg, #FF9800, #FFB74D)",
-                              shadow: "rgba(255, 152, 0, 0.2)",
-                            };
-                        }
+                      const getStageInfo = (stage) => {
+                        const info = {
+                          ToF: {
+                            gradient:
+                              "linear-gradient(135deg, #4CAF50, #81C784)",
+                            shadow: "rgba(76, 175, 80, 0.2)",
+                            icon: "🎯",
+                            label: "Top of Funnel",
+                            description: "Awareness & Discovery Content",
+                          },
+                          MoF: {
+                            gradient:
+                              "linear-gradient(135deg, #2196F3, #64B5F6)",
+                            shadow: "rgba(33, 150, 243, 0.2)",
+                            icon: "🔄",
+                            label: "Middle of Funnel",
+                            description: "Consideration & Evaluation Content",
+                          },
+                          BoF: {
+                            gradient:
+                              "linear-gradient(135deg, #9C27B0, #BA68C8)",
+                            shadow: "rgba(156, 39, 176, 0.2)",
+                            icon: "🎯",
+                            label: "Bottom of Funnel",
+                            description: "Decision & Conversion Content",
+                          },
+                          Unknown: {
+                            gradient:
+                              "linear-gradient(135deg, #FF9800, #FFB74D)",
+                            shadow: "rgba(255, 152, 0, 0.2)",
+                            icon: "❓",
+                            label: "Unclassified",
+                            description: "Content pending classification",
+                          },
+                        };
+                        return info[stage] || info.Unknown;
                       };
 
-                      const stageStyle = getStageColor(stage);
+                      const stageInfo = getStageInfo(stage);
 
-                      return (
+                      return stage === "Unknown" ? null : (
                         <div
                           key={stage}
-                          className="step-main-domain__funnel-stage"
+                          className="step-main-domain__funnel-card"
                           style={{
-                            boxShadow: `0 4px 15px ${stageStyle.shadow}`,
-                            borderLeft: `4px solid ${stageStyle.gradient
-                              .split(",")[0]
-                              .slice(21)}`,
+                            "--card-gradient": stageInfo.gradient,
+                            "--card-shadow": stageInfo.shadow,
+                            animationDelay: `${index * 0.1}s`,
                           }}
+                          title={stageInfo.description}
                         >
-                          <div className="step-main-domain__stage-header">
-                            <span className="step-main-domain__stage-name">
-                              {stage}
-                            </span>
-                            <span className="step-main-domain__stage-count">
-                              {count}
-                            </span>
+                          <div className="step-main-domain__card-content">
+                            <div className="step-main-domain__stage-info">
+                              <span className="step-main-domain__stage-icon">
+                                {stageInfo.icon}
+                              </span>
+                              <div className="step-main-domain__stage-details">
+                                <span className="step-main-domain__stage-label">
+                                  {stageInfo.label}
+                                </span>
+                                <span className="step-main-domain__stage-count">
+                                  {count} pages
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="step-main-domain__progress-container">
+                              <div className="step-main-domain__progress-track">
+                                <div
+                                  className="step-main-domain__progress-fill"
+                                  style={{ width: `${percentage}%` }}
+                                  data-percentage={`${percentage}%`}
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="step-main-domain__progress-bar">
-                            <div
-                              className="step-main-domain__progress-fill"
-                              data-stage={stage}
-                              style={{
-                                width: `${percentage}%`,
-                                background: stageStyle.gradient,
-                              }}
-                            />
-                          </div>
-                          <span className="step-main-domain__percentage">
-                            {percentage}% of total content
-                          </span>
                         </div>
                       );
                     }
@@ -955,52 +955,6 @@ const StepMainDomain = () => {
           Continue to Keywords
           <span className="step-main-domain__next-icon">→</span>
         </button>
-      </div>
-    </div>
-  );
-};
-
-const ProgressSteps = ({ currentStep }) => {
-  const steps = [
-    { label: "Domain", icon: "🌐" },
-    { label: "Sitemaps", icon: "🗺️" },
-    { label: "Metrics", icon: "📊" },
-    { label: "Location", icon: "📍" },
-  ];
-
-  return (
-    <div className="step-main-domain__progress-container">
-      <div className="step-main-domain__progress-header">
-        <CircularProgress size={20} />
-        <h4 className="step-main-domain__progress-title">
-          Analysis in Progress
-        </h4>
-      </div>
-
-      <div className="step-main-domain__progress-steps">
-        <div className="step-main-domain__progress-line">
-          <div
-            className="step-main-domain__progress-line-fill"
-            style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-          />
-        </div>
-
-        {steps.map((step, index) => (
-          <div key={index} className="step-main-domain__progress-step">
-            <div
-              className={`step-main-domain__step-indicator ${
-                index < currentStep
-                  ? "complete"
-                  : index === currentStep
-                  ? "active"
-                  : ""
-              }`}
-            >
-              {index < currentStep ? "✓" : step.icon}
-            </div>
-            <span className="step-main-domain__step-label">{step.label}</span>
-          </div>
-        ))}
       </div>
     </div>
   );

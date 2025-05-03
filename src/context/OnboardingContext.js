@@ -58,6 +58,12 @@ export const OnboardingProvider = ({ children }) => {
               trustFlow: firstSite.dynamic_fields?.trustFlow || "",
               citationFlow: firstSite.dynamic_fields?.citationFlow || "",
             },
+            funnelAnalysis: firstSite.dynamic_fields?.funnelAnalysis || {
+              totalAnalyzed: 0,
+              funnelDistribution: { ToF: 0, MoF: 0, BoF: 0, Unknown: 0 },
+            },
+            sitemaps: firstSite.dynamic_fields?.sitemaps || [],
+            selectedSitemaps: firstSite.dynamic_fields?.selectedSitemaps || [],
             searchConsoleData: firstSite.search_analytics || [],
             suggestionsFromAi: {
               content_strategies:
