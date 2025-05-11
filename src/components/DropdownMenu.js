@@ -7,6 +7,7 @@ function DropdownMenu({
   isOpen,
   toggle,
   links,
+  icon,
   nestedDropdown,
   handleLinkClick,
 }) {

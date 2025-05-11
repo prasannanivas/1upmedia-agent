@@ -15,29 +15,43 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 
+import { FiKey, FiEdit, FiDatabase, FiLayout, FiShield } from "react-icons/fi";
+
 export const agentLinks = [
-  { path: "/agents/ideation", label: "Keyword Strategy" },
-  { path: "/agents/content-review", label: "Keyword Review" },
-  { path: "/agents/content-creation", label: "Content Creation" },
-  { path: "/RAG", label: "RAG" },
+  { path: "/agents/ideation", label: "Keyword Strategy", icon: FiKey },
+  { path: "/agents/content-review", label: "Keyword Review", icon: FiEdit },
+  {
+    path: "/agents/content-creation",
+    label: "Content Creation",
+    icon: FiFileText,
+  },
+  { path: "/RAG", label: "RAG", icon: FiDatabase },
 ];
 
 export const boardLinks = [
-  { path: "/boards/templated", label: "Templated" },
-  { path: "/boards/custom", label: "Custom" },
+  { path: "/boards/templated", label: "Templated", icon: FiLayout },
+  { path: "/boards/custom", label: "Custom", icon: FiLayout },
 ];
 
 export const integrationLinks = [
-  { path: "/integrations/setup", label: "Setup Wizard" },
-  { path: "/integrations/active", label: "Active Integrations" },
+  { path: "/integrations/setup", label: "Wordpress", icon: FiFileText },
+  //{ path: "/integrations/active", label: "Active Integrations", icon: FiFileText },
 ];
 
 export const settingsLinks = [
-  { path: "/settings/user-management", label: "User Management" },
+  {
+    path: "/settings/user-management",
+    label: "User Management",
+    icon: FiSettings,
+  },
 ];
 
 export const advancedConfigLinks = [
-  { path: "/settings/advanced-config/security", label: "Security" },
+  {
+    path: "/settings/advanced-config/security",
+    label: "Security",
+    icon: FiShield,
+  },
 ];
 
 function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
@@ -115,7 +129,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
                 onClick={handleLinkClick}
               >
                 <item.icon className="nav-icon" />
-                <span>{item.label}</span>
+                <span>{item.label}</span>{" "}
                 {isActive(item.path) && (
                   <motion.div
                     className="active-indicator"
@@ -142,6 +156,14 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
             toggle={() => toggleDropdown("settings")}
             handleLinkClick={handleLinkClick}
             links={settingsLinks}
+          />
+          <DropdownMenu
+            title="Integrations"
+            icon={<FiSettings />}
+            isOpen={dropdowns.integrations}
+            toggle={() => toggleDropdown("integrations")}
+            handleLinkClick={handleLinkClick}
+            links={integrationLinks}
           />
 
           <motion.li whileHover={{ scale: 1.02, x: 5 }}>

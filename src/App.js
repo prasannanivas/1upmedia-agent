@@ -44,6 +44,7 @@ import NotFound from "./pages/NotFound";
 import RAG from "./pages/RAG";
 import { i } from "framer-motion/client";
 import TermsOfService from "./TermsOfService";
+import PostAnalytics from "./pages/PostAnalytics";
 
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -147,6 +148,7 @@ const AppWrapper = () => {
             element={<Security />}
           />
           <Route path="/RAG" element={<RAG />} />
+          <Route path="/analytics/:postId" element={<PostAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

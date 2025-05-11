@@ -36,6 +36,44 @@
   background: #f9f9f9;
 }
 
+/* Tracking column styling */
+.tracking-column {
+  text-align: center;
+  font-weight: bold;
+}
+
+td.tracking-column {
+  font-size: 16px;
+}
+
+/* Styles for clickable tick mark */
+td.tracking-column span[style*="cursor: pointer"] {
+  transition: transform 0.2s, opacity 0.2s;
+  position: relative;
+  display: inline-block;
+}
+
+td.tracking-column span[style*="cursor: pointer"]:hover {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+
+td.tracking-column span[style*="cursor: pointer"]:hover::after {
+  content: "View analytics";
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 140%;
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* Filter Controls */
 .filter-controls {
   display: flex;
@@ -144,4 +182,28 @@
 
 .schedule-column {
   width: 15%;
+}
+
+/* Custom styling for Analytics button */
+.analytics-button {
+  background: #4e73df;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  margin-right: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.3s, transform 0.1s;
+}
+
+.analytics-button:hover {
+  background: #3a5cca;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.analytics-button:active {
+  transform: translateY(0);
+  box-shadow: none;
 }

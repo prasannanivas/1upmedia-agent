@@ -374,6 +374,8 @@ export const AuthProvider = ({ children }) => {
     // Close modal
     setIsWordPressModalOpen(false);
 
+    console.log("WordPress credentials:", credentials);
+
     // Call your existing handleAuthorize with the credentials
     handleAuthorize("wordpress", null, {
       siteUrl: credentials.siteUrl,

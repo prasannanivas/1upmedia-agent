@@ -69,6 +69,49 @@ function PostsList() {
       tags: Array.from(tags).sort(),
     };
   }, [posts]);
+  // Function to check if tracking is enabled for a post
+  const isTrackingEnabled = (post) => {
+    if (!post.content || !post.post_id) return false;
+
+    try {
+      // Create regex patterns that specifically check for the post_id in data-content-uuid
+      // Handle both quoted and unquoted post IDs
+      const postIdPattern1 = new RegExp(
+        `data-content-uuid="${post.post_id}"`,
+        "i"
+      );
+      const postIdPattern2 = new RegExp(
+        `data-content-uuid='${post.post_id}'`,
+        "i"
+      );
+      const postIdPattern3 = new RegExp(
+        `data-content-uuid=${post.post_id}`,
+        "i"
+      );
+
+      // Check if the content has the tracking script with the correct post ID
+      const hasCollectorJs = post.content.includes("collector.js");
+      const hasCorrectPostId =
+        postIdPattern1.test(post.content) ||
+        postIdPattern2.test(post.content) ||
+        postIdPattern3.test(post.content);
+
+      return hasCollectorJs && hasCorrectPostId;
+    } catch (error) {
+      // If there's any issue with the regex, fall back to simple string checks
+      const hasScriptTag = post.content.includes("<script");
+      const hasCollectorScript = post.content.includes("collector.js");
+      const hasContentUuid =
+        post.content.includes(`data-content-uuid="${post.post_id}"`) ||
+        post.content.includes(`data-content-uuid='${post.post_id}'`) ||
+        post.content.includes(`data-content-uuid=${post.post_id}`);
+
+      // Return true if all required elements are present
+      return hasScriptTag && hasCollectorScript && hasContentUuid;
+    }
+  };
+
+  // Function to view analytics for a post
 
   // Filter options combining categories and tags
   const filterOptions = useMemo(
@@ -272,6 +315,7 @@ function PostsList() {
             >
               Scheduled Date{getSortIndicator("schedule_time")}
             </th>
+            <th className="tracking-column">Tracking Enabled</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -285,7 +329,36 @@ function PostsList() {
               </td>
               <td className="schedule-column">
                 {new Date(post.schedule_time).toLocaleDateString()}
-              </td>
+              </td>{" "}
+              <td className="tracking-column">
+                {isTrackingEnabled(post) ? (
+                  <span
+                    style={{
+                      color: "#28a745",
+                      fontSize: "18px",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      try {
+                        navigate(`/analytics/${post.post_id}`);
+                      } catch (error) {
+                        console.error(
+                          "Failed to navigate to analytics:",
+                          error
+                        );
+                        alert(
+                          "Could not open analytics. Please try again later."
+                        );
+                      }
+                    }}
+                    title="View analytics for this post"
+                  >
+                    ✓
+                  </span>
+                ) : (
+                  <span style={{ color: "#dc3545", fontSize: "18px" }}>✗</span>
+                )}
+              </td>{" "}
               <td>
                 <button
                   className="view-button"
@@ -305,6 +378,15 @@ function PostsList() {
                 >
                   Edit
                 </button>
+                {isTrackingEnabled(post) && (
+                  <button
+                    className="analytics-button"
+                    onClick={() => navigate(`/analytics/${post.post_id}`)}
+                    title="View detailed analytics for this post"
+                  >
+                    Analytics
+                  </button>
+                )}
                 <button
                   className="delete-button"
                   onClick={() => deletePost(post.post_id)}
