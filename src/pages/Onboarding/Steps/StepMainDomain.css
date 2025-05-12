@@ -1614,3 +1614,370 @@
   margin: 0;
   font-size: 0.9rem;
 }
+
+/* Analysis Overview Styles */
+.step-main-domain__analysis-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.step-main-domain__metric-overview-card {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.step-main-domain__metric-overview-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.step-main-domain__metric-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.step-main-domain__metric-overview-icon {
+  font-size: 20px;
+}
+
+.step-main-domain__metric-overview-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.step-main-domain__metric-gauge {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.step-main-domain__circular-progress {
+  --size: 80px;
+  --thickness: 8px;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.step-main-domain__circular-progress::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--color) var(--value), #e0e0e0 0);
+  -webkit-mask: radial-gradient(#0000 calc(var(--size) / 2 - var(--thickness)), #000 0);
+  mask: radial-gradient(#0000 calc(var(--size) / 2 - var(--thickness)), #000 0);
+}
+
+.step-main-domain__gauge-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* Analysis Section Styles */
+.step-main-domain__analysis-section {
+  margin-top: 32px;
+  border-top: 1px solid #eee;
+  padding-top: 24px;
+}
+
+.step-main-domain__analysis-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #333;
+}
+
+/* Stage Badge Styles */
+.step-main-domain__stage-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.step-main-domain__stage-ToF {
+  background-color: #4CAF50;
+}
+
+.step-main-domain__stage-MoF {
+  background-color: #2196F3;
+}
+
+.step-main-domain__stage-BoF {
+  background-color: #9C27B0;
+}
+
+.step-main-domain__stage-Retention {
+  background-color: #FF5722;
+}
+
+.step-main-domain__stage-Advocacy {
+  background-color: #FFC107;
+}
+
+.step-main-domain__stage-Unknown {
+  background-color: #9E9E9E;
+}
+
+/* Framework Cards */
+.step-main-domain__framework-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.step-main-domain__framework-card {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid;
+  background-color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+}
+
+.step-main-domain__framework-card:hover {
+  transform: scale(1.02);
+}
+
+.step-main-domain__framework-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  color: white;
+  font-weight: 500;
+}
+
+.step-main-domain__framework-stage {
+  font-size: 16px;
+}
+
+.step-main-domain__framework-percent {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.step-main-domain__framework-body {
+  padding: 16px;
+}
+
+.step-main-domain__framework-coverage {
+  margin-bottom: 12px;
+}
+
+.step-main-domain__framework-bar {
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.step-main-domain__framework-progress {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease-in-out;
+}
+
+.step-main-domain__framework-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.step-main-domain__framework-tag {
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.step-main-domain__framework-empty {
+  font-style: italic;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Content Details Styles */
+.step-main-domain__content-details {
+  margin-top: 16px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.step-main-domain__details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.step-main-domain__details-table th {
+  background-color: #f5f5f5;
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 500;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.step-main-domain__details-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.step-main-domain__details-table tr:last-child td {
+  border-bottom: none;
+}
+
+.step-main-domain__details-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.step-main-domain__url-cell {
+  max-width: 200px;
+}
+
+.step-main-domain__url-link {
+  display: block;
+  color: #2196F3;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.step-main-domain__url-link:hover {
+  text-decoration: underline;
+}
+
+.step-main-domain__frameworks-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.step-main-domain__detail-tag {
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.step-main-domain__metrics-cell {
+  display: flex;
+  gap: 6px;
+}
+
+.step-main-domain__metric-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.step-main-domain__more-details {
+  padding: 10px;
+  text-align: center;
+  background-color: #f5f5f5;
+  color: #666;
+  font-size: 14px;
+  border-top: 1px solid #eee;
+}
+
+/* Psychological Matrix */
+.step-main-domain__psych-matrix {
+  margin-top: 16px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.step-main-domain__psych-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.step-main-domain__psych-table th {
+  background-color: #f5f5f5;
+  padding: 12px;
+  font-weight: 500;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.step-main-domain__psych-table th:first-child {
+  text-align: left;
+}
+
+.step-main-domain__psych-header-icon {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+.step-main-domain__psych-table td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.step-main-domain__psych-table td:first-child {
+  text-align: left;
+}
+
+.step-main-domain__data-bar-container {
+  height: 20px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-main-domain__data-bar {
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 10px;
+  transition: width 1s ease-in-out;
+}
+
+.step-main-domain__data-value {
+  position: relative;
+  z-index: 1;
+  font-weight: 500;
+  text-shadow: 0 0 2px white;
+}
