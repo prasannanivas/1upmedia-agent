@@ -234,6 +234,22 @@ const StepMainDomain = () => {
           psychCompositeSummary: data.psychCompositeSummary,
           details: data.details,
         });
+
+        // Initialize the collapsible sections in expanded state when data loads
+        setTimeout(() => {
+          const frameworkSection = document.getElementById("frameworkSection");
+          if (frameworkSection) {
+            frameworkSection.classList.add("expanded");
+          }
+
+          // Add dynamic animations to elements
+          const animateElements = document.querySelectorAll(
+            ".step-main-domain__funnel-stage, .step-main-domain__mini-metric"
+          );
+          animateElements.forEach((element, index) => {
+            element.style.setProperty("--index", index);
+          });
+        }, 500);
       }
     } catch (error) {
       console.error("Error analyzing funnel:", error);
@@ -718,7 +734,7 @@ const StepMainDomain = () => {
               </button>
             </div>
             {isValidating && <AnalysisProgress steps={analysisSteps} />}
-          </div>
+          </div>{" "}
           {/** Sitemaps */}
           {!isValidating && sitemaps.length > 0 && (
             <div className="step-main-domain__sitemap-section">
@@ -743,47 +759,80 @@ const StepMainDomain = () => {
                         }
                       }}
                     >
-                      {selectedSitemaps.length === sitemaps.length
-                        ? "Deselect All"
-                        : "Select All"}
+                      {selectedSitemaps.length === sitemaps.length ? (
+                        <>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M19 13H5v-2h14v2z"></path>
+                          </svg>
+                          Deselect All
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                          </svg>
+                          Select All
+                        </>
+                      )}
                     </button>
                     <span className="step-main-domain__sitemap-count">
                       {selectedSitemaps.length} of {sitemaps.length} selected
                     </span>
                   </div>
                   <div className="step-main-domain__sitemap-list">
-                    {sitemaps.map((sitemap, index) => (
-                      <div
-                        key={index}
-                        className="step-main-domain__sitemap-item"
-                      >
-                        <label className="step-main-domain__checkbox-container">
-                          <input
-                            type="checkbox"
-                            checked={selectedSitemaps.includes(sitemap)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSitemaps((prev) => [
-                                  ...prev,
-                                  sitemap,
-                                ]);
-                              } else {
-                                setSelectedSitemaps((prev) =>
-                                  prev.filter((item) => item !== sitemap)
-                                );
-                              }
-                            }}
-                          />
-                          <span className="step-main-domain__checkbox-custom"></span>
-                          <span
-                            className="step-main-domain__sitemap-link"
-                            title={sitemap}
-                          >
-                            {sitemap}
-                          </span>
-                        </label>
-                      </div>
-                    ))}
+                    {sitemaps.map((sitemap, index) => {
+                      // Extract domain and path for better visualization
+                      let displayUrl = sitemap;
+                      try {
+                        const urlObj = new URL(sitemap);
+                        displayUrl = `${urlObj.hostname}${urlObj.pathname}`;
+                      } catch (e) {
+                        // Keep original if invalid URL
+                      }
+
+                      return (
+                        <div
+                          key={index}
+                          className="step-main-domain__sitemap-item"
+                        >
+                          <label className="step-main-domain__checkbox-container">
+                            <input
+                              type="checkbox"
+                              checked={selectedSitemaps.includes(sitemap)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedSitemaps((prev) => [
+                                    ...prev,
+                                    sitemap,
+                                  ]);
+                                } else {
+                                  setSelectedSitemaps((prev) =>
+                                    prev.filter((item) => item !== sitemap)
+                                  );
+                                }
+                              }}
+                            />
+                            <span className="step-main-domain__checkbox-custom"></span>
+                            <span
+                              className="step-main-domain__sitemap-link"
+                              title={sitemap}
+                            >
+                              {displayUrl}
+                            </span>
+                          </label>
+                        </div>
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -792,173 +841,189 @@ const StepMainDomain = () => {
               )}
               {selectedSitemaps.length > 0 && (
                 <button
-                  className="step-main-domain__analyze-btn"
+                  className={`step-main-domain__analyze-btn ${
+                    isFunnelAnalyzing ? "loading" : ""
+                  }`}
                   onClick={() => handleSitemapSelection(selectedSitemaps)}
                   disabled={isFunnelAnalyzing}
                 >
-                  {isFunnelAnalyzing ? "Analyzing Funnel..." : "Analyze Funnel"}
+                  {isFunnelAnalyzing ? (
+                    <>
+                      <div className="step-main-domain__btn-spinner"></div>
+                      <span>Analyzing Content...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="white"
+                      >
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                      </svg>
+                      <span>Analyze Content</span>
+                    </>
+                  )}
                 </button>
               )}
             </div>
           )}{" "}
-          {!isValidating && funnelAnalysis.totalAnalyzed > 0 && (
-            <div
-              className={`step-main-domain__funnel-section ${
-                isFunnelAnalyzing ? "loading" : ""
-              }`}
-            >
-              <h3 className="step-main-domain__subtitle">
-                <span role="img" aria-label="funnel">
-                  📊
-                </span>{" "}
-                Advanced Content Analysis
-              </h3>
+          {/* Show analysis section with conditional rendering based on state */}
+          <div
+            className={`step-main-domain__funnel-section ${
+              isFunnelAnalyzing ? "loading" : ""
+            }`}
+          >
+            <h3 className="step-main-domain__subtitle">
+              <span role="img" aria-label="funnel">
+                📊
+              </span>{" "}
+              Content Analysis
+              {isFunnelAnalyzing && (
+                <span className="step-main-domain__loading-badge">
+                  <div className="step-main-domain__spinner"></div> Analyzing...
+                </span>
+              )}
+            </h3>
 
-              {/* Overview Cards Row */}
-              <div className="step-main-domain__analysis-overview">
-                <div className="step-main-domain__total-card">
-                  <div className="step-main-domain__total-icon">📄</div>
-                  <div className="step-main-domain__total-info">
-                    <span className="step-main-domain__total-label">
-                      Pages Analyzed
-                    </span>
-                    <span className="step-main-domain__total-number">
-                      {funnelAnalysis.totalAnalyzed}
-                    </span>
-                  </div>
+            {/* When no data and not validating - show the prompt */}
+            {!isValidating &&
+              !isFunnelAnalyzing &&
+              funnelAnalysis.totalAnalyzed === 0 && (
+                <div className="step-main-domain__empty-state">
+                  <div className="step-main-domain__empty-icon">📈</div>
+                  <h4>No Content Analysis Data</h4>
+                  <p>
+                    Select sitemaps and analyze your content to see insights.
+                  </p>
                 </div>
+              )}
 
-                {/* Emotional Resonance */}
-                <div className="step-main-domain__metric-overview-card">
-                  <div className="step-main-domain__metric-header">
-                    <span className="step-main-domain__metric-overview-icon">
-                      ❤️
-                    </span>
-                    <span className="step-main-domain__metric-overview-label">
-                      Emotional Resonance
-                    </span>
-                  </div>
-                  <div className="step-main-domain__metric-gauge">
-                    <div
-                      className="step-main-domain__circular-progress"
-                      style={{
-                        "--value": `${
-                          funnelAnalysis.psychCompositeSummary?.overall
-                            ?.emotionalResonance || 0
-                        }%`,
-                        "--color": "#e91e63",
-                      }}
-                    >
-                      <span className="step-main-domain__gauge-value">
-                        {funnelAnalysis.psychCompositeSummary?.overall
-                          ?.emotionalResonance || 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cognitive Clarity */}
-                <div className="step-main-domain__metric-overview-card">
-                  <div className="step-main-domain__metric-header">
-                    <span className="step-main-domain__metric-overview-icon">
-                      🧠
-                    </span>
-                    <span className="step-main-domain__metric-overview-label">
-                      Cognitive Clarity
-                    </span>
-                  </div>
-                  <div className="step-main-domain__metric-gauge">
-                    <div
-                      className="step-main-domain__circular-progress"
-                      style={{
-                        "--value": `${
-                          funnelAnalysis.psychCompositeSummary?.overall
-                            ?.cognitiveClarity || 0
-                        }%`,
-                        "--color": "#2196F3",
-                      }}
-                    >
-                      <span className="step-main-domain__gauge-value">
-                        {funnelAnalysis.psychCompositeSummary?.overall
-                          ?.cognitiveClarity || 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Persuasion Leverage */}
-                <div className="step-main-domain__metric-overview-card">
-                  <div className="step-main-domain__metric-header">
-                    <span className="step-main-domain__metric-overview-icon">
-                      🎯
-                    </span>
-                    <span className="step-main-domain__metric-overview-label">
-                      Persuasion Leverage
-                    </span>
-                  </div>
-                  <div className="step-main-domain__metric-gauge">
-                    <div
-                      className="step-main-domain__circular-progress"
-                      style={{
-                        "--value": `${
-                          funnelAnalysis.psychCompositeSummary?.overall
-                            ?.persuasionLeverage || 0
-                        }%`,
-                        "--color": "#4CAF50",
-                      }}
-                    >
-                      <span className="step-main-domain__gauge-value">
-                        {funnelAnalysis.psychCompositeSummary?.overall
-                          ?.persuasionLeverage || 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Behavioral Momentum */}
-                <div className="step-main-domain__metric-overview-card">
-                  <div className="step-main-domain__metric-header">
-                    <span className="step-main-domain__metric-overview-icon">
-                      🔄
-                    </span>
-                    <span className="step-main-domain__metric-overview-label">
-                      Behavioral Momentum
-                    </span>
-                  </div>
-                  <div className="step-main-domain__metric-gauge">
-                    <div
-                      className="step-main-domain__circular-progress"
-                      style={{
-                        "--value": `${
-                          funnelAnalysis.psychCompositeSummary?.overall
-                            ?.behavioralMomentum || 0
-                        }%`,
-                        "--color": "#FF9800",
-                      }}
-                    >
-                      <span className="step-main-domain__gauge-value">
-                        {funnelAnalysis.psychCompositeSummary?.overall
-                          ?.behavioralMomentum || 0}
-                        %
-                      </span>
-                    </div>
-                  </div>
-                </div>
+            {/* Show loading state when analyzing */}
+            {isFunnelAnalyzing && (
+              <div className="step-main-domain__analysis-loading">
+                <div className="step-main-domain__card-skeleton step-main-domain__skeleton"></div>
+                <div className="step-main-domain__chart-skeleton step-main-domain__skeleton"></div>
+                <div className="step-main-domain__card-skeleton step-main-domain__skeleton"></div>
               </div>
+            )}
 
-              {/* Funnel Distribution */}
-              <div className="step-main-domain__analysis-section">
-                <h4 className="step-main-domain__analysis-title">
-                  <span role="img" aria-label="funnel">
-                    🔽
-                  </span>{" "}
-                  Content Distribution
-                </h4>
+            {/* Show results when data is available */}
+            {!isFunnelAnalyzing && funnelAnalysis.totalAnalyzed > 0 && (
+              <div className="step-main-domain__analysis-content">
+                {/* Minimalist Key Metrics */}{" "}
+                <div className="step-main-domain__key-metrics">
+                  <div className="step-main-domain__total-card">
+                    <div className="step-main-domain__total-icon">📄</div>
+                    <div className="step-main-domain__total-info">
+                      <span className="step-main-domain__total-label">
+                        Pages Analyzed
+                      </span>
+                      <span className="step-main-domain__total-number">
+                        {funnelAnalysis.totalAnalyzed}
+                      </span>
+                    </div>
+                  </div>
 
+                  {/* Overall Score */}
+                  <div className="step-main-domain__score-card">
+                    <div className="step-main-domain__score-header">
+                      Content Effectiveness
+                    </div>
+                    <div className="step-main-domain__score-metrics">
+                      {funnelAnalysis.psychCompositeSummary?.overall && (
+                        <>
+                          <div
+                            className="step-main-domain__mini-metric"
+                            title="Emotional Resonance - How well your content connects on an emotional level"
+                            style={{
+                              borderTop: `4px solid ${getMetricColor(
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .emotionalResonance
+                              )}`,
+                              "--index": 0,
+                            }}
+                          >
+                            <span>❤️</span>
+                            <span>
+                              {
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .emotionalResonance
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div
+                            className="step-main-domain__mini-metric"
+                            title="Cognitive Clarity - How clear and understandable your content is"
+                            style={{
+                              borderTop: `4px solid ${getMetricColor(
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .cognitiveClarity
+                              )}`,
+                              "--index": 1,
+                            }}
+                          >
+                            <span>🧠</span>
+                            <span>
+                              {
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .cognitiveClarity
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div
+                            className="step-main-domain__mini-metric"
+                            title="Persuasion Leverage - How effectively your content persuades visitors"
+                            style={{
+                              borderTop: `4px solid ${getMetricColor(
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .persuasionLeverage
+                              )}`,
+                              "--index": 2,
+                            }}
+                          >
+                            <span>🎯</span>
+                            <span>
+                              {
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .persuasionLeverage
+                              }
+                              %
+                            </span>
+                          </div>
+                          <div
+                            className="step-main-domain__mini-metric"
+                            title="Behavioral Momentum - How well your content drives action"
+                            style={{
+                              borderTop: `4px solid ${getMetricColor(
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .behavioralMomentum
+                              )}`,
+                              "--index": 3,
+                            }}
+                          >
+                            <span>🔄</span>
+                            <span>
+                              {
+                                funnelAnalysis.psychCompositeSummary.overall
+                                  .behavioralMomentum
+                              }
+                              %
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                {/* Streamlined Funnel Distribution */}
                 <div className="step-main-domain__funnel-visualization">
+                  <h4 className="step-main-domain__funnel-title">
+                    Marketing Funnel Distribution
+                  </h4>
                   {Object.entries(funnelAnalysis.funnelDistribution)
                     .filter(([stage, _]) => stage !== "Unknown")
                     .map(([stage, count], index) => {
@@ -970,441 +1035,210 @@ const StepMainDomain = () => {
                             ).toFixed(1)
                           : 0;
 
-                      const getStageInfo = (stage) => {
-                        const info = {
-                          ToF: {
-                            gradient:
-                              "linear-gradient(135deg, #4CAF50, #81C784)",
-                            shadow: "rgba(76, 175, 80, 0.2)",
-                            icon: "🌱",
-                            label: "Top of Funnel",
-                            description: "Awareness & Discovery Content",
-                            emoji: "🌱",
-                          },
-                          MoF: {
-                            gradient:
-                              "linear-gradient(135deg, #2196F3, #64B5F6)",
-                            shadow: "rgba(33, 150, 243, 0.2)",
-                            icon: "🔍",
-                            label: "Middle of Funnel",
-                            description: "Consideration & Evaluation Content",
-                            emoji: "🔍",
-                          },
-                          BoF: {
-                            gradient:
-                              "linear-gradient(135deg, #9C27B0, #BA68C8)",
-                            shadow: "rgba(156, 39, 176, 0.2)",
-                            icon: "🛒",
-                            label: "Bottom of Funnel",
-                            description: "Decision & Conversion Content",
-                            emoji: "🛒",
-                          },
-                          Retention: {
-                            gradient:
-                              "linear-gradient(135deg, #FF5722, #FF8A65)",
-                            shadow: "rgba(255, 87, 34, 0.2)",
-                            icon: "🔄",
-                            label: "Retention",
-                            description: "Customer retention content",
-                            emoji: "🔄",
-                          },
-                          Advocacy: {
-                            gradient:
-                              "linear-gradient(135deg, #FFC107, #FFD54F)",
-                            shadow: "rgba(255, 193, 7, 0.2)",
-                            icon: "📣",
-                            label: "Advocacy",
-                            description: "Brand advocacy & referral content",
-                            emoji: "📣",
-                          },
-                          Unknown: {
-                            gradient:
-                              "linear-gradient(135deg, #9E9E9E, #BDBDBD)",
-                            shadow: "rgba(158, 158, 158, 0.2)",
-                            icon: "❓",
-                            label: "Unclassified",
-                            description: "Content pending classification",
-                            emoji: "❓",
-                          },
-                        };
-                        return info[stage] || info.Unknown;
+                      // Color palette for stages - updated with RGB values for advanced effects
+                      const stageColors = {
+                        ToF: "#4CAF50",
+                        MoF: "#2196F3",
+                        BoF: "#9C27B0",
+                        Retention: "#FF5722",
+                        Advocacy: "#FFC107",
                       };
 
-                      const stageInfo = getStageInfo(stage);
+                      const stageColorsRGB = {
+                        ToF: "76, 175, 80",
+                        MoF: "33, 150, 243",
+                        BoF: "156, 39, 176",
+                        Retention: "255, 87, 34",
+                        Advocacy: "255, 193, 7",
+                      };
+
+                      // Icons for stages
+                      const stageIcons = {
+                        ToF: "🌱",
+                        MoF: "🔍",
+                        BoF: "🛒",
+                        Retention: "🔄",
+                        Advocacy: "📣",
+                      };
+
+                      // Labels for stages
+                      const stageLabels = {
+                        ToF: "Awareness",
+                        MoF: "Consideration",
+                        BoF: "Decision",
+                        Retention: "Retention",
+                        Advocacy: "Advocacy",
+                      };
 
                       return (
                         <div
                           key={stage}
-                          className="step-main-domain__funnel-card"
+                          className="step-main-domain__funnel-stage"
                           style={{
-                            "--card-gradient": stageInfo.gradient,
-                            "--card-shadow": stageInfo.shadow,
-                            animationDelay: `${index * 0.1}s`,
+                            "--stage-color": stageColors[stage],
+                            "--stage-color-rgb": stageColorsRGB[stage],
+                            "--index": index,
                           }}
-                          title={stageInfo.description}
                         >
-                          <div className="step-main-domain__card-content">
-                            <div className="step-main-domain__stage-info">
-                              <span className="step-main-domain__stage-icon">
-                                {stageInfo.emoji}
-                              </span>
-                              <div className="step-main-domain__stage-details">
-                                <span className="step-main-domain__stage-label">
-                                  {stageInfo.label}
-                                </span>
-                                <span className="step-main-domain__stage-count">
-                                  {count} {count === 1 ? "page" : "pages"}
-                                </span>
+                          <div className="step-main-domain__funnel-stage-header">
+                            <div className="step-main-domain__funnel-stage-icon">
+                              {stageIcons[stage]}
+                            </div>
+                            <div className="step-main-domain__funnel-stage-info">
+                              <div className="step-main-domain__funnel-stage-name">
+                                {stageLabels[stage]}
+                              </div>
+                              <div className="step-main-domain__funnel-stage-count">
+                                {count} {count === 1 ? "page" : "pages"}
                               </div>
                             </div>
-
-                            <div className="step-main-domain__progress-container">
-                              <div className="step-main-domain__progress-track">
-                                <div
-                                  className="step-main-domain__progress-fill"
-                                  style={{ width: `${percentage}%` }}
-                                  data-percentage={`${percentage}%`}
-                                />
-                              </div>
+                            <div className="step-main-domain__funnel-stage-percentage">
+                              {percentage}%
                             </div>
+                          </div>
+                          <div className="step-main-domain__funnel-progress-container">
+                            <div
+                              className="step-main-domain__funnel-progress-bar"
+                              style={{
+                                width: `${percentage}%`,
+                                "--index": index,
+                              }}
+                            ></div>
                           </div>
                         </div>
                       );
                     })}
                 </div>
-              </div>
-
-              {/* Framework Coverage */}
-              {funnelAnalysis.frameworkCoverage &&
-                funnelAnalysis.frameworkCoverage.length > 0 && (
-                  <div className="step-main-domain__analysis-section">
+                {/* Expandable Sections - Framework Coverage */}
+                <div className="step-main-domain__collapsible-section">
+                  <div className="step-main-domain__section-toggle">
                     <h4 className="step-main-domain__analysis-title">
                       <span role="img" aria-label="framework">
                         📐
                       </span>{" "}
                       Marketing Framework Coverage
                     </h4>
-
-                    <div className="step-main-domain__framework-grid">
-                      {funnelAnalysis.frameworkCoverage.map((framework) => {
-                        // Determine RAG color
-                        let ragColor;
-                        switch (framework.rag) {
-                          case "Red":
-                            ragColor = "#f44336";
-                            break;
-                          case "Amber":
-                            ragColor = "#ff9800";
-                            break;
-                          case "Green":
-                            ragColor = "#4caf50";
-                            break;
-                          default:
-                            ragColor = "#9e9e9e";
-                        }
-
-                        return (
-                          <div
-                            key={framework.stage}
-                            className="step-main-domain__framework-card"
-                            style={{ borderColor: ragColor }}
-                          >
-                            <div
-                              className="step-main-domain__framework-header"
-                              style={{ backgroundColor: ragColor }}
-                            >
-                              <span className="step-main-domain__framework-stage">
-                                {framework.stage}
-                              </span>
-                              <span className="step-main-domain__framework-percent">
-                                {framework.percent}%
-                              </span>
-                            </div>
-
-                            <div className="step-main-domain__framework-body">
-                              <div className="step-main-domain__framework-coverage">
-                                <span>
-                                  {framework.applied} of {framework.total}{" "}
-                                  frameworks
-                                </span>
-                                <div className="step-main-domain__framework-bar">
-                                  <div
-                                    className="step-main-domain__framework-progress"
-                                    style={{
-                                      width: `${framework.percent}%`,
-                                      backgroundColor: ragColor,
-                                    }}
-                                  ></div>
-                                </div>
-                              </div>
-
-                              <div className="step-main-domain__framework-tags">
-                                {framework.frameworks.map((fw, idx) => (
-                                  <span
-                                    key={idx}
-                                    className="step-main-domain__framework-tag"
-                                  >
-                                    {fw}
-                                  </span>
-                                ))}
-
-                                {framework.frameworks.length === 0 && (
-                                  <span className="step-main-domain__framework-empty">
-                                    No frameworks applied
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <button
+                      className="step-main-domain__toggle-btn"
+                      onClick={() =>
+                        document
+                          .getElementById("frameworkSection")
+                          .classList.toggle("expanded")
+                      }
+                    >
+                      <span>▼</span>
+                    </button>
                   </div>
-                )}
 
-              {/* Content Details Table */}
-              {funnelAnalysis.details && funnelAnalysis.details.length > 0 && (
-                <div className="step-main-domain__analysis-section">
-                  <h4 className="step-main-domain__analysis-title">
-                    <span role="img" aria-label="details">
-                      📝
-                    </span>{" "}
-                    Content Analysis Details
-                  </h4>
-
-                  <div className="step-main-domain__content-details">
-                    <table className="step-main-domain__details-table">
-                      <thead>
-                        <tr>
-                          <th>URL</th>
-                          <th>Stage</th>
-                          <th>Frameworks</th>
-                          <th>Metrics</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {funnelAnalysis.details
-                          .slice(0, 5)
-                          .map((item, index) => (
-                            <tr key={index}>
-                              <td className="step-main-domain__url-cell">
-                                <a
-                                  href={item.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="step-main-domain__url-link"
-                                >
-                                  {new URL(item.url).pathname || "/"}
-                                </a>
-                              </td>
-                              <td>
-                                <span
-                                  className={`step-main-domain__stage-badge step-main-domain__stage-${item.stage}`}
-                                >
-                                  {item.stage}
-                                </span>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__frameworks-cell">
-                                  {item.frameworks.map((fw, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="step-main-domain__detail-tag"
-                                    >
-                                      {fw}
-                                    </span>
-                                  ))}
-                                </div>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__metrics-cell">
-                                  <div
-                                    className="step-main-domain__metric-dot"
-                                    style={{
-                                      backgroundColor: getMetricColor(
-                                        item.emotionalResonance
-                                      ),
-                                    }}
-                                    title={`Emotional: ${item.emotionalResonance}`}
-                                  >
-                                    E
-                                  </div>
-                                  <div
-                                    className="step-main-domain__metric-dot"
-                                    style={{
-                                      backgroundColor: getMetricColor(
-                                        item.cognitiveClarity
-                                      ),
-                                    }}
-                                    title={`Cognitive: ${item.cognitiveClarity}`}
-                                  >
-                                    C
-                                  </div>
-                                  <div
-                                    className="step-main-domain__metric-dot"
-                                    style={{
-                                      backgroundColor: getMetricColor(
-                                        item.persuasionLeverage
-                                      ),
-                                    }}
-                                    title={`Persuasion: ${item.persuasionLeverage}`}
-                                  >
-                                    P
-                                  </div>
-                                  <div
-                                    className="step-main-domain__metric-dot"
-                                    style={{
-                                      backgroundColor: getMetricColor(
-                                        item.behavioralMomentum
-                                      ),
-                                    }}
-                                    title={`Behavioral: ${item.behavioralMomentum}`}
-                                  >
-                                    B
-                                  </div>
-                                </div>
-                              </td>
+                  <div
+                    id="frameworkSection"
+                    className="step-main-domain__collapsible-content"
+                  >
+                    {" "}
+                    {funnelAnalysis.frameworkCoverage &&
+                    funnelAnalysis.frameworkCoverage.length > 0 ? (
+                      <div className="step-main-domain__framework-table-container">
+                        <table className="step-main-domain__framework-table">
+                          <thead>
+                            <tr>
+                              <th>Stage</th>
+                              <th>Coverage</th>
+                              <th>Status</th>
+                              <th>Applied Frameworks</th>
                             </tr>
-                          ))}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {funnelAnalysis.frameworkCoverage.map(
+                              (framework) => {
+                                // Determine RAG color
+                                let ragColor, statusClass;
+                                switch (framework.rag) {
+                                  case "Red":
+                                    ragColor = "#f44336";
+                                    statusClass = "status-red";
+                                    break;
+                                  case "Amber":
+                                    ragColor = "#ff9800";
+                                    statusClass = "status-amber";
+                                    break;
+                                  case "Green":
+                                    ragColor = "#4caf50";
+                                    statusClass = "status-green";
+                                    break;
+                                  default:
+                                    ragColor = "#9e9e9e";
+                                    statusClass = "status-neutral";
+                                }
 
-                    {funnelAnalysis.details.length > 5 && (
-                      <div className="step-main-domain__more-details">
-                        <span>
-                          + {funnelAnalysis.details.length - 5} more pages
-                          analyzed
-                        </span>
+                                return (
+                                  <tr key={framework.stage}>
+                                    <td className="step-main-domain__framework-stage-cell">
+                                      {framework.stage}
+                                    </td>
+                                    <td className="step-main-domain__framework-coverage-cell">
+                                      {" "}
+                                      <div className="step-main-domain__framework-coverage-wrapper">
+                                        <span className="step-main-domain__framework-coverage-text">
+                                          {framework.applied} of{" "}
+                                          {framework.total}
+                                        </span>
+                                        <div className="step-main-domain__framework-bar">
+                                          <div
+                                            className="step-main-domain__framework-progress"
+                                            style={{
+                                              width: `${framework.percent}%`,
+                                              backgroundColor: ragColor,
+                                            }}
+                                            data-progress={`${framework.percent}%`}
+                                          ></div>
+                                        </div>
+                                        <span className="step-main-domain__framework-percent">
+                                          {framework.percent}%
+                                        </span>
+                                      </div>
+                                    </td>
+                                    <td className="step-main-domain__framework-status-cell">
+                                      {" "}
+                                      <div
+                                        className={`step-main-domain__framework-status ${statusClass}`}
+                                      >
+                                        {framework.rag}
+                                      </div>
+                                    </td>
+                                    <td className="step-main-domain__framework-tags-cell">
+                                      <div className="step-main-domain__framework-tags">
+                                        {framework.frameworks.map((fw, idx) => (
+                                          <span
+                                            key={idx}
+                                            className="step-main-domain__framework-tag"
+                                          >
+                                            {fw}
+                                          </span>
+                                        ))}
+                                        {framework.frameworks.length === 0 && (
+                                          <span className="step-main-domain__framework-empty">
+                                            No frameworks applied
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="step-main-domain__no-data">
+                        No framework data available
                       </div>
                     )}
                   </div>
                 </div>
-              )}
-
-              {/* Psychological Matrix by Stage */}
-              {funnelAnalysis.psychCompositeSummary?.byStage &&
-                Object.keys(funnelAnalysis.psychCompositeSummary.byStage)
-                  .length > 0 && (
-                  <div className="step-main-domain__analysis-section">
-                    <h4 className="step-main-domain__analysis-title">
-                      <span role="img" aria-label="psychology">
-                        🧪
-                      </span>{" "}
-                      Psychological Metrics by Funnel Stage
-                    </h4>
-
-                    <div className="step-main-domain__psych-matrix">
-                      <table className="step-main-domain__psych-table">
-                        <thead>
-                          <tr>
-                            <th>Stage</th>
-                            <th>
-                              <span className="step-main-domain__psych-header-icon">
-                                ❤️
-                              </span>
-                              <span>Emotional</span>
-                            </th>
-                            <th>
-                              <span className="step-main-domain__psych-header-icon">
-                                🧠
-                              </span>
-                              <span>Cognitive</span>
-                            </th>
-                            <th>
-                              <span className="step-main-domain__psych-header-icon">
-                                🎯
-                              </span>
-                              <span>Persuasion</span>
-                            </th>
-                            <th>
-                              <span className="step-main-domain__psych-header-icon">
-                                🔄
-                              </span>
-                              <span>Behavioral</span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(
-                            funnelAnalysis.psychCompositeSummary.byStage
-                          ).map(([stage, metrics]) => (
-                            <tr key={stage}>
-                              <td>
-                                <strong>{stage}</strong>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__data-bar-container">
-                                  <div
-                                    className="step-main-domain__data-bar"
-                                    style={{
-                                      width: `${metrics.emotionalResonance}%`,
-                                      backgroundColor: getMetricColor(
-                                        metrics.emotionalResonance
-                                      ),
-                                    }}
-                                  ></div>
-                                  <span className="step-main-domain__data-value">
-                                    {metrics.emotionalResonance}
-                                  </span>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__data-bar-container">
-                                  <div
-                                    className="step-main-domain__data-bar"
-                                    style={{
-                                      width: `${metrics.cognitiveClarity}%`,
-                                      backgroundColor: getMetricColor(
-                                        metrics.cognitiveClarity
-                                      ),
-                                    }}
-                                  ></div>
-                                  <span className="step-main-domain__data-value">
-                                    {metrics.cognitiveClarity}
-                                  </span>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__data-bar-container">
-                                  <div
-                                    className="step-main-domain__data-bar"
-                                    style={{
-                                      width: `${metrics.persuasionLeverage}%`,
-                                      backgroundColor: getMetricColor(
-                                        metrics.persuasionLeverage
-                                      ),
-                                    }}
-                                  ></div>
-                                  <span className="step-main-domain__data-value">
-                                    {metrics.persuasionLeverage}
-                                  </span>
-                                </div>
-                              </td>
-                              <td>
-                                <div className="step-main-domain__data-bar-container">
-                                  <div
-                                    className="step-main-domain__data-bar"
-                                    style={{
-                                      width: `${metrics.behavioralMomentum}%`,
-                                      backgroundColor: getMetricColor(
-                                        metrics.behavioralMomentum
-                                      ),
-                                    }}
-                                  ></div>
-                                  <span className="step-main-domain__data-value">
-                                    {metrics.behavioralMomentum}
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
           {/** Analysis Details */}
           {!isValidating &&
             (analysisData.domainAuthority ||
@@ -1495,67 +1329,135 @@ const StepMainDomain = () => {
   );
 };
 
-const AnalysisProgress = ({ steps }) => (
-  <div className="step-main-domain__analysis-stepper">
-    {steps.map((step, index) => (
-      <div key={index} className="step-main-domain__step-container">
-        {/* Step Icon with Status */}
-        <div className={`step-main-domain__step-icon ${step.status}`}>
-          {step.status === "completed" ? (
-            <i className="material-icons success">
-              {getStepIcon(step.label, true)}
-            </i>
-          ) : step.status === "loading" ? (
-            <CircularProgress size={24} thickness={3} />
-          ) : step.status === "error" ? (
-            <i className="material-icons error">
-              {getStepIcon(step.label, false)}
-            </i>
-          ) : (
-            <i className="material-icons pending">
-              {getStepIcon(step.label, false)}
-            </i>
-          )}
-        </div>
+const AnalysisProgress = ({ steps }) => {
+  const getIconByLabel = (label, isComplete) => {
+    switch (label) {
+      case "Domain Validation":
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
+          </svg>
+        );
+      case "Sitemap Analysis":
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3.6 12.5h-3.4V19h-2v-3.5H6.6v-2h3.4V10h2v3.5h3.4v2z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4z"></path>
+          </svg>
+        );
+      case "Metrics Analysis":
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2v-7h2v7zm4 0h-2V7h2v10z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2-14H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"></path>
+          </svg>
+        );
+      case "Location Detection":
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
+          </svg>
+        );
+      case "Business Details":
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 16v-1H3.01v6H21v-6h-7v1h-4zm12-9h-6V4l-2-2-2 2v3H6V2H2v13h20V7z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M15 6v8h-4V6h4m0-2h-4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm6 16H3V4h6v10h10v6z"></path>
+          </svg>
+        );
+      default:
+        return isComplete ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
+          </svg>
+        );
+    }
+  };
 
-        {/* Connector Line */}
-        {index < steps.length - 1 && (
-          <div className="step-main-domain__step-connector">
-            <span
-              className={`step-main-domain__connector-line ${
-                steps[index].status === "completed"
-                  ? "completed"
-                  : steps[index].status === "loading"
-                  ? "active"
-                  : ""
-              }`}
-            />
+  return (
+    <div className="step-main-domain__analysis-stepper">
+      {steps.map((step, index) => (
+        <div key={index} className="step-main-domain__step-container">
+          {/* Step Icon with Status */}
+          <div className={`step-main-domain__step-icon ${step.status}`}>
+            {step.status === "completed" ? (
+              getIconByLabel(step.label, true)
+            ) : step.status === "loading" ? (
+              <CircularProgress size={24} thickness={3} />
+            ) : step.status === "error" ? (
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
+              </svg>
+            ) : (
+              getIconByLabel(step.label, false)
+            )}
           </div>
-        )}
 
-        {/* Step Content */}
-        <div className="step-main-domain__step-content">
-          <span className={`step-main-domain__step-label ${step.status}`}>
-            {step.label}
-          </span>
-          <span className="step-main-domain__step-message">
-            {step.status === "completed" && step.successMessage}
-            {step.status === "error" && (
-              <span className="step-main-domain__error-message">
-                {step.errorMessage}
-              </span>
-            )}
-            {step.status === "loading" && (
-              <span className="step-main-domain__loading-message">
-                Processing<span className="step-main-domain__dots">...</span>
-              </span>
-            )}
-          </span>
+          {/* Connector Line */}
+          {index < steps.length - 1 && (
+            <div className="step-main-domain__step-connector">
+              <span
+                className={`step-main-domain__connector-line ${
+                  steps[index].status === "completed"
+                    ? "completed"
+                    : steps[index].status === "loading"
+                    ? "active"
+                    : ""
+                }`}
+              />
+            </div>
+          )}
+
+          {/* Step Content */}
+          <div className="step-main-domain__step-content">
+            <span className={`step-main-domain__step-label ${step.status}`}>
+              {step.label}
+            </span>
+            <span className="step-main-domain__step-message">
+              {step.status === "completed" && step.successMessage}
+              {step.status === "error" && (
+                <span className="step-main-domain__error-message">
+                  {step.errorMessage}
+                </span>
+              )}
+              {step.status === "loading" && (
+                <span className="step-main-domain__loading-message">
+                  Processing<span className="step-main-domain__dots">...</span>
+                </span>
+              )}
+            </span>
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 // Helper function to get appropriate icon for each step
 const getStepIcon = (stepLabel, isComplete) => {
