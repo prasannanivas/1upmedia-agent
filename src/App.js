@@ -11,6 +11,7 @@ import Boards from "./pages/Boards";
 import Analytics from "./pages/Analytics/Analytics";
 import SiteDetails from "./pages/Analytics/SiteDetails";
 import SiteStats from "./pages/Analytics/SiteStats";
+import KeywordsStats from "./pages/Analytics/KeywordsStats";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
 import StrategyAnalysis from "./pages/StrategyAnalysis";
@@ -120,6 +121,7 @@ const AppWrapper = () => {
           <Route path="/site-details" element={<SiteDetails />} />
           <Route path="/site-analyser" element={<SiteAnalyser />} />
           <Route path="/site-stats" element={<SiteStats />} />
+          <Route path="/keyword-stats" element={<KeywordsStats />} />
           <Route path="/post-details" element={<Dashboard />} />
           <Route path="/edit-post/:postId" element={<EditPost />} />
           <Route path="/post-details/:postId" element={<PostDetails />} />

@@ -232,7 +232,24 @@ function Analytics() {
                     cursor: "pointer",
                   }}
                 >
-                  Stats
+                  Site Stats
+                </button>
+                <button
+                  onClick={() =>
+                    navigate("/keyword-stats", {
+                      state: { siteDetails: site },
+                    })
+                  }
+                  style={{
+                    padding: "10px 15px",
+                    backgroundColor: "blue",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Keyword Stats
                 </button>
               </div>
             </li>
