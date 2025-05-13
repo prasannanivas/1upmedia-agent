@@ -189,12 +189,19 @@ const StepMainDomain = () => {
       updateStepStatus(1, "success");
     }
   }, [onboardingData]);
-
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
   const [isValidated, setIsValidated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [isFunnelAnalyzing, setIsFunnelAnalyzing] = useState(false);
+  const [isFunnelAnalyzing, setIsFunnelAnalyzing] = useState(false); // Initialize sitemap section to be expanded only if no sitemaps are selected
+  const [isSitemapExpanded, setIsSitemapExpanded] = useState(false);
+  // Effect to manage the sitemap expansion state when selections change
+  useEffect(() => {
+    // Collapse the sitemap section when user selects sitemaps
+    if (selectedSitemaps.length > 0 && isSitemapExpanded) {
+      setIsSitemapExpanded(false);
+    }
+  }, []);
 
   const updateStepStatus = (index, status, message = "") => {
     setAnalysisSteps((prev) =>
@@ -233,14 +240,12 @@ const StepMainDomain = () => {
           frameworkCoverage: data.frameworkCoverage,
           psychCompositeSummary: data.psychCompositeSummary,
           details: data.details,
-        });
-
-        // Initialize the collapsible sections in expanded state when data loads
+        }); // Initialize the collapsible sections appropriately
         setTimeout(() => {
-          const frameworkSection = document.getElementById("frameworkSection");
-          if (frameworkSection) {
-            frameworkSection.classList.add("expanded");
-          }
+          // Set the framework section to be expanded
+          document
+            .getElementById("frameworkSection")
+            ?.classList.add("expanded");
 
           // Add dynamic animations to elements
           const animateElements = document.querySelectorAll(
@@ -255,6 +260,7 @@ const StepMainDomain = () => {
       console.error("Error analyzing funnel:", error);
     } finally {
       setIsFunnelAnalyzing(false);
+      setIsSitemapExpanded(false);
     }
   };
 
@@ -617,11 +623,388 @@ const StepMainDomain = () => {
       </div>
     );
   };
-
   const BusinessDetailsDisplay = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [tempDetails, setTempDetails] = useState(businessDetails);
 
+    // Add enhanced styles inline for business details display
+    useEffect(() => {
+      const styleEl = document.createElement("style");
+      styleEl.id = "business-details-styles";
+      styleEl.textContent = `
+        .step-main-domain__business-card {
+          background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+          border-radius: 16px;
+          padding: 24px;
+          margin-top: 16px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.03);
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .step-main-domain__business-card:hover {
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(59, 130, 246, 0.05);
+          transform: translateY(-5px);
+        }
+        
+        .step-main-domain__business-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        
+        .step-main-domain__subtitle {
+          font-size: 1.3rem;
+          font-weight: 700;
+          background: linear-gradient(90deg, #2563eb, #3b82f6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          display: inline-block;
+          margin: 0;
+        }
+        
+        .step-main-domain__edit-btn {
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 8px 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+        
+        .step-main-domain__edit-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .step-main-domain__business-textarea {
+          width: 100%;
+          min-height: 350px;
+          padding: 20px;
+          border: 1px solid #ddd;
+          border-radius: 12px;
+          font-size: 15px;
+          line-height: 1.7;
+          font-family: 'Courier New', monospace;
+          transition: all 0.3s ease;
+          background-color: #fafbff;
+          color: #334155;
+        }
+        
+        .step-main-domain__business-textarea:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+          background-color: #fff;
+        }
+        
+        .step-main-domain__business-formatted {
+          display: flex;
+          flex-direction: column;
+          gap: 28px;
+        }
+        
+        .step-main-domain__business-section {
+          border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+          padding-bottom: 24px;
+          position: relative;
+          margin-bottom: 8px;
+          animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(15px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-main-domain__business-section:last-child {
+          border-bottom: none;
+          padding-bottom: 0;
+          margin-bottom: 0;
+        }
+        
+        .step-main-domain__business-section-title {
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: #1e40af;
+          margin-bottom: 18px;
+          padding-bottom: 10px;
+          border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+          display: inline-block;
+          position: relative;
+          letter-spacing: 0.5px;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .step-main-domain__business-section-title::before {
+          content: "";
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 70%;
+          height: 2px;
+          background: linear-gradient(to right, #3b82f6, rgba(59, 130, 246, 0.1));
+        }
+        
+        .step-main-domain__business-section-content {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          padding-left: 8px;
+        }
+        
+        .step-main-domain__business-detail-row {
+          display: flex;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+          padding: 8px 12px;
+          position: relative;
+          gap: 12px;
+          border-radius: 8px;
+          transition: all 0.25s ease;
+          background-color: rgba(241, 245, 249, 0.4);
+          border-left: 3px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .step-main-domain__business-detail-row:hover {
+          background-color: rgba(241, 245, 249, 0.9);
+          border-left: 3px solid rgba(59, 130, 246, 0.8);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          transform: translateX(2px);
+        }
+        
+        .step-main-domain__business-detail-key {
+          color: #334155;
+          font-weight: 700;
+          min-width: 160px;
+          position: relative;
+          display: inline-block;
+          font-size: 0.95rem;
+        }
+        
+        .step-main-domain__business-detail-key:after {
+          content: ":";
+          position: absolute;
+          right: 0;
+          color: #64748b;
+        }
+        
+        .step-main-domain__business-detail-value {
+          color: #0f172a;
+          flex: 1;
+          font-weight: 500;
+          font-size: 0.95rem;
+          line-height: 1.5;
+        }
+        
+        .step-main-domain__business-list-item {
+          display: flex;
+          gap: 12px;
+          align-items: flex-start;
+          padding: 6px 8px;
+          border-radius: 6px;
+          animation: slideIn 0.4s ease;
+          transition: all 0.2s ease;
+        }
+        
+        .step-main-domain__business-list-item:hover {
+          background-color: rgba(241, 245, 249, 0.9);
+          transform: translateX(3px);
+        }
+        
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-15px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .step-main-domain__business-bullet {
+          color: #fff;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          font-size: 0.8rem;
+          line-height: 1.6;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 3px;
+          box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+        
+        .step-main-domain__business-number {
+          color: #fff;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          font-weight: 600;
+          min-width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+          font-size: 0.8rem;
+        }
+        
+        .step-main-domain__business-placeholder {
+          color: #94a3b8;
+          font-style: italic;
+          text-align: center;
+          padding: 40px 0;
+          border: 2px dashed #e2e8f0;
+          border-radius: 10px;
+          margin: 20px 0;
+          background-color: rgba(241, 245, 249, 0.5);
+        }
+        
+        .step-main-domain__edit-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          margin-top: 16px;
+        }
+        
+        .step-main-domain__save-btn {
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          color: white;
+          border: none;
+          border-radius: 8px;
+          padding: 10px 20px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+        
+        .step-main-domain__save-btn:hover {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .step-main-domain__cancel-btn {
+          background: transparent;
+          color: #475569;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          padding: 10px 20px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .step-main-domain__cancel-btn:hover {
+          background: #f8fafc;
+          color: #334155;
+          border-color: #94a3b8;
+        }
+        
+        .step-main-domain__side-section {
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-radius: 16px;
+          padding: 24px;
+          height: 100%;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+          transition: all 0.4s ease;
+          border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        
+        .step-main-domain__side-section:hover {
+          box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
+        }
+      `;
+      document.head.appendChild(styleEl);
+
+      return () => {
+        const existingStyle = document.getElementById(
+          "business-details-styles"
+        );
+        if (existingStyle) {
+          document.head.removeChild(existingStyle);
+        }
+      };
+    }, []);
+
+    // Get appropriate emoji based on section title
+    const getSectionEmoji = useCallback((title) => {
+      const titleLower = title.toLowerCase();
+      if (titleLower.includes("overview") || titleLower.includes("about"))
+        return "🏢";
+      if (titleLower.includes("product") || titleLower.includes("service"))
+        return "🛍️";
+      if (titleLower.includes("contact") || titleLower.includes("info"))
+        return "📞";
+      if (
+        titleLower.includes("team") ||
+        titleLower.includes("staff") ||
+        titleLower.includes("employee")
+      )
+        return "👥";
+      if (
+        titleLower.includes("mission") ||
+        titleLower.includes("vision") ||
+        titleLower.includes("value")
+      )
+        return "🚀";
+      if (titleLower.includes("history") || titleLower.includes("journey"))
+        return "🗓️";
+      if (titleLower.includes("location") || titleLower.includes("address"))
+        return "📍";
+      if (titleLower.includes("hour")) return "🕒";
+      if (titleLower.includes("award") || titleLower.includes("achievement"))
+        return "🏆";
+      if (titleLower.includes("client") || titleLower.includes("customer"))
+        return "🤝";
+      if (titleLower.includes("project")) return "📋";
+      if (titleLower.includes("technology") || titleLower.includes("tech"))
+        return "💻";
+      if (titleLower.includes("price") || titleLower.includes("pricing"))
+        return "💰";
+      if (titleLower.includes("faq")) return "❓";
+      return "✨"; // Default emoji
+    }, []);
+
+    // Function to get key-specific emojis
+    const getKeyEmoji = useCallback((key) => {
+      const keyLower = key.toLowerCase();
+      if (keyLower.includes("name") || keyLower.includes("brand")) return "✨";
+      if (keyLower.includes("founded") || keyLower.includes("established"))
+        return "🗓️";
+      if (keyLower.includes("industry") || keyLower.includes("sector"))
+        return "🏭";
+      if (keyLower.includes("size") || keyLower.includes("employees"))
+        return "👥";
+      if (keyLower.includes("revenue") || keyLower.includes("income"))
+        return "💵";
+      if (keyLower.includes("website")) return "🌐";
+      if (keyLower.includes("email")) return "📧";
+      if (keyLower.includes("phone")) return "📱";
+      if (keyLower.includes("address") || keyLower.includes("location"))
+        return "📍";
+      if (keyLower.includes("social")) return "📱";
+      if (
+        keyLower.includes("ceo") ||
+        keyLower.includes("founder") ||
+        keyLower.includes("president")
+      )
+        return "👔";
+      if (keyLower.includes("mission")) return "🎯";
+      if (keyLower.includes("vision")) return "🔮";
+      if (keyLower.includes("value")) return "💎";
+      if (keyLower.includes("product")) return "📦";
+      if (keyLower.includes("service")) return "🛠️";
+      if (keyLower.includes("client") || keyLower.includes("customer"))
+        return "🤝";
+      if (keyLower.includes("award")) return "🏆";
+      if (keyLower.includes("hour")) return "🕒";
+      return null; // No emoji for this key
+    }, []);
     const handleSave = () => {
       setBusinessDetails(tempDetails);
       setIsEditing(false);
@@ -631,22 +1014,305 @@ const StepMainDomain = () => {
       setTempDetails(businessDetails);
       setIsEditing(false);
     };
+    // Function to parse and format a specific type of content with improved styling
+    const parseFormattedContent = useCallback(
+      (line) => {
+        // Handle bullet points (starting with dash)
+        if (line.trim().startsWith("-")) {
+          // Try to determine bullet type based on content
+          let bulletEmoji = "•";
+          const content = line.substring(1).trim().toLowerCase();
+
+          if (content.includes("award") || content.includes("achievement"))
+            bulletEmoji = "🏆";
+          else if (
+            content.includes("year") ||
+            content.includes("since") ||
+            content.includes("established")
+          )
+            bulletEmoji = "📅";
+          else if (content.includes("product") || content.includes("offer"))
+            bulletEmoji = "📦";
+          else if (content.includes("service")) bulletEmoji = "🛠️";
+          else if (content.includes("client") || content.includes("customer"))
+            bulletEmoji = "🤝";
+          else if (content.includes("technology") || content.includes("tech"))
+            bulletEmoji = "💻";
+          else if (content.includes("feature")) bulletEmoji = "✨";
+          else if (content.includes("benefit")) bulletEmoji = "💎";
+          else bulletEmoji = "✅";
+
+          return (
+            <div className="step-main-domain__business-list-item">
+              <span className="step-main-domain__business-bullet">
+                {bulletEmoji}
+              </span>
+              <span>{line.substring(1).trim()}</span>
+            </div>
+          );
+        }
+
+        // Handle numbered items (starting with numbers followed by period)
+        else if (/^\d+\./.test(line.trim())) {
+          const [num, ...rest] = line.trim().split(/\.\s+/);
+          const content = rest.join(". ").toLowerCase();
+
+          // Determine appropriate icon based on content
+          let icon = num;
+          if (content.includes("step")) icon = "🔄";
+          else if (content.includes("rank")) icon = "🏆";
+          else if (content.includes("phase")) icon = "📈";
+          else if (content.includes("stage")) icon = "🚩";
+
+          return (
+            <div className="step-main-domain__business-list-item">
+              <span className="step-main-domain__business-number">{icon}</span>
+              <span>{rest.join(". ")}</span>
+            </div>
+          );
+        }
+
+        // Handle key-value pairs (separated by colon)
+        else if (line.includes(":")) {
+          const [key, ...value] = line.split(":");
+          const keyEmoji = getKeyEmoji(key.trim());
+
+          return (
+            <div className="step-main-domain__business-detail-row">
+              <span className="step-main-domain__business-detail-key">
+                {keyEmoji && (
+                  <span className="step-main-domain__key-emoji">
+                    {keyEmoji}
+                  </span>
+                )}
+                {key.trim()}
+              </span>
+              <span className="step-main-domain__business-detail-value">
+                {value.join(":").trim()}
+              </span>
+            </div>
+          );
+        }
+
+        // Handle plain text
+        else {
+          return line.trim() ? <p>{line.trim()}</p> : null;
+        }
+      },
+      [getKeyEmoji]
+    );
+
+    // Function to check if a line is a section title (starts with asterisks)
+    const isSectionTitle = useCallback((line) => {
+      return line.trim().startsWith("*") || /^\*+\s+\w+/.test(line);
+    }, []);
+
+    // Format the business details with enhanced styling
+    const renderFormattedDetails = useCallback(() => {
+      if (!businessDetails) {
+        return (
+          <div className="step-main-domain__business-placeholder">
+            <div className="step-main-domain__placeholder-icon">📋</div>
+            <p>No business description added yet.</p>
+            <p>
+              Click <span className="step-main-domain__highlight">Edit</span> to
+              add your business details
+            </p>
+            <div className="step-main-domain__placeholder-helper">
+              <div className="step-main-domain__placeholder-tip">
+                <span className="step-main-domain__tip-icon">💡</span>
+                <span>Use sections marked with * like *Company Overview*</span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Split into major sections (separated by double new lines)
+      const sections = businessDetails.split("\n\n");
+      return (
+        <div className="step-main-domain__business-formatted">
+          {sections.map((section, sectionIndex) => {
+            const lines = section.split("\n");
+
+            // Skip empty sections
+            if (
+              lines.length === 0 ||
+              (lines.length === 1 && !lines[0].trim())
+            ) {
+              return null;
+            }
+
+            // Check if the first line is a section title (starts with asterisks)
+            const firstLine = lines[0];
+            const hasSectionTitle = isSectionTitle(firstLine);
+            const sectionTitle = hasSectionTitle
+              ? firstLine.replace(/\*/g, "").trim()
+              : "";
+
+            // Get appropriate section emoji
+            const sectionEmoji = hasSectionTitle
+              ? getSectionEmoji(sectionTitle)
+              : "📝";
+
+            // Content lines are all lines after the title (or all lines if no title)
+            const contentLines = hasSectionTitle ? lines.slice(1) : lines;
+
+            return (
+              <div
+                key={sectionIndex}
+                className="step-main-domain__business-section"
+                style={{ animationDelay: `${sectionIndex * 0.15}s` }}
+              >
+                {sectionTitle && (
+                  <h4 className="step-main-domain__business-section-title">
+                    <span className="step-main-domain__section-emoji">
+                      {sectionEmoji}
+                    </span>
+                    {sectionTitle}
+                  </h4>
+                )}
+
+                <div className="step-main-domain__business-section-content">
+                  {contentLines.map((line, lineIndex) => (
+                    <React.Fragment key={lineIndex}>
+                      {parseFormattedContent(line)}
+                    </React.Fragment>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }, [
+      parseFormattedContent,
+      isSectionTitle,
+      businessDetails,
+      getSectionEmoji,
+    ]);
+
+    // Add this style block to enhance the emoji appearance
+    useEffect(() => {
+      const styleEl = document.createElement("style");
+      styleEl.id = "business-details-emoji-styles";
+      styleEl.textContent = `
+        .step-main-domain__section-emoji {
+          margin-right: 10px;
+          font-size: 1.2em;
+          display: inline-block;
+          vertical-align: middle;
+          animation: bounce 1s ease infinite alternate;
+        }
+        
+        @keyframes bounce {
+          from { transform: translateY(0); }
+          to { transform: translateY(-3px); }
+        }
+        
+        .step-main-domain__key-emoji {
+          margin-right: 8px;
+          opacity: 0.9;
+          font-size: 0.95em;
+        }
+        
+        .step-main-domain__placeholder-icon {
+          font-size: 42px;
+          margin-bottom: 15px;
+          animation: pulse 2s ease infinite;
+        }
+        
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        
+        .step-main-domain__placeholder-helper {
+          margin-top: 20px;
+          font-size: 0.9em;
+        }
+        
+        .step-main-domain__placeholder-tip {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-top: 10px;
+        }
+        
+        .step-main-domain__tip-icon {
+          margin-right: 8px;
+          animation: glow 2s ease infinite;
+        }
+        
+        @keyframes glow {
+          0% { opacity: 0.7; }
+          50% { opacity: 1; }
+          100% { opacity: 0.7; }
+        }
+        
+        .step-main-domain__highlight {
+          font-weight: 700;
+          background: linear-gradient(90deg, #2563eb, #3b82f6);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        
+        .step-main-domain__business-bullet {
+          font-size: 0.9rem !important;
+        }
+        
+        .step-main-domain__business-card {
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .step-main-domain__business-card:after {
+          content: "";
+          position: absolute;
+          top: 0;
+          right: 0;
+          height: 200px;
+          width: 200px;
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.03) 0%, rgba(37, 99, 235, 0.08) 100%);
+          border-radius: 50%;
+          transform: translate(50%, -50%);
+          z-index: 0;
+          pointer-events: none;
+        }
+      `;
+      document.head.appendChild(styleEl);
+
+      return () => {
+        const existingStyle = document.getElementById(
+          "business-details-emoji-styles"
+        );
+        if (existingStyle) {
+          document.head.removeChild(existingStyle);
+        }
+      };
+    }, []);
 
     return (
       <div className="step-main-domain__side-section">
         <div className="step-main-domain__business-header">
           <h3 className="step-main-domain__subtitle">
-            <span role="img" aria-label="business">
+            <span
+              role="img"
+              aria-label="business"
+              style={{ marginRight: "10px" }}
+            >
               💼
-            </span>{" "}
+            </span>
             Business Profile
           </h3>
           {!isEditing && (
             <button
               className="step-main-domain__edit-btn"
               onClick={() => setIsEditing(true)}
+              title="Edit business profile"
             >
-              <span role="img" aria-label="edit">
+              <span role="img" aria-label="edit" style={{ marginRight: "6px" }}>
                 ✏️
               </span>
               Edit
@@ -660,7 +1326,23 @@ const StepMainDomain = () => {
                 className="step-main-domain__business-textarea"
                 value={tempDetails}
                 onChange={(e) => setTempDetails(e.target.value)}
-                placeholder="Enter your business description, products/services offered, and key information about your company..."
+                placeholder="Enter your business details using the following format:
+*Company Overview*
+Business Name: Your Company Name
+Founded: Year founded
+Industry: Your Industry
+- Key point about your business
+- Another key point
+- One more key point
+
+*Products & Services*
+1. Main product or service
+2. Secondary product or service
+
+*Contact Information*
+Website: example.com
+Email: contact@example.com
+Phone: (555) 123-4567"
                 spellCheck="true"
               />
               <div className="step-main-domain__edit-actions">
@@ -668,26 +1350,33 @@ const StepMainDomain = () => {
                   className="step-main-domain__save-btn"
                   onClick={handleSave}
                 >
+                  <span
+                    role="img"
+                    aria-label="save"
+                    style={{ marginRight: "6px" }}
+                  >
+                    💾
+                  </span>
                   Save Changes
                 </button>
                 <button
                   className="step-main-domain__cancel-btn"
                   onClick={handleCancel}
                 >
+                  <span
+                    role="img"
+                    aria-label="cancel"
+                    style={{ marginRight: "6px" }}
+                  >
+                    ↩️
+                  </span>
                   Cancel
                 </button>
               </div>
             </>
           ) : (
             <div className="step-main-domain__business-content">
-              {businessDetails ? (
-                <p>{businessDetails}</p>
-              ) : (
-                <p className="step-main-domain__business-placeholder">
-                  No business description added yet. Click edit to add your
-                  business details.
-                </p>
-              )}
+              {renderFormattedDetails()}
             </div>
           )}
         </div>
@@ -737,136 +1426,162 @@ const StepMainDomain = () => {
           </div>{" "}
           {/** Sitemaps */}
           {!isValidating && sitemaps.length > 0 && (
-            <div className="step-main-domain__sitemap-section">
-              <h3 className="step-main-domain__subtitle">
-                <span role="img" aria-label="sitemap">
-                  🗺️
-                </span>{" "}
-                Sitemaps
-              </h3>
-              {isFetchingSitemaps ? (
-                <div className="step-main-domain__loading-pulse" />
-              ) : (
-                <>
-                  <div className="step-main-domain__sitemap-header">
-                    <button
-                      className="step-main-domain__select-all"
-                      onClick={() => {
-                        if (selectedSitemaps.length === sitemaps.length) {
-                          setSelectedSitemaps([]);
-                        } else {
-                          setSelectedSitemaps([...sitemaps]);
-                        }
-                      }}
-                    >
-                      {selectedSitemaps.length === sitemaps.length ? (
-                        <>
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M19 13H5v-2h14v2z"></path>
-                          </svg>
-                          Deselect All
-                        </>
-                      ) : (
-                        <>
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
-                          </svg>
-                          Select All
-                        </>
-                      )}
-                    </button>
-                    <span className="step-main-domain__sitemap-count">
-                      {selectedSitemaps.length} of {sitemaps.length} selected
+            <div className="step-main-domain__sitemap-section step-main-domain__collapsible-section">
+              <div className="step-main-domain__section-toggle">
+                <h3 className="step-main-domain__subtitle">
+                  <span role="img" aria-label="sitemap">
+                    🗺️
+                  </span>{" "}
+                  Sitemaps
+                  {selectedSitemaps.length > 0 && (
+                    <span className="step-main-domain__selection-badge">
+                      {selectedSitemaps.length} selected
                     </span>
-                  </div>
-                  <div className="step-main-domain__sitemap-list">
-                    {sitemaps.map((sitemap, index) => {
-                      // Extract domain and path for better visualization
-                      let displayUrl = sitemap;
-                      try {
-                        const urlObj = new URL(sitemap);
-                        displayUrl = `${urlObj.hostname}${urlObj.pathname}`;
-                      } catch (e) {
-                        // Keep original if invalid URL
-                      }
-
-                      return (
-                        <div
-                          key={index}
-                          className="step-main-domain__sitemap-item"
-                        >
-                          <label className="step-main-domain__checkbox-container">
-                            <input
-                              type="checkbox"
-                              checked={selectedSitemaps.includes(sitemap)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedSitemaps((prev) => [
-                                    ...prev,
-                                    sitemap,
-                                  ]);
-                                } else {
-                                  setSelectedSitemaps((prev) =>
-                                    prev.filter((item) => item !== sitemap)
-                                  );
-                                }
-                              }}
-                            />
-                            <span className="step-main-domain__checkbox-custom"></span>
-                            <span
-                              className="step-main-domain__sitemap-link"
-                              title={sitemap}
-                            >
-                              {displayUrl}
-                            </span>
-                          </label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-              {sitemapError && (
-                <div className="step-main-domain__error">{sitemapError}</div>
-              )}
-              {selectedSitemaps.length > 0 && (
-                <button
-                  className={`step-main-domain__analyze-btn ${
-                    isFunnelAnalyzing ? "loading" : ""
-                  }`}
-                  onClick={() => handleSitemapSelection(selectedSitemaps)}
-                  disabled={isFunnelAnalyzing}
-                >
-                  {isFunnelAnalyzing ? (
-                    <>
-                      <div className="step-main-domain__btn-spinner"></div>
-                      <span>Analyzing Content...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="white"
-                      >
-                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-                      </svg>
-                      <span>Analyze Content</span>
-                    </>
                   )}
+                </h3>{" "}
+                <button
+                  className="step-main-domain__toggle-btn"
+                  onClick={() => setIsSitemapExpanded(!isSitemapExpanded)}
+                  title={isSitemapExpanded ? "Collapse" : "Expand"}
+                >
+                  <span
+                    style={{
+                      transform: isSitemapExpanded ? "rotate(180deg)" : "none",
+                    }}
+                  >
+                    ▼
+                  </span>
                 </button>
-              )}
+              </div>{" "}
+              <div
+                className={`step-main-domain__collapsible-content ${
+                  isSitemapExpanded ? "expanded" : ""
+                }`}
+              >
+                {isFetchingSitemaps ? (
+                  <div className="step-main-domain__loading-pulse" />
+                ) : (
+                  <>
+                    <div className="step-main-domain__sitemap-header">
+                      <button
+                        className="step-main-domain__select-all"
+                        onClick={() => {
+                          if (selectedSitemaps.length === sitemaps.length) {
+                            setSelectedSitemaps([]);
+                          } else {
+                            setSelectedSitemaps([...sitemaps]);
+                          }
+                        }}
+                      >
+                        {selectedSitemaps.length === sitemaps.length ? (
+                          <>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M19 13H5v-2h14v2z"></path>
+                            </svg>
+                            Deselect All
+                          </>
+                        ) : (
+                          <>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                            </svg>
+                            Select All
+                          </>
+                        )}
+                      </button>
+                      <span className="step-main-domain__sitemap-count">
+                        {selectedSitemaps.length} of {sitemaps.length} selected
+                      </span>
+                    </div>
+                    <div className="step-main-domain__sitemap-list">
+                      {sitemaps.map((sitemap, index) => {
+                        // Extract domain and path for better visualization
+                        let displayUrl = sitemap;
+                        try {
+                          const urlObj = new URL(sitemap);
+                          displayUrl = `${urlObj.hostname}${urlObj.pathname}`;
+                        } catch (e) {
+                          // Keep original if invalid URL
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className="step-main-domain__sitemap-item"
+                          >
+                            <label className="step-main-domain__checkbox-container">
+                              <input
+                                type="checkbox"
+                                checked={selectedSitemaps.includes(sitemap)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSitemaps((prev) => [
+                                      ...prev,
+                                      sitemap,
+                                    ]);
+                                  } else {
+                                    setSelectedSitemaps((prev) =>
+                                      prev.filter((item) => item !== sitemap)
+                                    );
+                                  }
+                                }}
+                              />
+                              <span className="step-main-domain__checkbox-custom"></span>
+                              <span
+                                className="step-main-domain__sitemap-link"
+                                title={sitemap}
+                              >
+                                {displayUrl}
+                              </span>
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {sitemapError && (
+                  <div className="step-main-domain__error">{sitemapError}</div>
+                )}
+                {selectedSitemaps.length > 0 && (
+                  <button
+                    className={`step-main-domain__analyze-btn ${
+                      isFunnelAnalyzing ? "loading" : ""
+                    }`}
+                    onClick={() => handleSitemapSelection(selectedSitemaps)}
+                    disabled={isFunnelAnalyzing}
+                  >
+                    {isFunnelAnalyzing ? (
+                      <>
+                        <div className="step-main-domain__btn-spinner"></div>
+                        <span>Analyzing Content...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="white"
+                        >
+                          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
+                        </svg>
+                        <span>Analyze Content</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           )}{" "}
           {/* Show analysis section with conditional rendering based on state */}
@@ -1355,7 +2070,7 @@ const AnalysisProgress = ({ steps }) => {
       case "Metrics Analysis":
         return isComplete ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2v-7h2v7zm4 0h-2V7h2v10z"></path>
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2-14H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"></path>
           </svg>
         ) : (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -1412,7 +2127,7 @@ const AnalysisProgress = ({ steps }) => {
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path>
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-8h-2v6h-2V7h4v6h2v-6h2V9h-2V7h-2V5h4v2h2v2h-2v2h-2v2h2v2h-2v2h-2v-2z"></path>
               </svg>
             ) : (
               getIconByLabel(step.label, false)
@@ -1459,7 +2174,9 @@ const AnalysisProgress = ({ steps }) => {
   );
 };
 
-// Helper function to get appropriate icon for each step
+// This function is now used by getIconByLabel
+// Helper function to get appropriate icon name for each step (for reference)
+/*
 const getStepIcon = (stepLabel, isComplete) => {
   switch (stepLabel) {
     case "Domain Validation":
@@ -1476,5 +2193,6 @@ const getStepIcon = (stepLabel, isComplete) => {
       return isComplete ? "check_circle" : "radio_button_unchecked";
   }
 };
+*/
 
 export default StepMainDomain;
