@@ -45,11 +45,27 @@ export default function SiteStats() {
             }),
           }
         );
-        if (!res.ok) throw new Error("Fetch failed");
+
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => null);
+          if (
+            res.status === 403 ||
+            (errorData &&
+              errorData.error &&
+              errorData.error.includes("Permission denied"))
+          ) {
+            throw new Error(
+              `Permission denied for this site in Google Search Console. Please verify you have appropriate access rights to ${siteDetails.siteUrl}.`
+            );
+          }
+          throw new Error(`Fetch failed: ${res.status} ${res.statusText}`);
+        }
+
         const json = await res.json();
         setDecay(json);
       } catch (e) {
-        setError(e.message);
+        console.error("Error fetching data:", e);
+        setError(e.message || "An unknown error occurred");
       } finally {
         setLoading(false);
       }
@@ -93,7 +109,9 @@ export default function SiteStats() {
 
     const totals = decay.results.reduce(
       (acc, page) => {
-        const lastMonth = page.monthly[page.monthly.length - 1];
+        // Access data from the gscData.monthly array instead of monthly
+        const gscMonthly = page.gscData?.monthly || [];
+        const lastMonth = gscMonthly[gscMonthly.length - 1];
         acc.impressions += lastMonth ? lastMonth.impressions : 0;
         acc.clicks += lastMonth ? lastMonth.clicks : 0;
         return acc;
@@ -107,7 +125,7 @@ export default function SiteStats() {
       ctr:
         totals.impressions > 0
           ? ((totals.clicks / totals.impressions) * 100).toFixed(2)
-          : 0,
+          : "0",
     };
   };
 
@@ -145,50 +163,111 @@ export default function SiteStats() {
       urls: decay.results.map((r) =>
         r.url.replace("https://", "").replace(/^www\./, "")
       ),
-      slopes: decay.results.map((r) => r.slopeI),
+      slopes: decay.results.map((r) => r.slopeI || 0), // Handle null slopes
       statuses: decay.results.map((r) => r.status),
     };
   };
 
   const monthlyChart = (r) => {
-    const labels = r.monthly.map((m) => m.month);
-    const impressions = r.monthly.map((m) => m.impressions);
-    const clicks = r.monthly.map((m) => m.clicks);
+    // Extract GSC data for impressions and clicks
+    const gscMonthly = r.gscData?.monthly || [];
+    const gaMonthly = r.gaData?.monthly || [];
 
-    // Calculate moving averages for trend lines
-    const movingAvgImpressions = calculateMovingAverage(impressions, 3);
+    // Use GSC months as primary labels if available, otherwise use GA months
+    let labels =
+      gscMonthly.length > 0
+        ? gscMonthly.map((m) => m.month)
+        : gaMonthly.map((m) => m.month);
+
+    // If neither has data, use empty array
+    if (labels.length === 0) {
+      return (
+        <div className="site-stats-no-data">No monthly data available</div>
+      );
+    }
+
+    const impressions = gscMonthly.map((m) => m.impressions);
+    const clicks = gscMonthly.map((m) => m.clicks);
+
+    // Extract GA data for pageviews and sessions if available
+    const pageViews = gaMonthly.map((m) => m.pageViews);
+    const sessions = gaMonthly.map((m) => m.sessions);
+
+    // Calculate moving averages for trend lines only if we have GSC data
+    const movingAvgImpressions =
+      impressions.length > 0 ? calculateMovingAverage(impressions, 3) : [];
+
+    // Prepare datasets
+    const datasets = [];
+
+    // Add GSC data if available
+    if (gscMonthly.length > 0) {
+      datasets.push({
+        label: "Impressions",
+        data: impressions,
+        backgroundColor: "rgba(53, 162, 235, 0.2)",
+        borderColor: "rgba(53, 162, 235, 1)",
+        tension: 0.2,
+      });
+
+      if (movingAvgImpressions.length > 0) {
+        datasets.push({
+          label: "Trend (3-month avg)",
+          data: movingAvgImpressions,
+          borderColor: "rgba(75, 192, 192, 1)",
+          borderDash: [5, 5],
+          borderWidth: 2,
+          pointRadius: 0,
+          tension: 0.4,
+          fill: false,
+        });
+      }
+
+      datasets.push({
+        label: "Clicks",
+        data: clicks,
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderColor: "rgba(255, 99, 132, 1)",
+        tension: 0.2,
+        yAxisID: "y1",
+      });
+    }
+
+    // Add GA data if available
+    if (gaMonthly.length > 0) {
+      datasets.push({
+        label: "PageViews",
+        data: pageViews,
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        borderColor: "rgba(75, 192, 192, 1)",
+        tension: 0.2,
+        yAxisID: gscMonthly.length > 0 ? "y2" : "y",
+        hidden: gscMonthly.length > 0, // Only hide if we have GSC data
+      });
+
+      datasets.push({
+        label: "Sessions",
+        data: sessions,
+        backgroundColor: "rgba(153, 102, 255, 0.2)",
+        borderColor: "rgba(153, 102, 255, 1)",
+        tension: 0.2,
+        yAxisID: gscMonthly.length > 0 ? "y2" : "y1",
+        hidden: gscMonthly.length > 0, // Only hide if we have GSC data
+      });
+    }
+
+    // If we have no datasets, show a message
+    if (datasets.length === 0) {
+      return (
+        <div className="site-stats-no-data">No data available to chart</div>
+      );
+    }
 
     return (
       <Line
         data={{
           labels,
-          datasets: [
-            {
-              label: "Impressions",
-              data: impressions,
-              backgroundColor: "rgba(53, 162, 235, 0.2)",
-              borderColor: "rgba(53, 162, 235, 1)",
-              tension: 0.2,
-            },
-            {
-              label: "Trend (3-month avg)",
-              data: movingAvgImpressions,
-              borderColor: "rgba(75, 192, 192, 1)",
-              borderDash: [5, 5],
-              borderWidth: 2,
-              pointRadius: 0,
-              tension: 0.4,
-              fill: false,
-            },
-            {
-              label: "Clicks",
-              data: clicks,
-              backgroundColor: "rgba(255, 99, 132, 0.2)",
-              borderColor: "rgba(255, 99, 132, 1)",
-              tension: 0.2,
-              yAxisID: "y1",
-            },
-          ],
+          datasets,
         }}
         options={{
           responsive: true,
@@ -201,14 +280,25 @@ export default function SiteStats() {
             tooltip: {
               callbacks: {
                 footer: (tooltipItems) => {
-                  if (tooltipItems.length > 1) {
-                    const impressions = tooltipItems[0].raw;
-                    const clicks = tooltipItems[2].raw;
-                    const ctr =
-                      impressions > 0
-                        ? ((clicks / impressions) * 100).toFixed(2)
-                        : 0;
-                    return `CTR: ${ctr}%`;
+                  // Find impressions and clicks items if they exist
+                  const impressionsItem = tooltipItems.find(
+                    (item) => item.dataset.label === "Impressions"
+                  );
+                  const clicksItem = tooltipItems.find(
+                    (item) => item.dataset.label === "Clicks"
+                  );
+
+                  if (
+                    impressionsItem &&
+                    clicksItem &&
+                    impressionsItem.raw > 0
+                  ) {
+                    const impressions = impressionsItem.raw || 0;
+                    const clicks = clicksItem.raw || 0;
+                    if (impressions > 0) {
+                      const ctr = ((clicks / impressions) * 100).toFixed(2);
+                      return `CTR: ${ctr}%`;
+                    }
                   }
                   return "";
                 },
@@ -219,7 +309,7 @@ export default function SiteStats() {
             y: {
               title: {
                 display: true,
-                text: "Impressions",
+                text: gscMonthly.length > 0 ? "Impressions" : "PageViews",
               },
               beginAtZero: true,
             },
@@ -227,12 +317,24 @@ export default function SiteStats() {
               position: "right",
               title: {
                 display: true,
-                text: "Clicks",
+                text: gscMonthly.length > 0 ? "Clicks" : "Sessions",
               },
               grid: {
                 drawOnChartArea: false,
               },
               beginAtZero: true,
+            },
+            y2: {
+              position: "right",
+              title: {
+                display: true,
+                text: "PageViews/Sessions",
+              },
+              grid: {
+                drawOnChartArea: false,
+              },
+              beginAtZero: true,
+              display: gaMonthly.length > 0 && gscMonthly.length > 0,
             },
           },
         }}
@@ -279,6 +381,9 @@ export default function SiteStats() {
         <div className="site-stats-header">
           <h1 className="site-stats-title">Content Health Dashboard</h1>
           <p className="site-stats-subtitle">{siteDetails.siteUrl}</p>
+          {decay && (
+            <p className="site-stats-last-updated">Data as of: {decay.asOf}</p>
+          )}
         </div>
 
         {/* Stats Summary Cards */}
@@ -420,7 +525,9 @@ export default function SiteStats() {
                   indexAxis: "y",
                   scales: {
                     x: {
-                      ticks: { callback: (v) => v.toFixed(1) },
+                      ticks: {
+                        callback: (v) => (v != null ? v.toFixed(1) : "0.0"),
+                      },
                       title: {
                         display: true,
                         text: "Slope (Higher is better)",
@@ -451,7 +558,9 @@ export default function SiteStats() {
                           const status =
                             slopeData().statuses[context.dataIndex];
                           return [
-                            `Slope: ${value.toFixed(3)}`,
+                            `Slope: ${
+                              value != null ? value.toFixed(3) : "0.000"
+                            }`,
                             `Status: ${status} ${getStatusIcon(status)}`,
                           ];
                         },
@@ -540,6 +649,7 @@ export default function SiteStats() {
                       </span>
                     )}
                   </th>
+                  <th>Data Source</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -564,14 +674,14 @@ export default function SiteStats() {
                       <td>
                         <div
                           className={`site-stats-slope-value ${
-                            r.slopeI < 0
+                            (r.slopeI || 0) < 0
                               ? "site-stats-slope-negative"
                               : "site-stats-slope-positive"
                           }`}
                         >
-                          {r.slopeI.toFixed(3)}
+                          {r.slopeI != null ? r.slopeI.toFixed(3) : "0.000"}
                           <span className="site-stats-slope-icon">
-                            {r.slopeI < 0 ? "↓" : "↑"}
+                            {(r.slopeI || 0) < 0 ? "↓" : "↑"}
                           </span>
                         </div>
                       </td>
@@ -579,15 +689,20 @@ export default function SiteStats() {
                         <div className="site-stats-progress-bar-container">
                           <div
                             className={`site-stats-progress-bar ${
-                              r.dropRatio > 0.5
+                              (r.dropRatio || 0) > 0.5
                                 ? "site-stats-progress-bar-danger"
                                 : "site-stats-progress-bar-warning"
                             }`}
-                            style={{ width: `${r.dropRatio * 100}%` }}
+                            style={{ width: `${(r.dropRatio || 0) * 100}%` }}
                           ></div>
                         </div>
                         <span className="site-stats-progress-label">
-                          {(r.dropRatio * 100).toFixed(1)}%
+                          {((r.dropRatio || 0) * 100).toFixed(1)}%
+                        </span>
+                      </td>
+                      <td>
+                        <span className="site-stats-source-badge">
+                          {r.dataSource}
                         </span>
                       </td>
                       <td>
@@ -603,7 +718,7 @@ export default function SiteStats() {
                     </tr>
                     {selectedUrl === r.url && (
                       <tr>
-                        <td colSpan="5" className="p-0">
+                        <td colSpan="6" className="p-0">
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
@@ -615,69 +730,103 @@ export default function SiteStats() {
                             </div>
                             <div className="site-stats-inline-insights">
                               {(() => {
+                                const gscMonthly = r.gscData?.monthly || [];
+                                const gaMonthly = r.gaData?.monthly || [];
+
                                 const lastMonth =
-                                  r.monthly[r.monthly.length - 1];
+                                  gscMonthly[gscMonthly.length - 1];
                                 const prevMonth =
-                                  r.monthly[r.monthly.length - 2];
+                                  gscMonthly[gscMonthly.length - 2];
+
+                                // Calculate change safely
                                 const monthlyChange =
-                                  prevMonth && lastMonth
+                                  prevMonth &&
+                                  lastMonth &&
+                                  prevMonth.impressions > 0
                                     ? ((lastMonth.impressions -
                                         prevMonth.impressions) /
                                         prevMonth.impressions) *
                                       100
-                                    : 0;
+                                    : null;
+
+                                // Get GA data if available
+                                const lastMonthGA =
+                                  gaMonthly[gaMonthly.length - 1];
 
                                 return (
                                   <>
-                                    <div className="site-stats-insight-item">
-                                      <p className="site-stats-insight-label">
-                                        Last Month Impressions
-                                      </p>
-                                      <p className="site-stats-insight-value">
-                                        {lastMonth
-                                          ? lastMonth.impressions.toLocaleString()
-                                          : "N/A"}
-                                      </p>
-                                      {monthlyChange !== 0 && (
-                                        <p
-                                          className={`site-stats-change ${
-                                            monthlyChange > 0
-                                              ? "site-stats-change-positive"
-                                              : "site-stats-change-negative"
-                                          }`}
-                                        >
-                                          {monthlyChange > 0 ? "↑" : "↓"}{" "}
-                                          {Math.abs(monthlyChange).toFixed(1)}%
+                                    {gscMonthly.length > 0 && (
+                                      <div className="site-stats-insight-item">
+                                        <p className="site-stats-insight-label">
+                                          Last Month Impressions
                                         </p>
-                                      )}
-                                    </div>
-                                    <div className="site-stats-insight-item">
-                                      <p className="site-stats-insight-label">
-                                        Last Month Clicks
-                                      </p>
-                                      <p className="site-stats-insight-value">
-                                        {lastMonth
-                                          ? lastMonth.clicks.toLocaleString()
-                                          : "N/A"}
-                                      </p>
-                                      <p className="site-stats-insight-label">
-                                        CTR:{" "}
-                                        {lastMonth && lastMonth.impressions > 0
-                                          ? (
-                                              (lastMonth.clicks /
-                                                lastMonth.impressions) *
-                                              100
-                                            ).toFixed(2)
-                                          : 0}
-                                        %
-                                      </p>
-                                    </div>
+                                        <p className="site-stats-insight-value">
+                                          {lastMonth
+                                            ? lastMonth.impressions.toLocaleString()
+                                            : "N/A"}
+                                        </p>
+                                        {monthlyChange !== null && (
+                                          <p
+                                            className={`site-stats-change ${
+                                              monthlyChange > 0
+                                                ? "site-stats-change-positive"
+                                                : "site-stats-change-negative"
+                                            }`}
+                                          >
+                                            {monthlyChange > 0 ? "↑" : "↓"}{" "}
+                                            {Math.abs(monthlyChange).toFixed(1)}
+                                            %
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {gscMonthly.length > 0 && (
+                                      <div className="site-stats-insight-item">
+                                        <p className="site-stats-insight-label">
+                                          Last Month Clicks
+                                        </p>
+                                        <p className="site-stats-insight-value">
+                                          {lastMonth
+                                            ? lastMonth.clicks.toLocaleString()
+                                            : "N/A"}
+                                        </p>
+                                        <p className="site-stats-insight-label">
+                                          CTR:{" "}
+                                          {lastMonth &&
+                                          lastMonth.impressions > 0
+                                            ? (
+                                                (lastMonth.clicks /
+                                                  lastMonth.impressions) *
+                                                100
+                                              ).toFixed(2)
+                                            : "0"}
+                                          %
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {lastMonthGA && (
+                                      <div className="site-stats-insight-item">
+                                        <p className="site-stats-insight-label">
+                                          Last Month Pageviews
+                                        </p>
+                                        <p className="site-stats-insight-value">
+                                          {lastMonthGA.pageViews.toLocaleString()}
+                                        </p>
+                                        <p className="site-stats-insight-label">
+                                          Sessions:{" "}
+                                          {lastMonthGA.sessions.toLocaleString()}
+                                        </p>
+                                      </div>
+                                    )}
+
                                     <div className="site-stats-insight-item">
                                       <p className="site-stats-insight-label">
                                         Drop Ratio
                                       </p>
                                       <p className="site-stats-insight-value">
-                                        {(r.dropRatio * 100).toFixed(1)}%
+                                        {((r.dropRatio || 0) * 100).toFixed(1)}%
                                       </p>
                                       <p className="site-stats-insight-label">
                                         {r.halfLifePassed
