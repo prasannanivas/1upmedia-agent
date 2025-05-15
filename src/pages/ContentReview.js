@@ -15,6 +15,9 @@ const ContentReview = () => {
   const [responseData, setResponseData] = useState(null);
   const [error, setError] = useState(null);
 
+  // Add state for modal control
+  const [modalData, setModalData] = useState(null);
+
   // Sorting
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
@@ -155,11 +158,13 @@ const ContentReview = () => {
   // 6) Define columns
   const columns = [
     { key: "keyword", label: "Keyword" },
+    { key: "url", label: "URL" },
     { key: "isBrand", label: "Brand Keyword" },
     { key: "isHighImpressionLowCTR", label: "High Impress Low CTR" },
     { key: "isOpportunity", label: "Opportunity" },
     { key: "isLongTail", label: "Long Tail" },
     { key: "difficulty", label: "Difficulty" },
+    { key: "mozDifficulty", label: "MOZ Difficulty" },
   ];
 
   const getBrandTooltip = (row) => {
@@ -230,6 +235,296 @@ const ContentReview = () => {
     alert(`Generating content for ${selected.length} selected keywords.`);
   };
 
+  // Add this state for tracking loading states for each keyword
+  const [loadingStates, setLoadingStates] = useState({});
+  // Add this state for tracking error states for each keyword
+  const [errorStates, setErrorStates] = useState({});
+
+  // Function to handle fetching MOZ difficulty for a keyword
+  const fetchMozDifficulty = (keyword, url) => {
+    const link = `https://ai.1upmedia.com:443/aiagent/keyword-classify/moz-difficulty`;
+
+    // Set loading state for this keyword
+    setLoadingStates((prev) => ({ ...prev, [keyword]: true }));
+    // Clear any previous errors
+    setErrorStates((prev) => ({ ...prev, [keyword]: null }));
+
+    fetch(link, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        keyword,
+        url,
+        email,
+        domain,
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Server returned status ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Update the responseData with the new MOZ difficulty
+        setResponseData((prevData) => {
+          const updatedClassifiedData = prevData.classifiedData.map((item) => {
+            if (item.keyword === keyword) {
+              return { ...item, mozDifficulty: data.mozDifficulty || "N/A" };
+            }
+            return item;
+          });
+          return { ...prevData, classifiedData: updatedClassifiedData };
+        });
+        // Clear loading state
+        setLoadingStates((prev) => ({ ...prev, [keyword]: false }));
+      })
+      .catch((err) => {
+        console.error(
+          `Error fetching MOZ difficulty for ${keyword}:`,
+          err.message
+        );
+        // Set error state
+        setErrorStates((prev) => ({
+          ...prev,
+          [keyword]: err.message || "Failed to fetch data",
+        }));
+        // Clear loading state
+        setLoadingStates((prev) => ({ ...prev, [keyword]: false }));
+      });
+  };
+
+  // MOZ icon for the difficulty column
+  const MozIcon = ({ keyword, url }) => (
+    <span
+      className="moz-icon"
+      onClick={(e) => {
+        e.stopPropagation();
+        fetchMozDifficulty(keyword, url);
+      }}
+      style={{
+        cursor: "pointer",
+        color: "#1A73E8",
+        fontWeight: "bold",
+      }}
+      title={`Click to fetch MOZ difficulty for "${keyword}"`}
+    >
+      MOZ
+    </span>
+  );
+
+  // New compact MOZ display component showing just the traffic light
+  const MozTrafficLight = ({
+    mozData,
+    onClick,
+    isLoading,
+    error,
+    keyword,
+    url,
+  }) => {
+    // If there's an error, show error state
+    if (error) {
+      return (
+        <div
+          className="moz-traffic-pill moz-error-pill"
+          onClick={(e) => {
+            e.stopPropagation();
+            fetchMozDifficulty(keyword, url);
+          }}
+          title={`Error: ${error}. Click to retry.`}
+        >
+          <span className="moz-error-icon">!</span>
+          <span className="moz-error-text">Error</span>
+        </div>
+      );
+    }
+
+    // If it's loading, show loading state
+    if (isLoading) {
+      return (
+        <div
+          className="moz-traffic-pill moz-loading-pill"
+          title="Loading MOZ data..."
+        >
+          <div className="moz-loading-spinner"></div>
+          <span className="moz-loading-text">Loading</span>
+        </div>
+      );
+    }
+
+    // If no data yet, don't render anything (the MozIcon will be shown instead)
+    if (!mozData) return null;
+
+    // Parse the data if it's a string
+    const data = typeof mozData === "string" ? JSON.parse(mozData) : mozData;
+
+    // Get traffic light color
+    const getTrafficLightColor = (light) => {
+      if (!light) return "#777";
+      if (light.includes("GREEN")) return "#28a745";
+      if (light.includes("YELLOW")) return "#ffc107";
+      if (light.includes("RED")) return "#dc3545";
+      return "#777";
+    };
+
+    const difficulty =
+      typeof data.moz_difficulty === "number"
+        ? data.moz_difficulty.toFixed(1)
+        : "N/A";
+
+    return (
+      <div
+        className="moz-traffic-pill"
+        onClick={onClick}
+        title="Click to view all MOZ data"
+      >
+        <span className="moz-difficulty-number">{difficulty}</span>
+        <span
+          className="moz-traffic-indicator"
+          style={{ backgroundColor: getTrafficLightColor(data.traffic_light) }}
+        >
+          {data.traffic_light ? data.traffic_light.split(" ")[0] : "N/A"}
+        </span>
+      </div>
+    );
+  };
+
+  // Modal component for detailed MOZ data
+  const MozDetailModal = ({ mozData, onClose }) => {
+    if (!mozData) return null;
+
+    // Parse the data if it's a string
+    const data = typeof mozData === "string" ? JSON.parse(mozData) : mozData;
+
+    // Format numbers to 1 decimal place
+    const formatNumber = (num) => {
+      return typeof num === "number" ? num.toFixed(1) : "N/A";
+    };
+
+    // Get traffic light color
+    const getTrafficLightColor = (light) => {
+      if (!light) return "#777";
+      if (light.includes("GREEN")) return "#28a745";
+      if (light.includes("YELLOW")) return "#ffc107";
+      if (light.includes("RED")) return "#dc3545";
+      return "#777";
+    };
+
+    return (
+      <div className="moz-modal-overlay" onClick={onClose}>
+        <div className="moz-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="moz-modal-header">
+            <h3>MOZ Difficulty Analysis</h3>
+            <span className="moz-modal-close" onClick={onClose}>
+              &times;
+            </span>
+          </div>
+
+          <div className="moz-modal-body">
+            <div className="moz-card moz-summary-card">
+              <div className="moz-card-content">
+                <div className="moz-stat-large">
+                  <span className="moz-stat-label">MOZ Difficulty Score</span>
+                  <span className="moz-stat-value">
+                    {formatNumber(data.moz_difficulty)}
+                  </span>
+                </div>
+
+                <div
+                  className="moz-verdict"
+                  style={{
+                    backgroundColor: getTrafficLightColor(data.traffic_light),
+                  }}
+                >
+                  {data.traffic_light || "Not Available"}
+                </div>
+              </div>
+            </div>
+
+            <div className="moz-stats-grid">
+              <div className="moz-stat-box">
+                <span className="moz-stat-title">Domain Authority</span>
+                <span className="moz-stat-number">
+                  {data.domain_authority || "N/A"}
+                </span>
+              </div>
+              <div className="moz-stat-box">
+                <span className="moz-stat-title">Page Authority</span>
+                <span className="moz-stat-number">
+                  {data.page_authority || "N/A"}
+                </span>
+              </div>
+              <div className="moz-stat-box">
+                <span className="moz-stat-title">Buffer Factor</span>
+                <span className="moz-stat-number">
+                  {formatNumber(data.buffer_factor)}
+                </span>
+              </div>
+              <div className="moz-stat-box">
+                <span className="moz-stat-title">Allowed KD</span>
+                <span className="moz-stat-number">
+                  {formatNumber(data.allowed_kd)}
+                </span>
+              </div>
+            </div>
+
+            <div className="moz-comparison-box">
+              <div className="moz-comparison-title">Competition Analysis</div>
+              <div className="moz-comparison-grid">
+                <div className="moz-comparison-item">
+                  <span className="moz-comparison-label">
+                    Buffered Allowed KD
+                  </span>
+                  <span className="moz-comparison-value">
+                    {formatNumber(data.buffered_allowed_kd)}
+                  </span>
+                </div>
+                <div className="moz-comparison-item">
+                  <span className="moz-comparison-label">Delta</span>
+                  <span
+                    className="moz-comparison-value"
+                    style={{
+                      color: data.delta < 0 ? "#28a745" : "#dc3545",
+                    }}
+                  >
+                    {formatNumber(data.delta)}
+                  </span>
+                </div>
+                <div className="moz-comparison-item">
+                  <span className="moz-comparison-label">Normalized Delta</span>
+                  <span
+                    className="moz-comparison-value"
+                    style={{
+                      color: data.delta_norm < 0 ? "#28a745" : "#dc3545",
+                    }}
+                  >
+                    {formatNumber(data.delta_norm)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {data.url && (
+              <div className="moz-url-box">
+                <span className="moz-url-label">URL Analyzed:</span>
+                <a
+                  href={data.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="moz-url-value"
+                >
+                  {data.url}
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // 9) Render
   return (
     <div className="contentreview-content-review-container">
@@ -238,7 +533,7 @@ const ContentReview = () => {
       </h1>
 
       {!keywordData ||
-        (keywordData.length == 0 && (
+        (keywordData.length === 0 && (
           <p>
             No keyword data available. Please connect to Google search Console
             and Try again
@@ -418,6 +713,7 @@ const ContentReview = () => {
 
                     {/* Row columns */}
                     <td>{row.keyword}</td>
+                    <td>{row.url}</td>
                     <td title={getBrandTooltip(row)}>
                       {row.isBrand ? "Brand Keyword" : ""}
                     </td>
@@ -432,6 +728,24 @@ const ContentReview = () => {
                     </td>
                     <td title={getDifficultyTooltip(row)}>
                       {row.difficulty || ""}
+                    </td>
+                    <td>
+                      {loadingStates[row.keyword] ? (
+                        <MozTrafficLight isLoading={true} />
+                      ) : errorStates[row.keyword] ? (
+                        <MozTrafficLight
+                          error={errorStates[row.keyword]}
+                          keyword={row.keyword}
+                          url={row.url}
+                        />
+                      ) : row.mozDifficulty ? (
+                        <MozTrafficLight
+                          mozData={row.mozDifficulty}
+                          onClick={() => setModalData(row.mozDifficulty)}
+                        />
+                      ) : (
+                        <MozIcon keyword={row.keyword} url={row.url} />
+                      )}
                     </td>
 
                     {/* Generate action */}
@@ -460,6 +774,13 @@ const ContentReview = () => {
             </table>
           </div>
         </>
+      )}
+
+      {modalData && (
+        <MozDetailModal
+          mozData={modalData}
+          onClose={() => setModalData(null)}
+        />
       )}
     </div>
   );

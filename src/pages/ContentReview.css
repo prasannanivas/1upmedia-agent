@@ -104,3 +104,321 @@
 .contentreview-generate-button:hover {
   background-color: #08a230;
 }
+
+/* MOZ Traffic Light Pill in table */
+.moz-traffic-pill {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f8f8f8;
+  border-radius: 20px;
+  padding: 4px 8px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.moz-traffic-pill:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Loading state for MOZ pill */
+.moz-loading-pill {
+  background-color: #f0f2f5;
+  cursor: wait;
+  min-width: 80px;
+  justify-content: center;
+}
+
+.moz-loading-pill:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.moz-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #0ab53a;
+  border-radius: 50%;
+  margin-right: 8px;
+  animation: moz-spinner 0.8s linear infinite;
+}
+
+@keyframes moz-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.moz-loading-text {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+/* Error state for MOZ pill */
+.moz-error-pill {
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+}
+
+.moz-error-icon {
+  background-color: #fc8181;
+  color: white;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.moz-error-text {
+  color: #e53e3e;
+  font-size: 0.8rem;
+}
+
+/* Original styles */
+.moz-difficulty-number {
+  font-weight: bold;
+  margin-right: 6px;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.moz-traffic-indicator {
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* MOZ Modal */
+.moz-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.moz-modal-content {
+  background-color: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 650px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  animation: modal-slide-in 0.3s ease;
+}
+
+@keyframes modal-slide-in {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.moz-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.moz-modal-header h3 {
+  margin: 0;
+  color: #333;
+}
+
+.moz-modal-close {
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #777;
+}
+
+.moz-modal-close:hover {
+  color: #333;
+}
+
+.moz-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Cards and Stats */
+.moz-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+.moz-summary-card {
+  background: linear-gradient(135deg, #f6f9fc, #eaf0f6);
+}
+
+.moz-card-content {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.moz-stat-large {
+  display: flex;
+  flex-direction: column;
+}
+
+.moz-stat-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.moz-stat-value {
+  font-size: 36px;
+  font-weight: bold;
+  color: #2d3748;
+}
+
+.moz-verdict {
+  padding: 10px 20px;
+  border-radius: 6px;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.moz-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.moz-stat-box {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.moz-stat-title {
+  font-size: 12px;
+  color: #718096;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.moz-stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2d3748;
+}
+
+.moz-comparison-box {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.moz-comparison-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.moz-comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.moz-comparison-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.moz-comparison-label {
+  font-size: 12px;
+  color: #718096;
+}
+
+.moz-comparison-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.moz-url-box {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.moz-url-label {
+  font-size: 12px;
+  color: #718096;
+}
+
+.moz-url-value {
+  word-break: break-all;
+  color: #3182ce;
+  text-decoration: none;
+}
+
+.moz-url-value:hover {
+  text-decoration: underline;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .moz-modal-content {
+    width: 95%;
+  }
+
+  .moz-stats-grid,
+  .moz-comparison-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .moz-card-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .moz-stat-value {
+    font-size: 28px;
+  }
+}
