@@ -58,7 +58,9 @@ const ContentReview = () => {
       })
         .then((res) => {
           if (!res.ok) {
-            throw new Error(`Server returned status ${res.status}`);
+            throw new Error(
+              `${res.details} Server returned status ${res.status}`
+            );
           }
           return res.json();
         })
@@ -261,9 +263,11 @@ const ContentReview = () => {
         domain,
       }),
     })
-      .then((res) => {
+      .then(async (res) => {
         if (!res.ok) {
-          throw new Error(`Server returned status ${res.status}`);
+          const errorDetails = await res.json();
+
+          throw new Error(`Keyword not found ${errorDetails.details}`);
         }
         return res.json();
       })
@@ -336,7 +340,7 @@ const ContentReview = () => {
           title={`Error: ${error}. Click to retry.`}
         >
           <span className="moz-error-icon">!</span>
-          <span className="moz-error-text">Error</span>
+          <span className="moz-error-text">Error {error}</span>
         </div>
       );
     }
