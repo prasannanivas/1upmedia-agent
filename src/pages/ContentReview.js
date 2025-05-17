@@ -242,14 +242,20 @@ const ContentReview = () => {
   // Add this state for tracking error states for each keyword
   const [errorStates, setErrorStates] = useState({});
 
+  // Function to create a unique identifier for each row
+  const getRowKey = (keyword, url) => {
+    return `${keyword}::${url}`;
+  };
+
   // Function to handle fetching MOZ difficulty for a keyword
   const fetchMozDifficulty = (keyword, url) => {
     const link = `https://ai.1upmedia.com:443/aiagent/keyword-classify/moz-difficulty`;
+    const rowKey = getRowKey(keyword, url);
 
-    // Set loading state for this keyword
-    setLoadingStates((prev) => ({ ...prev, [keyword]: true }));
+    // Set loading state for this keyword-url combination
+    setLoadingStates((prev) => ({ ...prev, [rowKey]: true }));
     // Clear any previous errors
-    setErrorStates((prev) => ({ ...prev, [keyword]: null }));
+    setErrorStates((prev) => ({ ...prev, [rowKey]: null }));
 
     fetch(link, {
       method: "POST",
@@ -275,15 +281,20 @@ const ContentReview = () => {
         // Update the responseData with the new MOZ difficulty
         setResponseData((prevData) => {
           const updatedClassifiedData = prevData.classifiedData.map((item) => {
-            if (item.keyword === keyword) {
-              return { ...item, mozDifficulty: data.mozDifficulty || "N/A" };
+            if (item.keyword === keyword && item.url === url) {
+              // Store the entire data object which now includes top_suggested_keywords
+              // and all_suggested_keywords directly in the response
+              return {
+                ...item,
+                mozDifficulty: data, // Store the complete response data
+              };
             }
             return item;
           });
           return { ...prevData, classifiedData: updatedClassifiedData };
         });
         // Clear loading state
-        setLoadingStates((prev) => ({ ...prev, [keyword]: false }));
+        setLoadingStates((prev) => ({ ...prev, [rowKey]: false }));
       })
       .catch((err) => {
         console.error(
@@ -293,10 +304,10 @@ const ContentReview = () => {
         // Set error state
         setErrorStates((prev) => ({
           ...prev,
-          [keyword]: err.message || "Failed to fetch data",
+          [rowKey]: err.message || "Failed to fetch data",
         }));
         // Clear loading state
-        setLoadingStates((prev) => ({ ...prev, [keyword]: false }));
+        setLoadingStates((prev) => ({ ...prev, [rowKey]: false }));
       });
   };
 
@@ -361,8 +372,41 @@ const ContentReview = () => {
     // If no data yet, don't render anything (the MozIcon will be shown instead)
     if (!mozData) return null;
 
-    // Parse the data if it's a string
-    const data = typeof mozData === "string" ? JSON.parse(mozData) : mozData;
+    console.log("MOZ Data:", mozData);
+
+    // Parse the data if it's a string and appears to be JSON format
+    let data;
+    try {
+      // First check if the data is a string and looks like it could be JSON
+      if (typeof mozData === "string") {
+        // Skip parsing for known non-JSON values like "N/A"
+        if (mozData === "N/A" || !mozData.trim().startsWith("{")) {
+          // For non-JSON values, create a placeholder object
+          data = {
+            moz_difficulty: "N/A",
+            traffic_light: "UNKNOWN",
+          };
+        } else {
+          // If it looks like JSON, try to parse it
+          data = JSON.parse(mozData);
+        }
+      } else {
+        // If it's not a string, use it directly
+        data = mozData;
+      }
+
+      // Check if the data is in the new format with a result object
+      if (data.result) {
+        data = data.result;
+      }
+    } catch (error) {
+      console.error("Error parsing MOZ data:", error, "Raw data:", mozData);
+      // Provide fallback data instead of returning null
+      data = {
+        moz_difficulty: "Error",
+        traffic_light: "ERROR",
+      };
+    }
 
     // Get traffic light color
     const getTrafficLightColor = (light) => {
@@ -376,20 +420,37 @@ const ContentReview = () => {
     const difficulty =
       typeof data.moz_difficulty === "number"
         ? data.moz_difficulty.toFixed(1)
-        : "N/A";
+        : data.metrics && typeof data.metrics.difficulty === "number"
+        ? data.metrics.difficulty.toFixed(1)
+        : data.moz_difficulty || "N/A";
 
     return (
-      <div
-        className="moz-traffic-pill"
-        onClick={onClick}
-        title="Click to view all MOZ data"
-      >
-        <span className="moz-difficulty-number">{difficulty}</span>
-        <span
-          className="moz-traffic-indicator"
-          style={{ backgroundColor: getTrafficLightColor(data.traffic_light) }}
+      <div className="moz-traffic-container">
+        <div
+          className="moz-traffic-pill"
+          onClick={onClick}
+          title="Click to view all MOZ data"
         >
-          {data.traffic_light ? data.traffic_light.split(" ")[0] : "N/A"}
+          <span className="moz-difficulty-number">{difficulty}</span>
+          <span
+            className="moz-traffic-indicator"
+            style={{
+              backgroundColor: getTrafficLightColor(data.traffic_light),
+            }}
+          >
+            {data.traffic_light ? data.traffic_light.split(" ")[0] : "N/A"}
+          </span>
+        </div>
+        <span
+          className="moz-refresh-icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Make sure we explicitly use the keyword and url props passed to this component
+            fetchMozDifficulty(keyword, url);
+          }}
+          title="Refresh MOZ data"
+        >
+          ⟳
         </span>
       </div>
     );
@@ -400,7 +461,64 @@ const ContentReview = () => {
     if (!mozData) return null;
 
     // Parse the data if it's a string
-    const data = typeof mozData === "string" ? JSON.parse(mozData) : mozData;
+    let data;
+    try {
+      if (typeof mozData === "string") {
+        // Skip parsing for known non-JSON values like "N/A"
+        if (mozData === "N/A" || !mozData.trim().startsWith("{")) {
+          throw new Error(`Invalid MOZ data format: ${mozData}`);
+        } else {
+          data = JSON.parse(mozData);
+        }
+      } else {
+        data = mozData;
+      }
+
+      // Check if the data is in the new format with a result object
+      if (data.result) {
+        data = data.result;
+      }
+    } catch (error) {
+      console.error("Error parsing MOZ data:", error);
+      return (
+        <div className="moz-modal-overlay" onClick={onClose}>
+          <div
+            className="moz-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="moz-modal-header">
+              <h3>Error Parsing MOZ Data</h3>
+              <span className="moz-modal-close" onClick={onClose}>
+                &times;
+              </span>
+            </div>
+            <div className="moz-modal-body">
+              <p>There was an error parsing the MOZ data: {error.message}</p>
+              <p>
+                Raw data:{" "}
+                {typeof mozData === "string"
+                  ? mozData
+                  : JSON.stringify(mozData)}
+              </p>
+              {/* Only show retry button if we have keyword and url */}
+              {mozData &&
+                typeof mozData === "object" &&
+                mozData.keyword &&
+                mozData.url && (
+                  <button
+                    onClick={() =>
+                      fetchMozDifficulty(mozData.keyword, mozData.url)
+                    }
+                    className="moz-retry-button"
+                  >
+                    Retry
+                  </button>
+                )}
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     // Format numbers to 1 decimal place
     const formatNumber = (num) => {
@@ -415,6 +533,14 @@ const ContentReview = () => {
       if (light.includes("RED")) return "#dc3545";
       return "#777";
     };
+
+    // Extract intent data if available
+    const intentData = data.intent_analysis || {};
+    const metrics = data.metrics || {};
+
+    // Extract suggested keywords directly from the data object
+    const topSuggestedKeywords = data.top_suggested_keywords || [];
+    const allSuggestedKeywords = data.all_suggested_keywords || [];
 
     return (
       <div className="moz-modal-overlay" onClick={onClose}>
@@ -432,7 +558,14 @@ const ContentReview = () => {
                 <div className="moz-stat-large">
                   <span className="moz-stat-label">MOZ Difficulty Score</span>
                   <span className="moz-stat-value">
-                    {formatNumber(data.moz_difficulty)}
+                    {formatNumber(data.moz_difficulty || metrics.difficulty)}
+                  </span>
+                </div>
+
+                <div className="moz-stat-large">
+                  <span className="moz-stat-label">Adjusted Difficulty</span>
+                  <span className="moz-stat-value">
+                    {formatNumber(data.adjusted_difficulty)}
                   </span>
                 </div>
 
@@ -444,6 +577,10 @@ const ContentReview = () => {
                 >
                   {data.traffic_light || "Not Available"}
                 </div>
+
+                {data.summary && (
+                  <div className="moz-summary-text">{data.summary}</div>
+                )}
               </div>
             </div>
 
@@ -451,13 +588,13 @@ const ContentReview = () => {
               <div className="moz-stat-box">
                 <span className="moz-stat-title">Domain Authority</span>
                 <span className="moz-stat-number">
-                  {data.domain_authority || "N/A"}
+                  {data.domain_authority || metrics.domain_authority || "N/A"}
                 </span>
               </div>
               <div className="moz-stat-box">
                 <span className="moz-stat-title">Page Authority</span>
                 <span className="moz-stat-number">
-                  {data.page_authority || "N/A"}
+                  {data.page_authority || metrics.page_authority || "N/A"}
                 </span>
               </div>
               <div className="moz-stat-box">
@@ -467,9 +604,11 @@ const ContentReview = () => {
                 </span>
               </div>
               <div className="moz-stat-box">
-                <span className="moz-stat-title">Allowed KD</span>
+                <span className="moz-stat-title">Success Probability</span>
                 <span className="moz-stat-number">
-                  {formatNumber(data.allowed_kd)}
+                  {data.success_probability
+                    ? `${(data.success_probability * 100).toFixed(1)}%`
+                    : "N/A"}
                 </span>
               </div>
             </div>
@@ -477,6 +616,12 @@ const ContentReview = () => {
             <div className="moz-comparison-box">
               <div className="moz-comparison-title">Competition Analysis</div>
               <div className="moz-comparison-grid">
+                <div className="moz-comparison-item">
+                  <span className="moz-comparison-label">Allowed KD</span>
+                  <span className="moz-comparison-value">
+                    {formatNumber(data.allowed_kd)}
+                  </span>
+                </div>
                 <div className="moz-comparison-item">
                   <span className="moz-comparison-label">
                     Buffered Allowed KD
@@ -490,10 +635,13 @@ const ContentReview = () => {
                   <span
                     className="moz-comparison-value"
                     style={{
-                      color: data.delta < 0 ? "#28a745" : "#dc3545",
+                      color:
+                        (data.delta || metrics.delta) < 0
+                          ? "#28a745"
+                          : "#dc3545",
                     }}
                   >
-                    {formatNumber(data.delta)}
+                    {formatNumber(data.delta || metrics.delta)}
                   </span>
                 </div>
                 <div className="moz-comparison-item">
@@ -501,14 +649,145 @@ const ContentReview = () => {
                   <span
                     className="moz-comparison-value"
                     style={{
-                      color: data.delta_norm < 0 ? "#28a745" : "#dc3545",
+                      color:
+                        (data.delta_norm || metrics.delta_normalized) < 0
+                          ? "#28a745"
+                          : "#dc3545",
                     }}
                   >
-                    {formatNumber(data.delta_norm)}
+                    {formatNumber(data.delta_norm || metrics.delta_normalized)}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* New Intent Analysis Section */}
+            {intentData && (
+              <div className="moz-intent-box">
+                <div className="moz-intent-title">Intent Analysis</div>
+                <div className="moz-intent-grid">
+                  <div className="moz-intent-item">
+                    <span className="moz-intent-label">Primary Intent</span>
+                    <span className="moz-intent-value">
+                      {intentData.primary_intent ||
+                        data.keyword_intent ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="moz-intent-item">
+                    <span className="moz-intent-label">
+                      Buyer Journey Stage
+                    </span>
+                    <span className="moz-intent-value">
+                      {intentData.buyer_journey_stage ||
+                        data.buyer_stage ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="moz-intent-item">
+                    <span className="moz-intent-label">Opportunity Score</span>
+                    <span className="moz-intent-value">
+                      {formatNumber(data.opportunity_score || 0)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Intent Score Bars if available */}
+                {intentData.intent_scores && (
+                  <div className="moz-intent-scores">
+                    <div className="moz-intent-score-title">
+                      Intent Distribution
+                    </div>
+                    <div className="moz-intent-score-bars">
+                      {Object.entries(intentData.intent_scores).map(
+                        ([intent, score]) => (
+                          <div className="moz-intent-score-item" key={intent}>
+                            <div className="moz-intent-score-label">
+                              {intent}
+                            </div>
+                            <div className="moz-intent-score-bar-container">
+                              <div
+                                className="moz-intent-score-bar"
+                                style={{ width: `${score * 100}%` }}
+                              ></div>
+                            </div>
+                            <div className="moz-intent-score-value">
+                              {(score * 100).toFixed(0)}%
+                            </div>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* New section for suggested keywords */}
+            {topSuggestedKeywords && topSuggestedKeywords.length > 0 && (
+              <div className="moz-suggested-keywords-section">
+                <h4>Top Suggested Keywords</h4>
+                <div className="moz-suggested-keywords-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Keyword</th>
+                        <th>Relevance</th>
+                        <th>Difficulty</th>
+                        <th>Traffic Light</th>
+                        <th>Success Probability</th>
+                        <th>Opportunity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topSuggestedKeywords.map((kw, idx) => (
+                        <tr key={idx}>
+                          <td>{kw.keyword}</td>
+                          <td>{formatNumber(kw.relevance * 100)}%</td>
+                          <td>{kw.difficulty || "N/A"}</td>
+                          <td>
+                            <span
+                              className="moz-traffic-pill-small"
+                              style={{
+                                backgroundColor: getTrafficLightColor(
+                                  kw.traffic_light
+                                ),
+                              }}
+                            >
+                              {kw.traffic_light
+                                ? kw.traffic_light.split(" ")[0]
+                                : "N/A"}
+                            </span>
+                          </td>
+                          <td>
+                            {kw.success_probability
+                              ? `${(kw.success_probability * 100).toFixed(1)}%`
+                              : "N/A"}
+                          </td>
+                          <td>{formatNumber(kw.opportunity_score)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {allSuggestedKeywords && allSuggestedKeywords.length > 0 && (
+              <div className="moz-all-keywords-section">
+                <h4>All Suggested Keywords</h4>
+                <div className="moz-all-keywords-container">
+                  {allSuggestedKeywords.map((kw, idx) => (
+                    <div key={idx} className="moz-keyword-chip">
+                      <span className="moz-keyword-text">{kw.keyword}</span>
+                      <span className="moz-keyword-relevance">
+                        {formatNumber(kw.relevance * 100)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {data.url && (
               <div className="moz-url-box">
@@ -701,68 +980,51 @@ const ContentReview = () => {
               </thead>
 
               <tbody>
-                {displayedData.map((row, idx) => (
-                  <tr key={idx}>
-                    {/* Row select */}
-                    {/* <td>
-                      <input
-                        className="contentreview-checkbox"
-                        type="checkbox"
-                        checked={!!selectedRows[row.keyword]}
-                        onChange={(e) =>
-                          handleRowSelect(row.keyword, e.target.checked)
-                        }
-                      />
-                    </td> */}
-
-                    {/* Row columns */}
-                    <td>{row.keyword}</td>
-                    <td>{row.url}</td>
-                    <td title={getBrandTooltip(row)}>
-                      {row.isBrand ? "Brand Keyword" : ""}
-                    </td>
-                    <td title={getHighImpTooltip(row)}>
-                      {row.isHighImpressionLowCTR ? "HighImp LowCTR" : ""}
-                    </td>
-                    <td title={getOpportunityTooltip(row)}>
-                      {row.isOpportunity ? "Opportunity" : ""}
-                    </td>
-                    <td title={getLongTailTooltip(row)}>
-                      {row.isLongTail ? "Long Tail" : ""}
-                    </td>
-                    <td title={getDifficultyTooltip(row)}>
-                      {row.difficulty || ""}
-                    </td>
-                    <td>
-                      {loadingStates[row.keyword] ? (
-                        <MozTrafficLight isLoading={true} />
-                      ) : errorStates[row.keyword] ? (
-                        <MozTrafficLight
-                          error={errorStates[row.keyword]}
-                          keyword={row.keyword}
-                          url={row.url}
-                        />
-                      ) : row.mozDifficulty ? (
-                        <MozTrafficLight
-                          mozData={row.mozDifficulty}
-                          onClick={() => setModalData(row.mozDifficulty)}
-                        />
-                      ) : (
-                        <MozIcon keyword={row.keyword} url={row.url} />
-                      )}
-                    </td>
-
-                    {/* Generate action */}
-                    {/* <td>
-                      <button
-                        className="contentreview-generate-button"
-                        onClick={() => handleGenerateForRow(row)}
-                      >
-                        Generate
-                      </button>
-                    </td> */}
-                  </tr>
-                ))}
+                {displayedData.map((row, idx) => {
+                  const rowKey = getRowKey(row.keyword, row.url);
+                  return (
+                    <tr key={idx}>
+                      {/* Row columns */}
+                      <td>{row.keyword}</td>
+                      <td>{row.url}</td>
+                      <td title={getBrandTooltip(row)}>
+                        {row.isBrand ? "Brand Keyword" : ""}
+                      </td>
+                      <td title={getHighImpTooltip(row)}>
+                        {row.isHighImpressionLowCTR ? "HighImp LowCTR" : ""}
+                      </td>
+                      <td title={getOpportunityTooltip(row)}>
+                        {row.isOpportunity ? "Opportunity" : ""}
+                      </td>
+                      <td title={getLongTailTooltip(row)}>
+                        {row.isLongTail ? "Long Tail" : ""}
+                      </td>
+                      <td title={getDifficultyTooltip(row)}>
+                        {row.difficulty || ""}
+                      </td>
+                      <td>
+                        {loadingStates[rowKey] ? (
+                          <MozTrafficLight isLoading={true} />
+                        ) : errorStates[rowKey] ? (
+                          <MozTrafficLight
+                            error={errorStates[rowKey]}
+                            keyword={row.keyword}
+                            url={row.url}
+                          />
+                        ) : row.mozDifficulty ? (
+                          <MozTrafficLight
+                            mozData={row.mozDifficulty}
+                            onClick={() => setModalData(row.mozDifficulty)}
+                            keyword={row.keyword}
+                            url={row.url}
+                          />
+                        ) : (
+                          <MozIcon keyword={row.keyword} url={row.url} />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {displayedData.length === 0 && (
                   <tr>
