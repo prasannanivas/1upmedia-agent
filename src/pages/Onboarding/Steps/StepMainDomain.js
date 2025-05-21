@@ -195,6 +195,199 @@ const StepMainDomain = () => {
   const [isValidating, setIsValidating] = useState(false);
   const [isFunnelAnalyzing, setIsFunnelAnalyzing] = useState(false); // Initialize sitemap section to be expanded only if no sitemaps are selected
   const [isSitemapExpanded, setIsSitemapExpanded] = useState(false);
+  // Add these new state variables to the StepMainDomain component
+  const [rateLimitedData, setRateLimitedData] = useState({
+    count: 0,
+    urls: [],
+  });
+  const [errorsData, setErrorsData] = useState({ count: 0, details: [] });
+  const [showRateLimitDialog, setShowRateLimitDialog] = useState(false);
+  const [isRetryingRateLimited, setIsRetryingRateLimited] = useState(false);
+
+  // Create a RateLimitDialog component inside StepMainDomain
+  const RateLimitDialog = () => {
+    if (!showRateLimitDialog) return null;
+
+    const handleRetry = async () => {
+      setShowRateLimitDialog(false);
+      setIsRetryingRateLimited(true);
+
+      try {
+        const response = await fetch(
+          "https://ai.1upmedia.com:443/sitemap/content-analysis/retry-with-ratelimits",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              xmlUrls: rateLimitedData.urls,
+            }),
+          }
+        );
+
+        const data = await response.json();
+        if (data.success) {
+          setFunnelAnalysis({
+            totalAnalyzed: data.totalAnalyzed,
+            funnelDistribution: data.funnelDistribution,
+            frameworkCoverage: data.frameworkCoverage,
+            psychCompositeSummary: data.psychCompositeSummary,
+            details: data.details,
+          });
+
+          // Update rate limited data if there are still some
+          if (data.rateLimited && data.rateLimited.count > 0) {
+            setRateLimitedData(data.rateLimited);
+          } else {
+            setRateLimitedData({ count: 0, urls: [] });
+          }
+
+          // Update errors data if any
+          if (data.otherErrors && data.otherErrors.count > 0) {
+            setErrorsData(data.otherErrors);
+          } else {
+            setErrorsData({ count: 0, details: [] });
+          }
+        }
+      } catch (error) {
+        console.error("Error retrying rate-limited URLs:", error);
+      } finally {
+        setIsRetryingRateLimited(false);
+      }
+    };
+
+    const handleCancel = () => {
+      setShowRateLimitDialog(false);
+    };
+
+    return (
+      <div className="step-main-domain__modal-overlay">
+        <div className="step-main-domain__modal">
+          <div className="step-main-domain__modal-header">
+            <h3>Rate Limiting Detected</h3>
+            <button
+              className="step-main-domain__modal-close"
+              onClick={handleCancel}
+            >
+              ×
+            </button>
+          </div>
+          <div className="step-main-domain__modal-body">
+            <div className="step-main-domain__modal-icon">⚠️</div>
+            <p>
+              <strong>{rateLimitedData.count} pages</strong> were blocked due to
+              rate limiting.
+            </p>
+            <p>
+              Would you like to retry analyzing these pages? This may take
+              longer as we need to work around rate limits.
+            </p>
+
+            {rateLimitedData.urls.length > 0 && (
+              <div className="step-main-domain__url-preview">
+                <details>
+                  <summary>
+                    View affected URLs (
+                    {Math.min(5, rateLimitedData.urls.length)} of{" "}
+                    {rateLimitedData.urls.length})
+                  </summary>
+                  <div className="step-main-domain__url-list">
+                    {rateLimitedData.urls.slice(0, 5).map((url, index) => (
+                      <div key={index} className="step-main-domain__url-item">
+                        {url}
+                      </div>
+                    ))}
+                    {rateLimitedData.urls.length > 5 && (
+                      <div className="step-main-domain__url-more">
+                        ...and {rateLimitedData.urls.length - 5} more
+                      </div>
+                    )}
+                  </div>
+                </details>
+              </div>
+            )}
+          </div>
+          <div className="step-main-domain__modal-footer">
+            <button
+              className="step-main-domain__modal-secondary"
+              onClick={handleCancel}
+            >
+              Cancel
+            </button>
+            <button
+              className="step-main-domain__modal-primary"
+              onClick={handleRetry}
+            >
+              Proceed with Retry (Longer waiting time)
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Create an ErrorsInfoPanel component to show other errors
+  // Create an ErrorsInfoPanel component to show other errors
+  const ErrorsInfoPanel = () => {
+    const [isVisible, setIsVisible] = useState(true);
+
+    if (errorsData.count === 0 || !isVisible) return null;
+
+    const handleClose = () => {
+      setIsVisible(false);
+    };
+
+    return (
+      <div className="step-main-domain__errors-panel">
+        <div className="step-main-domain__errors-header">
+          <span className="step-main-domain__errors-icon">⚠️</span>
+          <h4 className="step-main-domain__errors-title">Analysis Issues</h4>
+          <span className="step-main-domain__errors-count">
+            {errorsData.count}
+          </span>
+          <button
+            className="step-main-domain__errors-close"
+            onClick={handleClose}
+            title="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="step-main-domain__errors-content">
+          <p>Some pages couldn't be analyzed due to errors:</p>
+
+          <div className="step-main-domain__errors-list">
+            {errorsData.details.slice(0, 3).map((error, index) => (
+              <div key={index} className="step-main-domain__error-item">
+                <div className="step-main-domain__error-url">{error.url}</div>
+                <div className="step-main-domain__error-message">
+                  {error.error}
+                </div>
+              </div>
+            ))}
+
+            {errorsData.details.length > 3 && (
+              <details className="step-main-domain__errors-more">
+                <summary>
+                  Show {errorsData.details.length - 3} more errors
+                </summary>
+                {errorsData.details.slice(3).map((error, index) => (
+                  <div key={index + 3} className="step-main-domain__error-item">
+                    <div className="step-main-domain__error-url">
+                      {error.url}
+                    </div>
+                    <div className="step-main-domain__error-message">
+                      {error.error}
+                    </div>
+                  </div>
+                ))}
+              </details>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
   // Effect to manage the sitemap expansion state when selections change
   useEffect(() => {
     // Collapse the sitemap section when user selects sitemaps
@@ -240,7 +433,19 @@ const StepMainDomain = () => {
           frameworkCoverage: data.frameworkCoverage,
           psychCompositeSummary: data.psychCompositeSummary,
           details: data.details,
-        }); // Initialize the collapsible sections appropriately
+        });
+
+        // Handle rate limited data if present
+        if (data.rateLimited && data.rateLimited.count > 0) {
+          setRateLimitedData(data.rateLimited);
+          setShowRateLimitDialog(true);
+        }
+
+        // Handle other errors if present
+        if (data.otherErrors && data.otherErrors.count > 0) {
+          setErrorsData(data.otherErrors);
+        }
+
         setTimeout(() => {
           // Set the framework section to be expanded
           document
@@ -298,6 +503,8 @@ const StepMainDomain = () => {
     });
     setBusinessDetails("");
     setLocation("");
+    setSitemaps([]);
+    setSelectedSitemaps([]);
 
     // Reset all steps
     setAnalysisSteps((prev) =>
@@ -1550,6 +1757,7 @@ Phone: (555) 123-4567"
                     </div>
                   </>
                 )}
+
                 {sitemapError && (
                   <div className="step-main-domain__error">{sitemapError}</div>
                 )}
@@ -1584,6 +1792,10 @@ Phone: (555) 123-4567"
               </div>
             </div>
           )}{" "}
+          {/* Add the Rate Limit Dialog */}
+          <RateLimitDialog />
+          {/* Show errors panel if there are any */}
+          {!isFunnelAnalyzing && errorsData.count > 0 && <ErrorsInfoPanel />}
           {/* Show analysis section with conditional rendering based on state */}
           <div
             className={`step-main-domain__funnel-section ${
