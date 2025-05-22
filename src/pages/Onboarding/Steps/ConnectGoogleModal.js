@@ -19,6 +19,9 @@ const ConnectGoogleModal = ({
   const [updatedGoogleProfiles, setUpdatedGoogleProfiles] = useState(
     googleProfiles || []
   );
+  // Add new states for confirmation dialog
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingSite, setPendingSite] = useState(null);
 
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
@@ -199,6 +202,20 @@ const ConnectGoogleModal = ({
 
   // Fetch site analytics and then store/update the data
   const fetchSiteAnalytics = async (site) => {
+    // Check if there are already connected sites
+    if (connectedSites && connectedSites.length > 0) {
+      // Store the site for later use and show confirmation dialog
+      setPendingSite(site);
+      setShowConfirmation(true);
+      return;
+    }
+
+    // If no connected sites, proceed directly
+    await connectSite(site);
+  };
+
+  // Add new function to handle the actual connection after confirmation
+  const connectSite = async (site) => {
     console.log("Fetching analytics for site:", site);
     const { siteUrl, accessToken } = site;
     setLoadingPages(true);
@@ -265,6 +282,28 @@ const ConnectGoogleModal = ({
     }
   };
 
+  // Add new function to handle the confirmation answer
+  const handleConfirmation = async (confirmed) => {
+    setShowConfirmation(false);
+
+    if (confirmed && pendingSite) {
+      // Delete all existing connected sites first
+      try {
+        await Promise.all(
+          connectedSites.map((site) => deleteConnectedSite(site.siteUrl))
+        );
+        // Now connect the new site
+        await connectSite(pendingSite);
+      } catch (error) {
+        console.error("Error handling site replacement:", error);
+        setError("Failed to replace connected site.");
+      }
+    }
+
+    // Clear the pending site
+    setPendingSite(null);
+  };
+
   // Delete a connected site by calling your DELETE route
   const deleteConnectedSite = async (siteUrl) => {
     try {
@@ -321,9 +360,14 @@ const ConnectGoogleModal = ({
           Login with Google
         </button>
 
-        {loadingPages ? (
-          <p>Loading accounts...</p>
-        ) : googleSites.length === 0 ? (
+        {loadingPages && (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+            <p>Loading accounts...</p>
+          </div>
+        )}
+
+        {googleSites.length === 0 ? (
           <p>No sites found.</p>
         ) : (
           <ul className="google-sites-list">
@@ -348,6 +392,27 @@ const ConnectGoogleModal = ({
         )}
 
         {error && <p className="error-message">❌ {error}</p>}
+
+        {/* Add confirmation dialog */}
+        {showConfirmation && (
+          <div className="confirmation-dialog">
+            <div className="confirmation-content">
+              <p>DELETE the existing connection?</p>
+              <p>
+                This action will remove your current site connection and connect
+                the new one. Only one site can be connected at a time.
+              </p>
+              <div className="confirmation-buttons">
+                <button onClick={() => handleConfirmation(true)}>
+                  Yes, Replace It
+                </button>
+                <button onClick={() => handleConfirmation(false)}>
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <button className="modal-close-btn" onClick={onClose}>
           Close
