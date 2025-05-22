@@ -716,22 +716,22 @@ const StepMainDomain = () => {
       };
       setOnboardingData(updatedData);
 
-      // Save to backend
-      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          siteData: filteredSiteData,
-        }),
-      });
-
       const fd = new FormData();
       fd.append("email", email);
+      fd.append("engineType", "voice");
 
       // Add onboarding data if available
       if (businessDetails.trim()) {
-        fd.append("businessDetails", businessDetails);
+        fd.append(
+          "businessDetails",
+          businessDetails +
+            "\n" +
+            domain +
+            "\n" +
+            location +
+            +"\n" +
+            JSON.stringify(analysisData)
+        );
       }
 
       // Make the POST request without waiting for response
@@ -741,6 +741,16 @@ const StepMainDomain = () => {
       }).catch((error) => {
         console.error("Error analyzing style chunks:", error);
         setError("Failed to analyze style chunks. Please try again.");
+      });
+
+      // Save to backend
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          siteData: filteredSiteData,
+        }),
       });
 
       // Code continues executing immediately...

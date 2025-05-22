@@ -212,13 +212,29 @@ const StepKeywords = () => {
         delete filteredSiteData.dynamic_fields;
       }
 
-      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
+      const fd = new FormData();
+      fd.append("email", email);
+      fd.append("engineType", "signal"); // Signal engine is best for keywords
+
+      // Add keywords as JSON string
+      if (keywordList.length > 0) {
+        fd.append(
+          "keywordData",
+          JSON.stringify(keywordList) + JSON.stringify(GSCdata)
+        );
+      }
+
+      // Include site URL
+      if (siteURL) {
+        fd.append("domain", siteURL);
+      }
+
+      // Send to RAG system
+      fetch("https://ai.1upmedia.com:443/RAG/analyzeStyleChunks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          siteData: filteredSiteData,
-        }),
+        body: fd,
+      }).catch((error) => {
+        console.error("Error sending data to RAG system:", error);
       });
 
       const url = `https://ai.1upmedia.com:443/aiagent/keyword-classify`;
@@ -234,6 +250,16 @@ const StepKeywords = () => {
           email,
         }),
       });
+
+      await fetch("https://ai.1upmedia.com:443/aiagent/updateBusinessdetails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          siteData: filteredSiteData,
+        }),
+      });
+
       navigate("/dashboard");
     } catch (error) {
       console.error("Error saving business details:", error);

@@ -60,6 +60,78 @@ const SuggestionStep = () => {
       setIsLoading(false);
     }
   };
+
+  /* Send suggestions data to RAG system */
+  const sendSuggestionsToRAG = async () => {
+    try {
+      if (
+        !suggestions ||
+        Object.keys(suggestions).every((key) => !suggestions[key]?.length)
+      ) {
+        console.log("No suggestions to send to RAG");
+        return false;
+      }
+
+      const fd = new FormData();
+      fd.append("email", email);
+      fd.append("engineType", "intent"); // Intent engine handles content strategies
+
+      // Format suggestions into structured text
+      let suggestionsText = "# Content Strategy Suggestions\n\n";
+
+      // Add content strategies section
+      if (suggestions.content_strategies?.length) {
+        suggestionsText += "## Content Strategies\n\n";
+        suggestions.content_strategies.forEach((strategy, i) => {
+          suggestionsText += `### ${i + 1}. ${strategy.strategy_name}\n`;
+          suggestionsText += `- **Primary Goal**: ${strategy.primary_goal}\n`;
+          suggestionsText += `- **Secondary Goal**: ${strategy.secondary_goal}\n`;
+          suggestionsText += `- **Approach**: ${strategy.approach}\n\n`;
+        });
+      }
+
+      // Add content types section
+      if (suggestions.content_types?.length) {
+        suggestionsText += "## Content Types\n";
+        suggestions.content_types.forEach((type) => {
+          suggestionsText += `- ${type.replace(/_/g, " ")}\n`;
+        });
+        suggestionsText += "\n";
+      }
+
+      // Add topic clusters section
+      if (suggestions.topic_clusters?.length) {
+        suggestionsText += "## Topic Clusters\n";
+        suggestions.topic_clusters.forEach((topic) => {
+          suggestionsText += `- ${topic.replace(/_/g, " ")}\n`;
+        });
+      }
+
+      // Add the formatted text content
+      fd.append("templateData", suggestionsText);
+
+      // Include domain if available
+      if (onboardingData.domain) {
+        fd.append("domain", onboardingData.domain);
+      }
+
+      // Send to RAG system
+      const res = await fetch(
+        "https://ai.1upmedia.com:443/RAG/analyzeStyleChunks",
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
+
+      console.log("Content suggestions sent to RAG system");
+      return res.ok;
+    } catch (error) {
+      console.error("Error sending suggestions to RAG:", error);
+      return false;
+    }
+  };
+
   const handleNext = async () => {
     // Save suggestions in onboarding context for later use
     setOnboardingData((prev) => ({
@@ -68,6 +140,9 @@ const SuggestionStep = () => {
     }));
 
     try {
+      // Send suggestions to RAG system before proceeding
+      sendSuggestionsToRAG();
+
       // Prepare suggestions object only with non-empty fields
       const filteredSuggestions = {};
       if (suggestions.content_strategies?.length) {
