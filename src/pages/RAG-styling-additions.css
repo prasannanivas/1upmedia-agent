@@ -1,0 +1,231 @@
+/* Additional styling for RAG.jsx */
+
+/* Expand Button */
+.rag-expand-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  border-radius: 12px;
+  cursor: pointer;
+  width: 100%;
+  padding: 18px 0;
+  font-size: 20px;
+  color: #1e40af;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  z-index: 1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.rag-expand-button:hover {
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.rag-expand-button::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.rag-expand-button:hover::before {
+  transform: scaleX(1);
+}
+
+/* Enhanced Word Count Button */
+.word-count-btn {
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.word-count-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.word-count-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-color: #2563eb;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+/* Enhanced Custom Word Count */
+.custom-word-count {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  width: 180px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  text-align: center;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.custom-word-count:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Enhanced Contributing Chunks Section */
+.contributing-chunks {
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+}
+
+.contributing-chunks h4 {
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.contributing-chunks h4::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, rgba(59, 130, 246, 0.2));
+  border-radius: 2px;
+}
+
+.chunks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.chunk-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.chunk-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.chunk-name {
+  font-weight: 500;
+  color: #334155;
+}
+
+.chunk-percentage {
+  font-weight: 700;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-size: 1.1rem;
+}
+
+/* Enhanced Success Message */
+.rag-success {
+  text-align: center;
+  padding: 1.25rem;
+  margin-top: 1.5rem;
+  background: linear-gradient(145deg, #dcfce7, #bbf7d0);
+  border-radius: 12px;
+  border: 1px solid rgba(74, 222, 128, 0.5);
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15);
+  animation: successPulse 2s infinite alternate ease-in-out;
+}
+
+.rag-success p {
+  color: #166534;
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+@keyframes successPulse {
+  0% {
+    box-shadow: 0 4px 12px rgba(74, 222, 128, 0.15);
+  }
+
+  100% {
+    box-shadow: 0 4px 20px rgba(74, 222, 128, 0.3);
+  }
+}
+
+/* Enhanced Content Strategy Editor */
+.content-strategy-editor {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.strategy-field {
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.strategy-field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #334155;
+  font-size: 1rem;
+}
+
+.strategy-field input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.strategy-field input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+}

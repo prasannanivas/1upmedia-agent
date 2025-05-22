@@ -3,6 +3,9 @@ import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { useAuth } from "../context/AuthContext";
 import "./RAG.css";
+import "./RAG-styling-additions.css";
+import "./RAG-chart-styling.css";
+import "./RAG-enterprise-styling.css";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -15,11 +18,11 @@ function RAG() {
   const [links, setLinks] = useState([""]);
   const [filesArray, setFilesArray] = useState([]); // Start empty
   const [uploadedFiles, setUploadedFiles] = useState([]); // Track uploaded files
+  const [selectedEngine, setSelectedEngine] = useState("auto"); // Add selected engine state
 
   // Loading / Error / Server
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
   // Server responses
   const [analysisResponse, setAnalysisResponse] = useState(null);
   const [personaPrompt, setPersonaPrompt] = useState(null);
@@ -30,9 +33,28 @@ function RAG() {
   const [contentStrategy, setContentStrategy] = useState(null);
   const [isEditingStrategy, setIsEditingStrategy] = useState(false);
   const [isUploadExpanded, setIsUploadExpanded] = useState(false);
-  const [wordCount, setWordCount] = useState(500); // Add this state
-  const [isCustomWordCount, setIsCustomWordCount] = useState(false); // Add this state
-  const [sources, setSources] = useState([]); // Add this state
+  const [wordCount, setWordCount] = useState(500);
+  const [isCustomWordCount, setIsCustomWordCount] = useState(false);
+  const [sources, setSources] = useState([]);
+
+  // Intelligence Engine State
+  const [engines, setEngines] = useState({
+    voice: { loadPercentage: 0, sourceCount: 0, recommendedSources: [] },
+    positioning: { loadPercentage: 0, sourceCount: 0, recommendedSources: [] },
+    signal: { loadPercentage: 0, sourceCount: 0, recommendedSources: [] },
+    intent: { loadPercentage: 0, sourceCount: 0, recommendedSources: [] },
+  });
+  const [systemStatus, setSystemStatus] = useState({
+    contentGenerationLocked: true,
+    recommendationsLocked: true,
+    keywordDifficultyValidated: false,
+    domainAuthorityValidated: false,
+    decayMappingResolved: false,
+    cannibalizationMappingResolved: false,
+    funnelStageAligned: false,
+    psychographicPersonaAssigned: false,
+  });
+  const [activeEngine, setActiveEngine] = useState("voice");
 
   const [chunksData] = useState({
     totalChunks: 2,
@@ -63,9 +85,8 @@ function RAG() {
       fetchSources(); // Add sources fetch on mount
     }
   }, [email]);
-
   const strengthChartData = {
-    labels: ["Strength Score"],
+    labels: ["Strength", "Remaining"],
     datasets: [
       {
         data: [
@@ -73,20 +94,52 @@ function RAG() {
           100 - (strengthData?.strengthScore || 0),
         ],
         backgroundColor: [
-          "rgba(54, 162, 235, 0.8)",
-          "rgba(211, 211, 211, 0.3)",
+          strengthData?.strengthScore > 75
+            ? "rgba(16, 185, 129, 0.85)" // High score (green)
+            : strengthData?.strengthScore > 50
+            ? "rgba(59, 130, 246, 0.85)" // Medium score (blue)
+            : "rgba(245, 158, 11, 0.85)", // Low score (amber)
+          "rgba(226, 232, 240, 0.3)",
         ],
         borderWidth: 0,
+        borderRadius: 6,
+        hoverOffset: 4,
+        hoverBorderWidth: 2,
+        hoverBorderColor: "#ffffff",
       },
     ],
   };
-
   const chartOptions = {
-    cutout: "70%",
+    cutout: "75%",
     plugins: {
       legend: {
         display: false,
       },
+      tooltip: {
+        enabled: true,
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        titleColor: "#1e40af",
+        bodyColor: "#334155",
+        titleFont: {
+          size: 14,
+          weight: "bold",
+        },
+        bodyFont: {
+          size: 12,
+        },
+        padding: 12,
+        boxPadding: 8,
+        cornerRadius: 8,
+        displayColors: true,
+        borderColor: "rgba(226, 232, 240, 0.7)",
+        borderWidth: 1,
+      },
+    },
+    animation: {
+      animateRotate: true,
+      animateScale: true,
+      duration: 1000,
+      easing: "easeOutQuart",
     },
   };
 
@@ -124,6 +177,9 @@ function RAG() {
       const fd = new FormData();
       fd.append("email", email);
 
+      // Add selected engine (auto or specific engine)
+      fd.append("engineType", selectedEngine);
+
       // Filter out blank links
       const nonEmptyLinks = links.filter((l) => l.trim());
       fd.append("links", JSON.stringify(nonEmptyLinks));
@@ -151,10 +207,9 @@ function RAG() {
       // Clear uploads on success
       setLinks([""]);
       setFilesArray([]);
-      setUploadedFiles([]);
-
-      // Refresh strength data
+      setUploadedFiles([]); // Refresh strength data and sources (which will update engine statuses)
       await handleCheckStrength();
+      await fetchSources();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -164,21 +219,30 @@ function RAG() {
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/summary?email=...
-     ────────────────────────────────────────────────────────────────────── */
-  const fetchSources = async () => {
-    try {
-      const res = await fetch(
-        `https://ai.1upmedia.com:443/RAG/summary?email=${encodeURIComponent(
-          email
-        )}`
-      );
-      if (!res.ok) throw new Error(`Sources fetch error: ${res.status}`);
-      const data = await res.json();
-      setSources(data.sources);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+     ────────────────────────────────────────────────────────────────────── */ const fetchSources =
+    async () => {
+      try {
+        const res = await fetch(
+          `https://ai.1upmedia.com:443/RAG/summary?email=${encodeURIComponent(
+            email
+          )}`
+        );
+        if (!res.ok) throw new Error(`Sources fetch error: ${res.status}`);
+        const data = await res.json();
+        setSources(data.sources || []);
+
+        // Update engines and system status if they exist
+        if (data.engines) {
+          setEngines(data.engines);
+        }
+
+        if (data.systemStatus) {
+          setSystemStatus(data.systemStatus);
+        }
+      } catch (err) {
+        setError(err.message);
+      }
+    };
 
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/personaPrompt?email=...
@@ -205,7 +269,6 @@ function RAG() {
       setIsLoading(false);
     }
   };
-
   /* ──────────────────────────────────────────────────────────────────────
      GET /RAG/analyzeStrength?email=...
      ────────────────────────────────────────────────────────────────────── */
@@ -221,6 +284,15 @@ function RAG() {
       if (!res.ok) throw new Error(`Strength analysis error: ${res.status}`);
       const data = await res.json();
       setStrengthData(data);
+
+      // Update engines and system status if they exist in the response
+      if (data.engines) {
+        setEngines(data.engines);
+      }
+
+      if (data.systemStatus) {
+        setSystemStatus(data.systemStatus);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -323,7 +395,12 @@ function RAG() {
           }),
         }
       );
-      if (!res.ok) throw new Error(`Content generation error: ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.error || `Content generation error: ${res.status}`
+        );
+      }
       const data = await res.json();
       setGeneratedContent(data);
     } catch (err) {
@@ -345,26 +422,238 @@ function RAG() {
      ────────────────────────────────────────────────────────────────────── */
   return (
     <div className="rag-container">
-      {/* Strength Overview */}
+      {/* Intelligence Engines Overview */}
+      <div className="intelligence-engines-grid">
+        <h2 className="intelligence-engines-title">Intelligence Engines</h2>
+
+        {systemStatus && (
+          <div className="system-status-alerts">
+            {!systemStatus.contentGenerationLocked &&
+              !systemStatus.recommendationsLocked && (
+                <div className="status-alert success">
+                  <span>✅ All Systems Ready</span>
+                  <p>
+                    Your content generation and recommendation systems are
+                    unlocked.
+                  </p>
+                </div>
+              )}
+          </div>
+        )}
+
+        <div className="engines-grid">
+          {/* Voice Engine */}
+          <div
+            className={`engine-card ${
+              activeEngine === "voice" ? "active" : ""
+            }`}
+            onClick={() => setActiveEngine("voice")}
+          >
+            <div className="engine-header">
+              <h3>🗣️ Voice Engine</h3>
+              <div className="engine-progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${engines.voice.loadPercentage}%` }}
+                ></div>
+              </div>
+              <span className="engine-percentage">
+                {engines.voice.loadPercentage}% Loaded
+              </span>
+            </div>
+            <div className="engine-content">
+              <p>
+                Keeps your brand voice consistent, recognizable, and trustworthy
+                — across every URL, post, or page.
+              </p>
+              <h4>Ingested:</h4>
+              <ul>
+                <li>Writing style tags</li>
+                <li>CTA structure</li>
+                <li>Brand tone patterns</li>
+              </ul>
+              <h4>Needs:</h4>
+              <p>
+                High-value conversion page copy (e.g., landing pages, checkout
+                CTAs)
+              </p>
+              {engines.voice.recommendedSources.length > 0 && (
+                <div className="engine-recommendations">
+                  <h4>Recommended Sources:</h4>
+                  <ul>
+                    {engines.voice.recommendedSources.map((source, index) => (
+                      <li key={index}>{source}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Positioning Engine */}
+          <div
+            className={`engine-card ${
+              activeEngine === "positioning" ? "active" : ""
+            }`}
+            onClick={() => setActiveEngine("positioning")}
+          >
+            <div className="engine-header">
+              <h3>⚔️ Positioning Engine</h3>
+              <div className="engine-progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${engines.positioning.loadPercentage}%` }}
+                ></div>
+              </div>
+              <span className="engine-percentage">
+                {engines.positioning.loadPercentage}% Loaded
+              </span>
+            </div>
+            <div className="engine-content">
+              <p>
+                Frames your messaging against competitors and highlights your
+                advantages.
+              </p>
+              <h4>Ingested:</h4>
+              <ul>
+                <li>SERP keyword overlaps</li>
+                <li>Offer/feature breakdowns</li>
+                <li>Competitor tone and hooks</li>
+              </ul>
+              <h4>Needs:</h4>
+              <p>Competitor landing pages, battlecard-type content</p>
+              {engines.positioning.recommendedSources.length > 0 && (
+                <div className="engine-recommendations">
+                  <h4>Recommended Sources:</h4>
+                  <ul>
+                    {engines.positioning.recommendedSources.map(
+                      (source, index) => (
+                        <li key={index}>{source}</li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Signal Engine */}
+          <div
+            className={`engine-card ${
+              activeEngine === "signal" ? "active" : ""
+            }`}
+            onClick={() => setActiveEngine("signal")}
+          >
+            <div className="engine-header">
+              <h3>📊 Signal Engine</h3>
+              <div className="engine-progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${engines.signal.loadPercentage}%` }}
+                ></div>
+              </div>
+              <span className="engine-percentage">
+                {engines.signal.loadPercentage}% Loaded
+              </span>
+            </div>
+            <div className="engine-content">
+              <p>
+                Monitors trends, buzzwords, and macro themes in your industry to
+                align your strategy with what's rising.
+              </p>
+              <h4>Ingested:</h4>
+              <ul>
+                <li>Topic clusters</li>
+                <li>Trend terminology</li>
+                <li>Macro industry pain points</li>
+              </ul>
+              <h4>Needs:</h4>
+              <p>Fresh blogs, press releases, market commentary</p>
+              {engines.signal.recommendedSources.length > 0 && (
+                <div className="engine-recommendations">
+                  <h4>Recommended Sources:</h4>
+                  <ul>
+                    {engines.signal.recommendedSources.map((source, index) => (
+                      <li key={index}>{source}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Intent Engine */}
+          <div
+            className={`engine-card ${
+              activeEngine === "intent" ? "active" : ""
+            }`}
+            onClick={() => setActiveEngine("intent")}
+          >
+            <div className="engine-header">
+              <h3>🧠 Intent Engine</h3>
+              <div className="engine-progress-bar">
+                <div
+                  className="progress-fill"
+                  style={{ width: `${engines.intent.loadPercentage}%` }}
+                ></div>
+              </div>
+              <span className="engine-percentage">
+                {engines.intent.loadPercentage}% Loaded
+              </span>
+            </div>
+            <div className="engine-content">
+              <p>
+                Aligns your content to buyer intent, funnel stage, and
+                psychological drivers.
+              </p>
+              <h4>Ingested:</h4>
+              <ul>
+                <li>Funnel stage predictions</li>
+                <li>Keyword intent classes</li>
+                <li>Behavioral signals</li>
+              </ul>
+              <h4>Needs:</h4>
+              <p>GA4 integration or personas with mapped user paths</p>
+              {engines.intent.recommendedSources.length > 0 && (
+                <div className="engine-recommendations">
+                  <h4>Recommended Sources:</h4>
+                  <ul>
+                    {engines.intent.recommendedSources.map((source, index) => (
+                      <li key={index}>{source}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Strength Overview */}{" "}
       {strengthData && (
         <div className="rag-strength-overview">
           <div className="strength-chart-container">
             <div className="strength-chart">
-              <div
-                style={{
-                  width: "200px",
-                  height: "200px",
-                  position: "relative",
-                }}
-              >
-                <Doughnut data={strengthChartData} options={chartOptions} />
-                <div className="chart-center-text">
-                  <strong>{strengthData.strengthScore}</strong>
-                  <span>/{100}</span>
+              <div className="chart-wrapper">
+                <div className="doughnut-glow"></div>
+                <div
+                  style={{
+                    width: "220px",
+                    height: "220px",
+                    position: "relative",
+                  }}
+                >
+                  <Doughnut data={strengthChartData} options={chartOptions} />
+                  <div className="chart-center-text">
+                    <strong className="animated-counter">
+                      {strengthData.strengthScore}
+                    </strong>
+                    <span>/{100}</span>
+                  </div>
                 </div>
+                <div className="chart-label">{strengthData.strengthLevel}</div>
+                <div className="chart-subtitle">RAG System Strength Score</div>
               </div>
               <div className="strength-level">
-                <h3>{strengthData.strengthLevel}</h3>
                 <button
                   className="rag-button-secondary"
                   onClick={() => setShowDetails(!showDetails)}
@@ -393,8 +682,7 @@ function RAG() {
                 </p>
               )}
             </div>
-          </div>
-
+          </div>{" "}
           {showDetails && (
             <div className="strength-details">
               <div className="quality-description">
@@ -403,7 +691,7 @@ function RAG() {
               </div>
 
               <div className="recommendations">
-                <h4>Recommendations</h4>
+                <h4>Recommendations for Improvement</h4>
                 <div className="recommendation-cards">
                   {strengthData.recommendations.map((rec, index) => (
                     <div
@@ -426,7 +714,6 @@ function RAG() {
           )}
         </div>
       )}
-
       {/* Rest of the component */}
       {isLoading ? (
         <div className="rag-loader-wrap">
@@ -439,15 +726,99 @@ function RAG() {
             className="rag-expand-button"
             onClick={() => setIsUploadExpanded(!isUploadExpanded)}
           >
-            <h1>Upload to RAG {isUploadExpanded ? "▼" : "▶"}</h1>
+            <h1>
+              Upload to Intelligence Engines {isUploadExpanded ? "▼" : "▶"}
+            </h1>
           </button>
 
           {isUploadExpanded && (
             <form className="rag-form" onSubmit={handleSubmit}>
               <p className="rag-welcome">
                 Logged in as <strong>{email}</strong>
-              </p>
-
+              </p>{" "}
+              {/* Engine Selection */}
+              <div className="engine-selection">
+                <label className="rag-label">
+                  Select Target Intelligence Engine:
+                </label>
+                <div className="engine-selection-grid">
+                  <label
+                    className={`engine-option ${
+                      selectedEngine === "auto" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="engine"
+                      value="auto"
+                      checked={selectedEngine === "auto"}
+                      onChange={() => setSelectedEngine("auto")}
+                    />
+                    <span className="engine-icon">🤖</span>
+                    <span className="engine-name">Auto-Detect</span>
+                  </label>
+                  <label
+                    className={`engine-option ${
+                      selectedEngine === "voice" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="engine"
+                      value="voice"
+                      checked={selectedEngine === "voice"}
+                      onChange={() => setSelectedEngine("voice")}
+                    />
+                    <span className="engine-icon">🗣️</span>
+                    <span className="engine-name">Voice</span>
+                  </label>
+                  <label
+                    className={`engine-option ${
+                      selectedEngine === "positioning" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="engine"
+                      value="positioning"
+                      checked={selectedEngine === "positioning"}
+                      onChange={() => setSelectedEngine("positioning")}
+                    />
+                    <span className="engine-icon">⚔️</span>
+                    <span className="engine-name">Positioning</span>
+                  </label>
+                  <label
+                    className={`engine-option ${
+                      selectedEngine === "signal" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="engine"
+                      value="signal"
+                      checked={selectedEngine === "signal"}
+                      onChange={() => setSelectedEngine("signal")}
+                    />
+                    <span className="engine-icon">📊</span>
+                    <span className="engine-name">Signal</span>
+                  </label>
+                  <label
+                    className={`engine-option ${
+                      selectedEngine === "intent" ? "selected" : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="engine"
+                      value="intent"
+                      checked={selectedEngine === "intent"}
+                      onChange={() => setSelectedEngine("intent")}
+                    />
+                    <span className="engine-icon">🧠</span>
+                    <span className="engine-name">Intent</span>
+                  </label>
+                </div>
+              </div>
               {/* Links */}
               <label className="rag-label">Add Site Links:</label>
               {links.map((val, i) => (
@@ -467,12 +838,10 @@ function RAG() {
               >
                 Add Another Link
               </button>
-
               {/* Files */}
               <label className="rag-label">
                 Upload Files (PDF/Word/Images):
               </label>
-
               {/* Display uploaded files */}
               <div className="rag-files-list">
                 {uploadedFiles.map((file, index) => (
@@ -488,7 +857,6 @@ function RAG() {
                   </div>
                 ))}
               </div>
-
               {/* Upload button or Add more */}
               <div className="rag-upload-section">
                 <input
@@ -509,7 +877,6 @@ function RAG() {
                     : "Add More Documents"}
                 </label>
               </div>
-
               <button
                 type="submit"
                 className="rag-button-submit"
@@ -535,7 +902,6 @@ function RAG() {
           <p>✅ RAG processing successful!</p>
         </div>
       )}
-
       {/* Show persona prompt */}
       {personaPrompt && (
         <div className="rag-persona">
@@ -764,7 +1130,6 @@ function RAG() {
           </p>
         </div>
       )}
-
       {generatedContent && (
         <div className="rag-generated-content">
           <h3>Generated Content</h3>

@@ -726,6 +726,25 @@ const StepMainDomain = () => {
         }),
       });
 
+      const fd = new FormData();
+      fd.append("email", email);
+
+      // Add onboarding data if available
+      if (businessDetails.trim()) {
+        fd.append("businessDetails", businessDetails);
+      }
+
+      // Make the POST request without waiting for response
+      fetch("https://ai.1upmedia.com:443/RAG/analyzeStyleChunks", {
+        method: "POST",
+        body: fd,
+      }).catch((error) => {
+        console.error("Error analyzing style chunks:", error);
+        setError("Failed to analyze style chunks. Please try again.");
+      });
+
+      // Code continues executing immediately...
+
       return true;
     } catch (error) {
       console.error("Error in handleSave:", error);

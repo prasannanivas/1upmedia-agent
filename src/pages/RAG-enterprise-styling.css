@@ -1,0 +1,123 @@
+/* Additional enterprise section styling for RAG.jsx */
+
+.enterprise-value-notice {
+  background: linear-gradient(145deg, #fffbeb, #fef3c7);
+  border: none;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(251, 191, 36, 0.1);
+}
+
+.enterprise-value-notice::before {
+  content: "⚠️";
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  font-size: 5rem;
+  opacity: 0.1;
+  transform: rotate(15deg);
+}
+
+.enterprise-value-notice p {
+  color: #92400e;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+
+.intelligence-utility-summary {
+  background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+  border-radius: 12px;
+  padding: 1.75rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+}
+
+.intelligence-utility-summary h3 {
+  margin: 0 0 1.25rem 0;
+  font-size: 1.2rem;
+  color: #1e40af;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.intelligence-utility-summary h3::before {
+  content: "📦";
+  font-size: 1.4rem;
+}
+
+.intelligence-utility-summary ul {
+  margin: 0;
+  padding-left: 0;
+  list-style-type: none;
+  color: #334155;
+}
+
+.intelligence-utility-summary li {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  position: relative;
+  padding-left: 2rem;
+}
+
+.intelligence-utility-summary li::before {
+  content: "✅";
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Enhanced Content Generation Form */
+.rag-content-generation {
+  width: 80%;
+  margin: 2.5rem 0;
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(226, 232, 240, 0.7);
+  position: relative;
+  overflow: hidden;
+}
+
+.rag-content-generation::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.rag-content-generation h3 {
+  color: #1e40af;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.rag-content-generation h3::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, rgba(59, 130, 246, 0.2));
+  border-radius: 2px;
+}
