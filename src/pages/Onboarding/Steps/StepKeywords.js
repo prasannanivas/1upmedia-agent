@@ -318,13 +318,13 @@ const StepKeywords = () => {
       // Prepare dates for analysis
       const today = new Date();
       const startDate = new Date(today);
-      startDate.setFullYear(startDate.getFullYear() - 1); // 1 year ago
+      startDate.setFullYear(startDate.getFullYear() - 2); // 1 year ago
 
       const comparisonEnd = new Date(today);
       comparisonEnd.setMonth(comparisonEnd.getMonth() - 1); // 1 month ago
 
       const comparisonStart = new Date(comparisonEnd);
-      comparisonStart.setMonth(comparisonStart.getMonth() - 5); // 6 months ago
+      comparisonStart.setMonth(comparisonStart.getMonth() - 12); // 6 months ago
 
       if (!accessToken) {
         alert("No access token found for Google Search Console");
