@@ -22,6 +22,9 @@ const ConnectGoogleModal = ({
   // Add new states for confirmation dialog
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [pendingSite, setPendingSite] = useState(null);
+  const [gaProperties, setGaProperties] = useState([]);
+  const [selectedGAProperty, setSelectedGAProperty] = useState(null);
+  const [loadingGAProperties, setLoadingGAProperties] = useState(false);
 
   const { authState, handleAuthorize } = useAuth();
   const { email } = authState;
@@ -30,6 +33,7 @@ const ConnectGoogleModal = ({
   useEffect(() => {
     if (isOpen) {
       fetchGoogleSites();
+      fetchGAProperties();
     }
   }, [isOpen]);
 
@@ -157,7 +161,7 @@ const ConnectGoogleModal = ({
   };
 
   // Save or update the site data in your backend
-  const storeOrUpdateSiteData = async (site, analyticsData) => {
+  const storeOrUpdateSiteData = async (site, analyticsData, gaProperty) => {
     // Check if the site already exists among connected sites
     const exists = connectedSites.find((s) => s.siteUrl === site.siteUrl);
     console.log(site);
@@ -166,7 +170,7 @@ const ConnectGoogleModal = ({
       : `/aiagent/search-console`;
     const method = exists ? "PUT" : "POST";
 
-    console.log("ForDomain", forDomain, endpoint, method);
+    console.log("ForDomain", forDomain, endpoint, method, gaProperty);
 
     try {
       const response = await fetch(`https://ai.1upmedia.com:443${endpoint}`, {
@@ -182,6 +186,7 @@ const ConnectGoogleModal = ({
             refreshToken: site.refreshToken,
             searchConsoleData: analyticsData,
           },
+          google_analytics: gaProperty,
         }),
       });
       if (!response.ok) {
@@ -211,11 +216,11 @@ const ConnectGoogleModal = ({
     }
 
     // If no connected sites, proceed directly
-    await connectSite(site);
+    await connectSite(site, selectedGAProperty);
   };
 
   // Add new function to handle the actual connection after confirmation
-  const connectSite = async (site) => {
+  const connectSite = async (site, gaProperty) => {
     console.log("Fetching analytics for site:", site);
     const { siteUrl, accessToken } = site;
     setLoadingPages(true);
@@ -263,7 +268,7 @@ const ConnectGoogleModal = ({
         const uniqueKeywords = [...new Set(allKeywords)];
 
         // Store or update the site data based on its current status
-        await storeOrUpdateSiteData(site, data);
+        await storeOrUpdateSiteData(site, data, gaProperty);
 
         if (uniqueKeywords.length > 0) {
           onKeywordsSelected(uniqueKeywords);
@@ -293,7 +298,7 @@ const ConnectGoogleModal = ({
           connectedSites.map((site) => deleteConnectedSite(site.siteUrl))
         );
         // Now connect the new site
-        await connectSite(pendingSite);
+        await connectSite(pendingSite, selectedGAProperty);
       } catch (error) {
         console.error("Error handling site replacement:", error);
         setError("Failed to replace connected site.");
@@ -330,6 +335,29 @@ const ConnectGoogleModal = ({
     onClose();
   };
 
+  // New function to fetch GA properties
+  const fetchGAProperties = async () => {
+    setLoadingGAProperties(true);
+
+    const gaToken = updatedGoogleProfiles.find(
+      (profile) => profile.social_media_name === "google"
+    )?.access_token;
+
+    try {
+      const response = await fetch(
+        `http://localhost:3000/google/ga-properties?gaToken=${gaToken}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setGaProperties(data.properties || []);
+      }
+    } catch (error) {
+      console.error("Error fetching GA properties:", error);
+    } finally {
+      setLoadingGAProperties(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -342,7 +370,17 @@ const ConnectGoogleModal = ({
             <ul>
               {connectedSites.map((site) => (
                 <li key={site.siteUrl} className="connected-site-item">
-                  <span>{site.siteUrl}</span>
+                  <span>
+                    {" "}
+                    {"URL: "}
+                    {site.siteUrl}
+                  </span>
+                  <span>
+                    {"Property: "}
+                    {site.google_analytics
+                      ? site.google_analytics.accountName
+                      : ""}{" "}
+                  </span>
                   <button onClick={() => deleteConnectedSite(site.siteUrl)}>
                     Delete
                   </button>
@@ -412,6 +450,56 @@ const ConnectGoogleModal = ({
               </div>
             </div>
           </div>
+        )}
+
+        <h3>Select a Google Analytics Property</h3>
+        {loadingGAProperties ? (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+            <p>Loading GA properties...</p>
+          </div>
+        ) : gaProperties.length === 0 ? (
+          <p>No GA properties found.</p>
+        ) : (
+          <ul className="ga-properties-list">
+            {gaProperties.map((property) => (
+              <li
+                key={property.propertyId}
+                className={`ga-property-item${
+                  selectedGAProperty?.propertyId === property.propertyId
+                    ? " selected"
+                    : ""
+                }`}
+                style={{
+                  cursor: "pointer",
+                  padding: "8px",
+                  border: "1px solid #eee",
+                  marginBottom: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="ga-property"
+                  checked={
+                    selectedGAProperty?.propertyId === property.propertyId
+                  }
+                  onChange={() => setSelectedGAProperty(property)}
+                  style={{ marginRight: "10px" }}
+                />
+                <div style={{ flex: 1 }}>
+                  <strong>{property.accountName}</strong> —{" "}
+                  {property.propertyName} ({property.propertyId})
+                  {property.streams && property.streams.length > 0 && (
+                    <div style={{ fontSize: "0.9em", color: "#666" }}>
+                      Streams: {property.streams.map((s) => s.name).join(", ")}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
 
         <button className="modal-close-btn" onClick={onClose}>

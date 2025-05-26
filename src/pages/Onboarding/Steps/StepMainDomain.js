@@ -1341,7 +1341,7 @@ Phone: (555) 123-4567"
                   <span role="img" aria-label="content">
                     📝
                   </span>{" "}
-                  Average Content Cost ($)
+                  Average Article Cost ($)
                 </label>
                 <input
                   type="number"
@@ -1978,7 +1978,7 @@ Phone: (555) 123-4567"
 
       <div className="step-main-domain__footer">
         <button onClick={handleNext} className="step-main-domain__next-btn">
-          Continue to Keywords
+          Continue to Content decay
           <span className="step-main-domain__next-icon">→</span>
         </button>
       </div>

@@ -88,18 +88,18 @@ const StepKeywords = () => {
     }
   };
 
-  const handleAddRelatedKeyword = (relatedKeyword) => {
-    if (!keywordList.includes(relatedKeyword)) {
-      setKeywordList((prev) => [...prev, relatedKeyword]);
-      setRelatedKeywords((prev) => prev.filter((k) => k !== relatedKeyword));
-      setAnimate(true);
-      setTimeout(() => setAnimate(false), 1000);
-    }
-  };
+  // const handleAddRelatedKeyword = (relatedKeyword) => {
+  //   if (!keywordList.includes(relatedKeyword)) {
+  //     setKeywordList((prev) => [...prev, relatedKeyword]);
+  //     setRelatedKeywords((prev) => prev.filter((k) => k !== relatedKeyword));
+  //     setAnimate(true);
+  //     setTimeout(() => setAnimate(false), 1000);
+  //   }
+  // };
 
-  const handleRemoveKeyword = (index) => {
-    setKeywordList((prev) => prev.filter((_, i) => i !== index));
-  };
+  // const handleRemoveKeyword = (index) => {
+  //   setKeywordList((prev) => prev.filter((_, i) => i !== index));
+  // };
 
   const fetchRelatedKeywords = async () => {
     setLoadingRelated(true);
@@ -178,8 +178,6 @@ const StepKeywords = () => {
         onboardingData.domainCostDetails?.AverageContentCost || 0,
     });
   }, [onboardingData]);
-
-  console.log("Connected Sites:", analysisData);
 
   useEffect(() => {
     setOnboardingData((prev) => ({
@@ -537,13 +535,13 @@ const StepKeywords = () => {
                     >
                       <FaGoogle />
                     </motion.div>
-                    <h3>Connect Google Search Console</h3>
+                    <h3>Connect Google Search Console and Google Analytics</h3>
                     <p>
                       Unlock powerful insights and optimize your keyword
                       strategy
                     </p>
 
-                    <motion.button
+                    <button
                       className="gsc-connect-button"
                       onClick={handleGSCConnect}
                       whileTap={{ scale: 0.95 }}
@@ -551,8 +549,8 @@ const StepKeywords = () => {
                       onMouseEnter={() => setShowTooltip("gsc")}
                       onMouseLeave={() => setShowTooltip(null)}
                     >
-                      Connect Google Search Console
-                    </motion.button>
+                      Connect Google Search Console and Analytics
+                    </button>
 
                     {showTooltip === "gsc" && (
                       <div className="premium-tooltip">{tooltips.gsc}</div>
