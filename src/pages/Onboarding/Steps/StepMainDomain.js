@@ -26,8 +26,8 @@ const StepMainDomain = () => {
   const [selectedSitemaps, setSelectedSitemaps] = useState([]);
   const [isSitemapValidated, setIsSitemapValidated] = useState(false);
   const [domainCostDetails, setDomainCostDetails] = useState({
-    averageOrderValue: "",
-    AverageContentCost: "",
+    averageOrderValue: 0,
+    AverageContentCost: 0,
   });
   const [businessDetails, setBusinessDetails] = useState(
     onboardingData.businessDetails || ""
@@ -649,6 +649,7 @@ const StepMainDomain = () => {
         businessDetails,
         sitemaps,
         selectedSitemaps,
+        domainCostDetails,
         isSitemapValidated,
         funnelAnalysis,
         lastUpdated: new Date().toISOString(),
