@@ -25,6 +25,10 @@ export const OnboardingProvider = ({ children }) => {
       trustFlow: "",
       citationFlow: "",
     },
+    domainCostDetails: {
+      averageOrderValue: "",
+      AverageContentCost: "",
+    },
     socialIntegrations: [],
     suggestionsFromAi: {},
     authors: [],
@@ -52,6 +56,7 @@ export const OnboardingProvider = ({ children }) => {
             location: firstSite.location || "",
             keywords: firstSite.keywords || [],
             businessDetails: firstSite.business_details || "",
+            GSCAnalysisData: firstSite.dynamic_fields?.analysisData,
             initialAnalysisState: {
               domainAuthority: firstSite?.dynamic_fields?.domainAuthority || "",
               pageAuthority: firstSite.dynamic_fields?.pageAuthority || "",
@@ -61,6 +66,10 @@ export const OnboardingProvider = ({ children }) => {
             funnelAnalysis: firstSite.dynamic_fields?.funnelAnalysis || {
               totalAnalyzed: 0,
               funnelDistribution: { ToF: 0, MoF: 0, BoF: 0, Unknown: 0 },
+            },
+            domainCostDetails: firstSite.dynamic_fields?.domainCostDetails || {
+              averageOrderValue: "",
+              AverageContentCost: "",
             },
             sitemaps: firstSite.dynamic_fields?.sitemaps || [],
             selectedSitemaps: firstSite.dynamic_fields?.selectedSitemaps || [],

@@ -1,80 +1,12 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../../context/OnboardingContext";
 import { useAuth } from "../../../context/AuthContext";
 import "./StepMainDomain.css";
 import Loader from "../../../components/Loader";
-import { LinearProgress, CircularProgress } from "@mui/material";
-
-// ───────────────────────────────────────────────────────────
-// Did-You-Know facts (unchanged)
-// ───────────────────────────────────────────────────────────
-const DID_YOU_KNOW_FACTS = [
-  {
-    title: "Domain Authority (DA)",
-    fact: "Domain Authority is a search engine ranking score that predicts how likely a website is to rank in search engine result pages. Scores range from 1 to 100, with higher scores indicating better ranking ability.",
-  },
-  {
-    title: "Page Authority (PA)",
-    fact: "Page Authority specifically measures the predictive ranking strength of a single page, rather than an entire domain. It's particularly useful for comparing different pages competing for the same keywords.",
-  },
-  {
-    title: "Trust Flow",
-    fact: "Trust Flow measures the quality of links pointing to a website. Sites with high Trust Flow are likely to be more trustworthy as they're linked to by other trusted sites.",
-  },
-  {
-    title: "Citation Flow",
-    fact: "Citation Flow measures the quantity of links pointing to a website. It's a useful metric when viewed alongside Trust Flow to understand both quantity and quality of backlinks.",
-  },
-  {
-    title: "Website Health",
-    fact: "Regular monitoring of your website's metrics helps identify potential SEO issues early and ensures your site maintains its competitive edge in search rankings.",
-  },
-];
-
-const CheckMarkIcon = () => (
-  <svg
-    className="step-main-domain__check-icon"
-    viewBox="0 0 24 24"
-    width="24"
-    height="24"
-  >
-    <path
-      fill="currentColor"
-      d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
-    />
-  </svg>
-);
-
-const LoadingFacts = ({ isValidating = false }) => {
-  const [currentFact, setCurrentFact] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentFact((prev) => (prev + 1) % DID_YOU_KNOW_FACTS.length);
-    }, 5000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="step-main-domain__loading-facts">
-      <div className="step-main-domain__loading-spinner">
-        <span className="step-main-domain__spinner"></span>
-        <p>
-          {isValidating
-            ? "Validating your website..."
-            : "Analyzing your website metrics..."}
-        </p>
-      </div>
-      <div className="step-main-domain__fact-card">
-        <h4>Did You Know?</h4>
-        <h5>{DID_YOU_KNOW_FACTS[currentFact].title}</h5>
-        <p>{DID_YOU_KNOW_FACTS[currentFact].fact}</p>
-      </div>
-    </div>
-  );
-};
+import { CircularProgress } from "@mui/material";
+import { STYLE_TEXT } from "./StepMainDomainStyleText";
+import AnalysisProgress from "./AnalysisProgress";
 
 const StepMainDomain = () => {
   const { onboardingData, setOnboardingData, loading } = useOnboarding();
@@ -93,7 +25,10 @@ const StepMainDomain = () => {
   const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
   const [selectedSitemaps, setSelectedSitemaps] = useState([]);
   const [isSitemapValidated, setIsSitemapValidated] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [domainCostDetails, setDomainCostDetails] = useState({
+    averageOrderValue: "",
+    AverageContentCost: "",
+  });
   const [businessDetails, setBusinessDetails] = useState(
     onboardingData.businessDetails || ""
   );
@@ -185,13 +120,17 @@ const StepMainDomain = () => {
     setSitemaps(onboardingData.sitemaps || []);
     setSelectedSitemaps(onboardingData.selectedSitemaps || []);
     setIsSitemapValidated(onboardingData.isSitemapValidated || false);
+    setDomainCostDetails(
+      onboardingData.domainCostDetails || {
+        averageOrderValue: "",
+        AverageContentCost: "",
+      }
+    );
     if (onboardingData.isSitemapValidated) {
       updateStepStatus(1, "success");
     }
   }, [onboardingData]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
-  const [isValidated, setIsValidated] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [isFunnelAnalyzing, setIsFunnelAnalyzing] = useState(false); // Initialize sitemap section to be expanded only if no sitemaps are selected
   const [isSitemapExpanded, setIsSitemapExpanded] = useState(false);
@@ -473,7 +412,7 @@ const StepMainDomain = () => {
      1. Validate domain ⟵ **updated**
   ──────────────────────────────── */
   const handleValidateDomain = async () => {
-    if (!domain || isSaving) return;
+    if (!domain) return;
 
     setIsValidating(true);
     setError("");
@@ -550,11 +489,10 @@ const StepMainDomain = () => {
       }
 
       // Don't proceed with other analysis until sitemaps are selected
-      setIsValidated(true);
     } catch (error) {
       setError(error.message || "Validation process failed. Please try again.");
       console.error("Error in validation process:", error);
-      setIsValidated(false);
+
       setIsSitemapValidated(false);
     } finally {
       setIsValidating(false);
@@ -689,6 +627,7 @@ const StepMainDomain = () => {
           ...(sitemaps && { sitemaps }),
           ...(selectedSitemaps && { selectedSitemaps }),
           ...(funnelAnalysis && { funnelAnalysis }),
+          ...(domainCostDetails && { domainCostDetails }),
           ...(onboardingData.suggestionsFromAi && {
             suggestions: {
               ...onboardingData.suggestionsFromAi,
@@ -867,294 +806,7 @@ const StepMainDomain = () => {
     useEffect(() => {
       const styleEl = document.createElement("style");
       styleEl.id = "business-details-styles";
-      styleEl.textContent = `
-        .step-main-domain__business-card {
-          background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
-          border-radius: 16px;
-          padding: 24px;
-          margin-top: 16px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.03);
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-        
-        .step-main-domain__business-card:hover {
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(59, 130, 246, 0.05);
-          transform: translateY(-5px);
-        }
-        
-        .step-main-domain__business-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-        }
-        
-        .step-main-domain__subtitle {
-          font-size: 1.3rem;
-          font-weight: 700;
-          background: linear-gradient(90deg, #2563eb, #3b82f6);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          display: inline-block;
-          margin: 0;
-        }
-        
-        .step-main-domain__edit-btn {
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 8px 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-        }
-        
-        .step-main-domain__edit-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
-        }
-        
-        .step-main-domain__business-textarea {
-          width: 100%;
-          min-height: 350px;
-          padding: 20px;
-          border: 1px solid #ddd;
-          border-radius: 12px;
-          font-size: 15px;
-          line-height: 1.7;
-          font-family: 'Courier New', monospace;
-          transition: all 0.3s ease;
-          background-color: #fafbff;
-          color: #334155;
-        }
-        
-        .step-main-domain__business-textarea:focus {
-          outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-          background-color: #fff;
-        }
-        
-        .step-main-domain__business-formatted {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
-        }
-        
-        .step-main-domain__business-section {
-          border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-          padding-bottom: 24px;
-          position: relative;
-          margin-bottom: 8px;
-          animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(15px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .step-main-domain__business-section:last-child {
-          border-bottom: none;
-          padding-bottom: 0;
-          margin-bottom: 0;
-        }
-        
-        .step-main-domain__business-section-title {
-          font-size: 1.3rem;
-          font-weight: 700;
-          color: #1e40af;
-          margin-bottom: 18px;
-          padding-bottom: 10px;
-          border-bottom: 2px solid rgba(59, 130, 246, 0.5);
-          display: inline-block;
-          position: relative;
-          letter-spacing: 0.5px;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        }
-        
-        .step-main-domain__business-section-title::before {
-          content: "";
-          position: absolute;
-          bottom: -2px;
-          left: 0;
-          width: 70%;
-          height: 2px;
-          background: linear-gradient(to right, #3b82f6, rgba(59, 130, 246, 0.1));
-        }
-        
-        .step-main-domain__business-section-content {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          padding-left: 8px;
-        }
-        
-        .step-main-domain__business-detail-row {
-          display: flex;
-          flex-wrap: wrap;
-          margin-bottom: 10px;
-          padding: 8px 12px;
-          position: relative;
-          gap: 12px;
-          border-radius: 8px;
-          transition: all 0.25s ease;
-          background-color: rgba(241, 245, 249, 0.4);
-          border-left: 3px solid rgba(59, 130, 246, 0.3);
-        }
-        
-        .step-main-domain__business-detail-row:hover {
-          background-color: rgba(241, 245, 249, 0.9);
-          border-left: 3px solid rgba(59, 130, 246, 0.8);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-          transform: translateX(2px);
-        }
-        
-        .step-main-domain__business-detail-key {
-          color: #334155;
-          font-weight: 700;
-          min-width: 160px;
-          position: relative;
-          display: inline-block;
-          font-size: 0.95rem;
-        }
-        
-        .step-main-domain__business-detail-key:after {
-          content: ":";
-          position: absolute;
-          right: 0;
-          color: #64748b;
-        }
-        
-        .step-main-domain__business-detail-value {
-          color: #0f172a;
-          flex: 1;
-          font-weight: 500;
-          font-size: 0.95rem;
-          line-height: 1.5;
-        }
-        
-        .step-main-domain__business-list-item {
-          display: flex;
-          gap: 12px;
-          align-items: flex-start;
-          padding: 6px 8px;
-          border-radius: 6px;
-          animation: slideIn 0.4s ease;
-          transition: all 0.2s ease;
-        }
-        
-        .step-main-domain__business-list-item:hover {
-          background-color: rgba(241, 245, 249, 0.9);
-          transform: translateX(3px);
-        }
-        
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateX(-15px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .step-main-domain__business-bullet {
-          color: #fff;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          font-size: 0.8rem;
-          line-height: 1.6;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-top: 3px;
-          box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-        }
-        
-        .step-main-domain__business-number {
-          color: #fff;
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          font-weight: 600;
-          min-width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-          font-size: 0.8rem;
-        }
-        
-        .step-main-domain__business-placeholder {
-          color: #94a3b8;
-          font-style: italic;
-          text-align: center;
-          padding: 40px 0;
-          border: 2px dashed #e2e8f0;
-          border-radius: 10px;
-          margin: 20px 0;
-          background-color: rgba(241, 245, 249, 0.5);
-        }
-        
-        .step-main-domain__edit-actions {
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-          margin-top: 16px;
-        }
-        
-        .step-main-domain__save-btn {
-          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          padding: 10px 20px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-        }
-        
-        .step-main-domain__save-btn:hover {
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
-        }
-        
-        .step-main-domain__cancel-btn {
-          background: transparent;
-          color: #475569;
-          border: 1px solid #cbd5e1;
-          border-radius: 8px;
-          padding: 10px 20px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-        
-        .step-main-domain__cancel-btn:hover {
-          background: #f8fafc;
-          color: #334155;
-          border-color: #94a3b8;
-        }
-        
-        .step-main-domain__side-section {
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border-radius: 16px;
-          padding: 24px;
-          height: 100%;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-          transition: all 0.4s ease;
-          border: 1px solid rgba(226, 232, 240, 0.8);
-        }
-        
-        .step-main-domain__side-section:hover {
-          box-shadow: 0 6px 25px rgba(0, 0, 0, 0.08);
-        }
-      `;
+      styleEl.textContent = STYLE_TEXT;
       document.head.appendChild(styleEl);
 
       return () => {
@@ -1658,6 +1310,54 @@ Phone: (555) 123-4567"
                 )}
               </button>
             </div>
+
+            {/* Cost Input Fields */}
+            <div className="step-main-domain__cost-inputs">
+              <div className="step-main-domain__input-group">
+                <label className="step-main-domain__input-label">
+                  <span role="img" aria-label="money">
+                    💰
+                  </span>{" "}
+                  Average Order Value ($)
+                </label>
+                <input
+                  type="number"
+                  value={domainCostDetails.averageOrderValue}
+                  onChange={(e) =>
+                    setDomainCostDetails((prev) => ({
+                      ...prev,
+                      averageOrderValue: Number(e.target.value),
+                    }))
+                  }
+                  placeholder="0"
+                  className="step-main-domain__cost-input"
+                  min="0"
+                />
+              </div>
+
+              <div className="step-main-domain__input-group">
+                <label className="step-main-domain__input-label">
+                  <span role="img" aria-label="content">
+                    📝
+                  </span>{" "}
+                  Average Content Cost ($)
+                </label>
+                <input
+                  type="number"
+                  value={domainCostDetails.AverageContentCost}
+                  onChange={(e) =>
+                    setDomainCostDetails((prev) => ({
+                      ...prev,
+                      AverageContentCost: Number(e.target.value),
+                    }))
+                  }
+                  placeholder="0"
+                  className="step-main-domain__cost-input"
+                  min="0"
+                />
+              </div>
+            </div>
+
             {isValidating && <AnalysisProgress steps={analysisSteps} />}
           </div>{" "}
           {/** Sitemaps */}
@@ -2284,156 +1984,5 @@ Phone: (555) 123-4567"
     </div>
   );
 };
-
-const AnalysisProgress = ({ steps }) => {
-  const getIconByLabel = (label, isComplete) => {
-    switch (label) {
-      case "Domain Validation":
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
-          </svg>
-        );
-      case "Sitemap Analysis":
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3.6 12.5h-3.4V19h-2v-3.5H6.6v-2h3.4V10h2v3.5h3.4v2z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-8-2h2v-4h4v-2h-4V7h-2v4H7v2h4z"></path>
-          </svg>
-        );
-      case "Metrics Analysis":
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-5h2v5zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2-14H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4zm2-14H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"></path>
-          </svg>
-        );
-      case "Location Detection":
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"></path>
-          </svg>
-        );
-      case "Business Details":
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M10 16v-1H3.01v6H21v-6h-7v1h-4zm12-9h-6V4l-2-2-2 2v3H6V2H2v13h20V7z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M15 6v8h-4V6h4m0-2h-4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm6 16H3V4h6v10h10v6z"></path>
-          </svg>
-        );
-      default:
-        return isComplete ? (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
-          </svg>
-        ) : (
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
-          </svg>
-        );
-    }
-  };
-
-  return (
-    <div className="step-main-domain__analysis-stepper">
-      {steps.map((step, index) => (
-        <div key={index} className="step-main-domain__step-container">
-          {/* Step Icon with Status */}
-          <div className={`step-main-domain__step-icon ${step.status}`}>
-            {step.status === "completed" ? (
-              getIconByLabel(step.label, true)
-            ) : step.status === "loading" ? (
-              <CircularProgress size={24} thickness={3} />
-            ) : step.status === "error" ? (
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-8h-2v6h-2V7h4v6h2v-6h2V9h-2V7h-2V5h4v2h2v2h-2v2h-2v2h2v2h-2v2h-2v-2z"></path>
-              </svg>
-            ) : (
-              getIconByLabel(step.label, false)
-            )}
-          </div>
-
-          {/* Connector Line */}
-          {index < steps.length - 1 && (
-            <div className="step-main-domain__step-connector">
-              <span
-                className={`step-main-domain__connector-line ${
-                  steps[index].status === "completed"
-                    ? "completed"
-                    : steps[index].status === "loading"
-                    ? "active"
-                    : ""
-                }`}
-              />
-            </div>
-          )}
-
-          {/* Step Content */}
-          <div className="step-main-domain__step-content">
-            <span className={`step-main-domain__step-label ${step.status}`}>
-              {step.label}
-            </span>
-            <span className="step-main-domain__step-message">
-              {step.status === "completed" && step.successMessage}
-              {step.status === "error" && (
-                <span className="step-main-domain__error-message">
-                  {step.errorMessage}
-                </span>
-              )}
-              {step.status === "loading" && (
-                <span className="step-main-domain__loading-message">
-                  Processing<span className="step-main-domain__dots">...</span>
-                </span>
-              )}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// This function is now used by getIconByLabel
-// Helper function to get appropriate icon name for each step (for reference)
-/*
-const getStepIcon = (stepLabel, isComplete) => {
-  switch (stepLabel) {
-    case "Domain Validation":
-      return isComplete ? "domain_verified" : "domain";
-    case "Sitemap Analysis":
-      return isComplete ? "map" : "map_outlined";
-    case "Metrics Analysis":
-      return isComplete ? "analytics" : "monitoring";
-    case "Location Detection":
-      return isComplete ? "location_on" : "location_searching";
-    case "Business Details":
-      return isComplete ? "business_center" : "store";
-    default:
-      return isComplete ? "check_circle" : "radio_button_unchecked";
-  }
-};
-*/
 
 export default StepMainDomain;

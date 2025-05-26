@@ -22,6 +22,7 @@ import "./StepKeywords.css";
 import Loader from "../../../components/Loader";
 import { useAuth } from "../../../context/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import SEOAnalysisDashboard from "../../../components/SEOAnalysisDashboard";
 
 const StepKeywords = () => {
   const {
@@ -31,7 +32,7 @@ const StepKeywords = () => {
     connectedSites,
     setConnectedSites,
   } = useOnboarding();
-  const { googleProfiles } = useSocialMedia();
+  const { socialMediaProfiles, storeSocialMediaToken } = useSocialMedia();
   const { authState } = useAuth();
   const { email } = authState;
   const [siteURL, setSiteURL] = useState(onboardingData.domain || "");
@@ -41,7 +42,7 @@ const StepKeywords = () => {
   const [relatedKeywords, setRelatedKeywords] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState(
-    onboardingData.initialAnalysisState || {}
+    onboardingData.GSCAnalysisData || {}
   );
   const [GSCdata, setGSCdata] = useState(
     onboardingData.searchConsoleData || {}
@@ -52,6 +53,12 @@ const StepKeywords = () => {
   const [animate, setAnimate] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showGSCSuccess, setShowGSCSuccess] = useState(false);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [domainCostDetails, setDomainCostDetails] = useState({
+    averageOrderValue: "",
+    AverageContentCost: "",
+  });
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -160,10 +167,19 @@ const StepKeywords = () => {
   useEffect(() => {
     setSiteURL(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
-    setAnalysisData(onboardingData.initialAnalysisState || {});
+    setAnalysisData(onboardingData.GSCAnalysisData || {});
     setKeywordList(onboardingData.keywords || []);
     setGSCdata(onboardingData.searchConsoleData || {});
+    setAnalysisData(onboardingData.GSCAnalysisData || {});
+    setDomainCostDetails({
+      averageOrderValue:
+        onboardingData.domainCostDetails?.averageOrderValue || 0,
+      AverageContentCost:
+        onboardingData.domainCostDetails?.AverageContentCost || 0,
+    });
   }, [onboardingData]);
+
+  console.log("Connected Sites:", analysisData);
 
   useEffect(() => {
     setOnboardingData((prev) => ({
@@ -199,7 +215,7 @@ const StepKeywords = () => {
         ...(keywordList && { keywordList }),
         ...(GSCdata && { search_analytics: GSCdata }),
         dynamic_fields: {
-          ...analysisData,
+          analysisData: analysisData,
           ...(onboardingData.suggestionsFromAi && {
             suggestions: {
               ...onboardingData.suggestionsFromAi,
@@ -287,6 +303,137 @@ const StepKeywords = () => {
       "Shows how competitive a keyword is to rank for. Lower numbers are easier to rank for.",
   };
 
+  const handleAnalyzeSite = async () => {
+    if (connectedSites.length === 0) {
+      alert("Please connect Google Search Console first");
+      return;
+    }
+
+    setAnalysisLoading(true);
+    setAnalysisComplete(false);
+    try {
+      // Get site details from connected site
+      const site = connectedSites[0];
+      console.log("Starting site analysis...", site, site.google_console);
+      let accessToken = site.google_console?.accessToken;
+      let refreshToken = site.google_console?.refreshToken;
+      // Prepare dates for analysis
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setFullYear(startDate.getFullYear() - 1); // 1 year ago
+
+      const comparisonEnd = new Date(today);
+      comparisonEnd.setMonth(comparisonEnd.getMonth() - 1); // 1 month ago
+
+      const comparisonStart = new Date(comparisonEnd);
+      comparisonStart.setMonth(comparisonStart.getMonth() - 5); // 6 months ago
+
+      if (!accessToken) {
+        alert("No access token found for Google Search Console");
+        return;
+      }
+
+      // API call with retry logic for token refresh
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const response = await fetch(
+            "https://ai.1upmedia.com:443/google/seo-analysis",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                // Use the exact format and values required
+                siteUrl: site.siteUrl,
+                gscToken: accessToken,
+                startDate: startDate.toISOString().split("T")[0],
+                endDate: today.toISOString().split("T")[0],
+                comparisonStart: comparisonStart.toISOString().split("T")[0],
+                comparisonEnd: comparisonEnd.toISOString().split("T")[0],
+                averageOrderValue: domainCostDetails.averageOrderValue,
+                averageContentCost: domainCostDetails.AverageContentCost,
+                conversionRate: 0.03,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            // Store analysis data in context
+            setAnalysisData(data);
+            setAnalysisComplete(true);
+
+            break; // Exit retry loop on success
+          } else if (response.status === 401 && attempt === 0) {
+            // Token expired, try refreshing
+            console.log("Access token expired. Refreshing...");
+
+            // Find the Google profile with refresh token
+            const googleProfile = socialMediaProfiles.find(
+              (profile) =>
+                profile.social_media_name.toLowerCase() === "google" &&
+                refreshToken
+            );
+
+            if (!googleProfile) {
+              throw new Error("No refresh token available");
+            }
+
+            const refreshResponse = await fetch(
+              "https://ai.1upmedia.com:443/google/fetch-new-access-token",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  refreshToken,
+                }),
+              }
+            );
+
+            if (refreshResponse.ok) {
+              const { access_token: newAccessToken } =
+                await refreshResponse.json();
+              accessToken = newAccessToken; // Update token for retry
+
+              // Update the token in storage
+              await storeSocialMediaToken({
+                email,
+                social_media: {
+                  social_media_name: googleProfile.social_media_name,
+                  account_name: googleProfile.account_name,
+                  profile_picture: googleProfile.profile_picture,
+                  access_token: newAccessToken,
+                  dynamic_fields: {
+                    refreshToken: refreshToken,
+                  },
+                },
+              });
+
+              console.log("Access token refreshed successfully");
+            } else {
+              throw new Error("Failed to refresh access token");
+            }
+          } else {
+            throw new Error(`Request failed with status: ${response.status}`);
+          }
+        } catch (error) {
+          if (attempt === 1) {
+            // Only throw on final attempt
+            throw error;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error analyzing site:", error);
+      alert("Error analyzing site: " + error.message);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  };
+
   return (
     <div className="step-keywords premium-layout">
       <div className="step-keywords__container">
@@ -344,14 +491,40 @@ const StepKeywords = () => {
                     </div>
                   </div>
 
-                  <motion.button
-                    className="gsc-manage-button"
-                    onClick={handleGSCConnect}
-                    whileTap={{ scale: 0.95 }}
-                    whileHover={{ scale: 1.05 }}
+                  <div
+                    className="gsc-connected-actions"
+                    style={{ position: "relative", zIndex: 10 }}
                   >
-                    Manage Connection
-                  </motion.button>
+                    <motion.button
+                      className="gsc-manage-button"
+                      onClick={handleGSCConnect}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      Manage Connection
+                    </motion.button>
+
+                    <motion.button
+                      className="gsc-analyze-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAnalyzeSite();
+                      }}
+                      disabled={analysisLoading}
+                      whileTap={{ scale: 0.95 }}
+                      whileHover={analysisLoading ? {} : { scale: 1.05 }}
+                    >
+                      {analysisLoading ? (
+                        <>
+                          <span className="loading-spinner"></span> Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <FaChartLine /> Analyze Site
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
                 </div>
               ) : (
                 // Not connected state - full promotional view
@@ -556,7 +729,7 @@ const StepKeywords = () => {
               </div>
 
               {/* Selected Keywords Section with animations */}
-              <div className="step-keywords__content">
+              {/* <div className="step-keywords__content">
                 <AnimatePresence>
                   {relatedKeywords.length > 0 && (
                     <motion.div
@@ -643,10 +816,33 @@ const StepKeywords = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </div> */}
 
               {/* Related Keywords Section */}
             </motion.div>
+
+            {/* Show analysis results if data exists */}
+            {Object.keys(analysisData).length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="analysis-results-container"
+              >
+                <SEOAnalysisDashboard analysisData={analysisData} />
+              </motion.div>
+            )}
+
+            {/* Optional: Show a temporary success message when analysis completes */}
+            {analysisComplete && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="analysis-success-message"
+              >
+                <FaCheck /> Analysis completed successfully
+              </motion.div>
+            )}
 
             <div className="step-keywords__actions">
               <motion.button
