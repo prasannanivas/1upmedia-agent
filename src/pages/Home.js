@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, User, Settings, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Globe,
+  User,
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  Target,
+  Database,
+  Link2,
+  BarChart3,
+  Zap,
+} from "lucide-react";
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
+import { useContentPnL } from "../hooks/useContentPnL";
 
 const quickLinks = [
   { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
@@ -67,8 +79,9 @@ const HomePage = () => {
   const [index, setIndex] = useState(0);
   const { getPercentageProfileCompletion } = useOnboarding();
   const navigate = useNavigate();
+  const pnlMetrics = useContentPnL();
 
-  const completionPercentage = getPercentageProfileCompletion(); // Fetch completion percentage
+  const completionPercentage = getPercentageProfileCompletion();
 
   // Change text every 1.5 seconds
   const intervalRef = useRef(null);
@@ -81,8 +94,461 @@ const HomePage = () => {
     return () => clearInterval(intervalRef.current);
   }, []);
 
+  // Enhanced setup tasks with icons and better descriptions
+  const setupTasks = [
+    {
+      id: 1,
+      title: "Complete Business Profile",
+      description: "Set up your business domain, location, and core details",
+      icon: <Database size={20} />,
+      completed: completionPercentage.total >= 100,
+      path: "/onboarding/step-main-domain",
+      category: "foundation",
+    },
+    {
+      id: 2,
+      title: "Set Funnel Ratio (60/20/20)",
+      description: "Define your content strategy distribution",
+      icon: <Target size={20} />,
+      completed: false,
+      path: "/onboarding/step-suggestions",
+      category: "strategy",
+    },
+    {
+      id: 3,
+      title: "Connect Google Analytics & Search Console",
+      description: "Link your analytics for data-driven insights",
+      icon: <BarChart3 size={20} />,
+      completed: false,
+      path: "/onboarding/step-keywords",
+      category: "data",
+    },
+    {
+      id: 4,
+      title: "Add Your Domain or Import URLs",
+      description: "Import existing content for analysis",
+      icon: <Link2 size={20} />,
+      completed:
+        completionPercentage.details.find((d) => d.name === "basicInfo")
+          ?.percentage >= 100,
+      path: "/onboarding/step-main-domain",
+      category: "foundation",
+    },
+    {
+      id: 5,
+      title: "Connect Your CRM",
+      description: "Enable full attribution tracking",
+      icon: <User size={20} />,
+      completed: false,
+      path: "/integrations",
+      category: "integration",
+    },
+    {
+      id: 6,
+      title: "Install Attribution Pixel",
+      description: "Track visitor journey from content to conversion",
+      icon: <Zap size={20} />,
+      completed: false,
+      path: "/analytics",
+      category: "tracking",
+    },
+  ];
+
+  const completedTasksCount = setupTasks.filter(
+    (task) => task.completed
+  ).length;
+  // Interactive task click handler with haptic feedback
+  const handleTaskClick = (task) => {
+    // Vibration feedback for mobile devices
+    if (navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+
+    navigate(task.path);
+  };
+
   return (
     <div className="homepage-container">
+      {/* Content Ledger OS System Activation */}
+      <motion.section
+        className="content-ledger-os"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1 }}
+      >
+        <div className="ledger-header">
+          {" "}
+          <h1 className="ledger-title">
+            WELCOME TO YOUR CONTENT LEDGER OS – SYSTEM NOT ACTIVATED
+          </h1>
+          <div className="ledger-divider">
+            <div className="divider-line"></div>
+          </div>
+        </div>
+
+        <div className="ledger-status">
+          <p className="ledger-subtitle">But right now, we don't know:</p>
+          <div className="ledger-unknown-items">
+            <div className="ledger-item">✔️ What you've published</div>
+            <div className="ledger-item">✔️ What your funnel looks like</div>
+            <div className="ledger-item">✔️ What your content costs</div>
+            <div className="ledger-item">✔️ Where your revenue comes from</div>
+          </div>{" "}
+        </div>
+
+        <div className="ledger-divider">
+          <div className="divider-line"></div>
+        </div>
+
+        <div className="ledger-preview">
+          <h2 className="ledger-preview-title">
+            📊 PREVIEW: ONCE CONNECTED, YOU'LL UNLOCK:
+          </h2>
+          <div className="ledger-preview-items">
+            <div className="ledger-preview-item">
+              ▸ Content Investment vs Verified Revenue
+            </div>
+            <div className="ledger-preview-item">
+              ▸ Decay Map (Content Losing Visibility)
+            </div>
+            <div className="ledger-preview-item">
+              ▸ Funnel Imbalance (TOFU / MOFU / BOFU Gaps)
+            </div>
+            <div className="ledger-preview-item">
+              ▸ Keyword Efficiency Gap (DA vs KD Mismatch)
+            </div>
+            <div className="ledger-preview-item">
+              ▸ Psychographic Fit Score (Persona Relevance)
+            </div>
+            <div className="ledger-preview-item">
+              ▸ Full Attribution Chain (View → Form → CRM → Closed Deal)
+            </div>
+          </div>{" "}
+        </div>
+
+        <div className="ledger-divider">
+          <div className="divider-line"></div>
+        </div>
+
+        <div className="ledger-activation">
+          <h2 className="ledger-activation-title">
+            🚀 GET STARTED — ACTIVATE THE LEDGER
+          </h2>{" "}
+          <div className="ledger-tasks">
+            {setupTasks.map((task) => (
+              <motion.div
+                key={task.id}
+                className={`ledger-task ${task.category}`}
+                whileHover={{ scale: 1.02 }}
+                onClick={() => handleTaskClick(task)}
+              >
+                <span className="ledger-task-icon">{task.icon}</span>
+                <div className="ledger-task-content">
+                  <span className="ledger-task-number">[{task.id}]</span>
+                  <span className="ledger-task-title">{task.title}</span>
+                  <span className="ledger-task-description">
+                    {task.description}
+                  </span>
+                </div>
+                <span
+                  className={`ledger-task-status ${
+                    task.completed ? "completed" : "pending"
+                  }`}
+                >
+                  {task.completed ? "✓" : "○"}
+                </span>
+              </motion.div>
+            ))}
+          </div>{" "}
+          <div className="ledger-progress">
+            <span className="ledger-progress-text">Progress: </span>
+            <div className="ledger-progress-bar">
+              {Array.from({ length: 12 }, (_, i) => (
+                <div
+                  key={i}
+                  className={`ledger-progress-segment ${
+                    i < (completedTasksCount / setupTasks.length) * 12
+                      ? "filled"
+                      : "empty"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="ledger-progress-count">
+              {completedTasksCount}/{setupTasks.length} Setup Tasks Complete
+            </span>
+          </div>{" "}
+        </div>
+
+        <div className="ledger-divider">
+          <div className="divider-line"></div>
+        </div>
+
+        <div className="ledger-quote">
+          <p>
+            💡 "The system is blind by default. But when turned on, it doesn't
+            blink."
+          </p>
+        </div>
+
+        <div className="ledger-divider">
+          ────────────────────────────────────────────────────────────────────────────
+        </div>
+      </motion.section>
+
+      {/* Content P&L Snapshot Section */}
+      <motion.section
+        className="content-pnl-snapshot"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 0.2 }}
+      >
+        {" "}
+        <div className="pnl-header">
+          <h2 className="pnl-title">🚨 CONTENT P&L SNAPSHOT</h2>
+          {pnlMetrics.isLoading ? (
+            <div className="pnl-loading">⏳ Loading financial data...</div>
+          ) : (
+            <div className="pnl-data-indicator">
+              {pnlMetrics.hasRealData ? (
+                <span className="pnl-real-data">📊 Live Data</span>
+              ) : (
+                <span className="pnl-demo-data">🔮 Projected Data</span>
+              )}
+            </div>
+          )}
+        </div>{" "}
+        <div className="pnl-metrics-grid">
+          {pnlMetrics.isLoading ? (
+            // Loading skeleton
+            <>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Total Content Investment:</span>
+                <span className="pnl-value investment pnl-loading">⏳</span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Estimated Revenue Impact:</span>
+                <span className="pnl-value revenue pnl-loading">⏳</span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ ROI:</span>
+                <span className="pnl-value roi pnl-loading">⏳</span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Verified Attribution:</span>
+                <span className="pnl-value status inactive pnl-loading">
+                  ⏳
+                </span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Active Attribution Pixel:</span>
+                <span className="pnl-value status inactive pnl-loading">
+                  ⏳
+                </span>
+              </div>
+            </>
+          ) : (
+            // Actual data
+            <>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Total Content Investment:</span>
+                <span className="pnl-value investment">
+                  ${pnlMetrics.totalContentInvestment.toLocaleString()}
+                </span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Estimated Revenue Impact:</span>
+                <span className="pnl-value revenue">
+                  ${pnlMetrics.estimatedRevenueImpact.toLocaleString()}
+                </span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ ROI:</span>
+                <span
+                  className={`pnl-value roi ${
+                    pnlMetrics.roi >= 0 ? "positive" : "negative"
+                  }`}
+                >
+                  {pnlMetrics.roi >= 0 ? "+" : ""}
+                  {pnlMetrics.roi}%
+                </span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Verified Attribution:</span>
+                <span className="pnl-value status inactive">
+                  {pnlMetrics.verifiedAttribution}
+                </span>
+              </div>
+              <div className="pnl-metric">
+                <span className="pnl-label">▸ Active Attribution Pixel:</span>
+                <span className="pnl-value status inactive">
+                  {pnlMetrics.attributionPixel}
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+        <div className="pnl-divider">
+          ────────────────────────────────────────────────────────────────────────────
+        </div>
+        <div className="revenue-leak-section">
+          <h3 className="leak-title">💸 REVENUE LEAK MAP (SUMMARY)</h3>{" "}
+          <div className="leak-items">
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/analytics/content-waste")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Content Cost Waste</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                ${pnlMetrics.revenueLeak.contentCostWaste.toLocaleString()}
+              </span>
+              <span className="leak-action">[View Affected Assets]</span>
+            </motion.div>
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/analytics/decay-analysis")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Content Decay Loss</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                ${pnlMetrics.revenueLeak.contentDecayLoss.toLocaleString()}
+              </span>
+              <span className="leak-action">[View Decay Curve]</span>
+            </motion.div>
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/analytics/keyword-efficiency")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Keyword Efficiency Gap</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                ${pnlMetrics.revenueLeak.keywordEfficiencyGap.toLocaleString()}
+              </span>
+              <span className="leak-action">[Audit Keywords]</span>
+            </motion.div>
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/onboarding/step-suggestions")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Funnel Gap</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                {pnlMetrics.revenueLeak.funnelGaps} Keywords
+              </span>
+              <span className="leak-action">[Fill Funnel]</span>
+            </motion.div>
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/analytics/persona-match")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Psychographic Mismatch</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                {pnlMetrics.revenueLeak.psychographicMismatch}% Misfit
+              </span>
+              <span className="leak-action">[Match Personas]</span>
+            </motion.div>
+            <motion.div
+              className="leak-item"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => navigate("/analytics/link-structure")}
+            >
+              <span className="leak-indicator">[!]</span>
+              <span className="leak-type">Link Dilution</span>
+              <span className="leak-separator">▸</span>
+              <span className="leak-amount">
+                ${pnlMetrics.revenueLeak.linkDilution.toLocaleString()}
+              </span>
+              <span className="leak-action">[Fix Structure]</span>
+            </motion.div>
+          </div>
+        </div>
+        <div className="pnl-divider">
+          ────────────────────────────────────────────────────────────────────────────
+        </div>
+        <div className="quick-actions-section">
+          <h3 className="actions-title">🔧 QUICK ACTIONS</h3>
+          <div className="quick-actions-grid">
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/onboarding/step-keywords")}
+            >
+              [1] Connect Google Search Console & GA4
+            </motion.button>
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/integrations")}
+            >
+              [2] Connect CRM to Verify ROI
+            </motion.button>
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/analytics")}
+            >
+              [3] Install Attribution Pixel
+            </motion.button>
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/onboarding/step-main-domain")}
+            >
+              [4] Complete Business Profile
+            </motion.button>
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/onboarding/step-suggestions")}
+            >
+              [5] Set Funnel Ratio (Default: 60 / 20 / 20)
+            </motion.button>
+            <motion.button
+              className="quick-action-btn"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/content/import")}
+            >
+              [6] Upload Existing Content URLs
+            </motion.button>
+            <motion.button
+              className="quick-action-btn primary"
+              whileHover={{ scale: 1.05 }}
+              onClick={() => navigate("/onboarding")}
+            >
+              [7] Begin Full Ledger Activation
+            </motion.button>
+          </div>
+        </div>
+        <div className="pnl-divider">
+          ────────────────────────────────────────────────────────────────────────────
+        </div>
+        <div className="pnl-tip">
+          <p>
+            💡 <strong>TIP:</strong>
+            <br />
+            This system is estimating your losses. Connect your real data to
+            reveal which content is underperforming, what's actually profitable,
+            and how to stop wasting budget without firing your entire marketing
+            team.
+          </p>
+        </div>
+        <div className="pnl-divider">
+          ────────────────────────────────────────────────────────────────────────────
+        </div>
+      </motion.section>
+
       {/* Hero Section */}
       <motion.section
         className="homepage-hero"
