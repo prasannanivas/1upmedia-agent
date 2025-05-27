@@ -993,14 +993,12 @@
 
 /* Content P&L Snapshot Styles - Enhanced Modern UI */
 .content-pnl-snapshot {
-  background: linear-gradient(
-    135deg,
-    #0f0f23 0%,
-    #1a1a2e 25%,
-    #16213e 50%,
-    #0f3460 75%,
-    #533483 100%
-  );
+  background: linear-gradient(135deg,
+      #0f0f23 0%,
+      #1a1a2e 25%,
+      #16213e 50%,
+      #0f3460 75%,
+      #533483 100%);
   color: #ffffff;
   font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
   margin: 0 0 4rem 0;
@@ -1034,14 +1032,12 @@
   left: -3px;
   right: -3px;
   bottom: -3px;
-  background: linear-gradient(
-    135deg,
-    rgba(139, 69, 255, 0.6) 0%,
-    rgba(59, 130, 246, 0.4) 25%,
-    rgba(236, 72, 153, 0.5) 50%,
-    rgba(239, 68, 68, 0.4) 75%,
-    rgba(139, 69, 255, 0.6) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(139, 69, 255, 0.6) 0%,
+      rgba(59, 130, 246, 0.4) 25%,
+      rgba(236, 72, 153, 0.5) 50%,
+      rgba(239, 68, 68, 0.4) 75%,
+      rgba(139, 69, 255, 0.6) 100%);
   border-radius: 35px;
   z-index: -1;
   animation: pnlBorderGlow 6s ease-in-out infinite;
@@ -1056,21 +1052,15 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(
-    circle at 30% 20%,
-    rgba(139, 69, 255, 0.15) 0%,
-    transparent 50%
-  ),
-  radial-gradient(
-    circle at 80% 80%,
-    rgba(59, 130, 246, 0.1) 0%,
-    transparent 50%
-  ),
-  radial-gradient(
-    circle at 40% 90%,
-    rgba(236, 72, 153, 0.1) 0%,
-    transparent 50%
-  );
+  background: radial-gradient(circle at 30% 20%,
+      rgba(139, 69, 255, 0.15) 0%,
+      transparent 50%),
+    radial-gradient(circle at 80% 80%,
+      rgba(59, 130, 246, 0.1) 0%,
+      transparent 50%),
+    radial-gradient(circle at 40% 90%,
+      rgba(236, 72, 153, 0.1) 0%,
+      transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -1127,14 +1117,12 @@
 }
 
 .pnl-title {
-  background: linear-gradient(
-    135deg,
-    #ff6b6b 0%,
-    #ff8e8e 25%,
-    #ffd93d 50%,
-    #ff6b6b 75%,
-    #ff4757 100%
-  );
+  background: linear-gradient(135deg,
+      #ff6b6b 0%,
+      #ff8e8e 25%,
+      #ffd93d 50%,
+      #ff6b6b 75%,
+      #ff4757 100%);
   background-size: 400% 400%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1172,11 +1160,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.05) 100%);
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
@@ -1193,12 +1179,10 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.1),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent);
   transition: left 0.6s ease;
 }
 
@@ -1208,22 +1192,34 @@
 
 .pnl-metric:hover {
   transform: translateX(12px) translateY(-4px);
-  box-shadow: 
+  box-shadow:
     0 20px 40px rgba(0, 0, 0, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.08) 100%);
 }
 
-.pnl-metric:nth-child(1) { border-left: 4px solid #ff6b6b; }
-.pnl-metric:nth-child(2) { border-left: 4px solid #4ecdc4; }
-.pnl-metric:nth-child(3) { border-left: 4px solid #45b7d1; }
-.pnl-metric:nth-child(4) { border-left: 4px solid #f9ca24; }
-.pnl-metric:nth-child(5) { border-left: 4px solid #6c5ce7; }
+.pnl-metric:nth-child(1) {
+  border-left: 4px solid #ff6b6b;
+}
+
+.pnl-metric:nth-child(2) {
+  border-left: 4px solid #4ecdc4;
+}
+
+.pnl-metric:nth-child(3) {
+  border-left: 4px solid #45b7d1;
+}
+
+.pnl-metric:nth-child(4) {
+  border-left: 4px solid #f9ca24;
+}
+
+.pnl-metric:nth-child(5) {
+  border-left: 4px solid #6c5ce7;
+}
 
 .pnl-label {
   color: #e2e8f0;
@@ -1281,42 +1277,110 @@
   margin: 3rem 0;
   position: relative;
   z-index: 1;
-}
   font-family: monospace;
   font-size: 0.8rem;
   opacity: 0.6;
 }
 
+/* Enhanced Revenue Leak Section */
 .revenue-leak-section {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  position: relative;
+  z-index: 1;
 }
 
 .leak-title {
-  color: #dc2626;
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg,
+      #ff6b6b 0%,
+      #ffd93d 50%,
+      #ff6b6b 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 1.75rem;
+  font-weight: 900;
+  margin-bottom: 2rem;
   text-align: center;
+  animation: pnlTitleShimmer 3s ease-in-out infinite;
+  text-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
 }
 
 .leak-items {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .leak-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
-  border-radius: 16px;
-  border-left: 4px solid #ef4444;
+  gap: 1.25rem;
+  padding: 2rem 2.5rem;
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.08) 0%,
+      rgba(255, 255, 255, 0.04) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Courier New', monospace;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   position: relative;
+  overflow: hidden;
+}
+
+.leak-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 107, 107, 0.1),
+      transparent);
+  transition: left 0.6s ease;
+}
+
+.leak-item:hover::before {
+  left: 100%;
+}
+
+.leak-item:hover {
+  transform: translateX(16px) translateY(-6px);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.08) 100%);
+}
+
+.leak-item:nth-child(1) {
+  border-left: 4px solid #ff6b6b;
+}
+
+.leak-item:nth-child(2) {
+  border-left: 4px solid #ff8e8e;
+}
+
+.leak-item:nth-child(3) {
+  border-left: 4px solid #4ecdc4;
+}
+
+.leak-item:nth-child(4) {
+  border-left: 4px solid #45b7d1;
+}
+
+.leak-item:nth-child(5) {
+  border-left: 4px solid #f9ca24;
+}
+
+.leak-item:nth-child(6) {
+  border-left: 4px solid #6c5ce7;
   overflow: hidden;
 }
 
@@ -1329,16 +1393,6 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.1), transparent);
   transition: left 0.5s ease;
-}
-
-.leak-item:hover::before {
-  left: 100%;
-}
-
-.leak-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 32px rgba(239, 68, 68, 0.2);
-  border-left-color: #dc2626;
 }
 
 .leak-indicator {
@@ -1481,33 +1535,43 @@
 
 /* Animations */
 @keyframes pnlFloat {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
+
   25% {
     transform: translateY(-8px) rotate(0.5deg);
   }
+
   50% {
     transform: translateY(-4px) rotate(0deg);
   }
+
   75% {
     transform: translateY(-12px) rotate(-0.5deg);
   }
 }
 
 @keyframes pnlBorderGlow {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
     opacity: 0.8;
   }
+
   25% {
     background-position: 25% 50%;
     opacity: 1;
   }
+
   50% {
     background-position: 100% 50%;
     opacity: 0.9;
   }
+
   75% {
     background-position: 75% 50%;
     opacity: 1;
@@ -1515,18 +1579,23 @@
 }
 
 @keyframes pnlTitleShimmer {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
     transform: scale(1);
   }
+
   25% {
     background-position: 25% 50%;
     transform: scale(1.02);
   }
+
   50% {
     background-position: 100% 50%;
     transform: scale(1);
   }
+
   75% {
     background-position: 75% 50%;
     transform: scale(1.01);
@@ -1534,25 +1603,33 @@
 }
 
 @keyframes pnlAlertBounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(-50%) scale(1) rotate(0deg);
   }
+
   25% {
     transform: translateY(-50%) scale(1.1) rotate(5deg);
   }
+
   50% {
     transform: translateY(-50%) scale(1.05) rotate(0deg);
   }
+
   75% {
     transform: translateY(-50%) scale(1.1) rotate(-5deg);
   }
 }
 
 @keyframes pnlPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.7;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.05);
@@ -1560,13 +1637,16 @@
 }
 
 @keyframes pnlDataGlow {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 0 20px rgba(16, 185, 129, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 0 30px rgba(16, 185, 129, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transform: scale(1.02);
@@ -1574,13 +1654,16 @@
 }
 
 @keyframes pnlNegativeROI {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 0 15px rgba(255, 107, 107, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 0 25px rgba(255, 107, 107, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transform: scale(1.02);
@@ -1588,13 +1671,16 @@
 }
 
 @keyframes pnlPositiveROI {
-  0%, 100% {
-    box-shadow: 
+
+  0%,
+  100% {
+    box-shadow:
       0 0 15px rgba(78, 205, 196, 0.2),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
+
   50% {
-    box-shadow: 
+    box-shadow:
       0 0 25px rgba(78, 205, 196, 0.4),
       inset 0 1px 0 rgba(255, 255, 255, 0.2);
     transform: scale(1.02);
@@ -1605,6 +1691,7 @@
   0% {
     transform: translateX(0) translateY(0);
   }
+
   100% {
     transform: translateX(12px) translateY(-4px);
   }
@@ -1614,6 +1701,7 @@
   0% {
     left: -100%;
   }
+
   100% {
     left: 100%;
   }
@@ -1621,10 +1709,13 @@
 
 /* Revenue Leak Enhanced Animations */
 @keyframes leakItemPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
     background: rgba(255, 255, 255, 0.05);
   }
+
   50% {
     transform: scale(1.02);
     background: rgba(255, 255, 255, 0.1);
@@ -1632,10 +1723,13 @@
 }
 
 @keyframes leakIndicatorBlink {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
     color: #ff6b6b;
   }
+
   50% {
     opacity: 0.6;
     color: #ff8e8e;
