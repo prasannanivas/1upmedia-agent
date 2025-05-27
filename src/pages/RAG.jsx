@@ -32,7 +32,7 @@ function RAG() {
   const [showDetails, setShowDetails] = useState(false);
   const [contentStrategy, setContentStrategy] = useState(null);
   const [isEditingStrategy, setIsEditingStrategy] = useState(false);
-  const [isUploadExpanded, setIsUploadExpanded] = useState(false);
+  const [isUploadExpanded, setIsUploadExpanded] = useState(true);
   const [wordCount, setWordCount] = useState(500);
   const [isCustomWordCount, setIsCustomWordCount] = useState(false);
   const [sources, setSources] = useState([]);

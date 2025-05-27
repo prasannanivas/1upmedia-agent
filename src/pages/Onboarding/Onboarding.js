@@ -20,7 +20,7 @@ const Onboarding = () => {
 
   return (
     <div className="Onboarding">
-      <h1>Onboarding Workflow</h1>
+      <h1>Strategic Visibility Briefing</h1>
       <Routes>
         <Route path="/" element={<Navigate to="step-main-domain" />} />
         <Route path="step-main-domain" element={<StepMainDomain />} />

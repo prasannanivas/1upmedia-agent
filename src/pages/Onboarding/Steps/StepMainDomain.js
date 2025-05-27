@@ -1275,7 +1275,21 @@ Phone: (555) 123-4567"
 
   return (
     <div className="step-main-domain">
-      <h2 className="step-main-domain__title">Site Analysis</h2>
+      <h2 className="step-main-domain__title">System Activation Report</h2>
+      <p
+        className="step-main-domain__subtitle-text"
+        style={{
+          fontSize: "14px",
+          color: "#666",
+          maxWidth: "90%",
+          margin: "-5px auto 20px",
+          textAlign: "center",
+          fontStyle: "italic",
+        }}
+      >
+        This system is blind by default. The moment you complete setup, you
+        unlock insight your team has never measured.
+      </p>
       {error && <div className="step-main-domain__error">{error}</div>}
 
       <div className="step-main-domain__split-container">
@@ -1291,25 +1305,6 @@ Phone: (555) 123-4567"
                 className="step-main-domain__input"
                 disabled={isValidating}
               />
-              <button
-                onClick={handleValidateDomain}
-                className={`step-main-domain__primary-btn ${
-                  isValidating ? "step-main-domain__primary-btn--loading" : ""
-                }`}
-                disabled={!domain || isValidating}
-              >
-                {isValidating ? (
-                  <div className="step-main-domain__loading-state">
-                    <CircularProgress size={20} color="inherit" />
-                    <span>Analyzing...</span>
-                  </div>
-                ) : (
-                  <>
-                    <span className="step-main-domain__btn-icon">🔍</span>
-                    <span>Analyze Site</span>
-                  </>
-                )}
-              </button>
             </div>
 
             {/* Cost Input Fields */}
@@ -1358,6 +1353,26 @@ Phone: (555) 123-4567"
                 />
               </div>
             </div>
+            <button
+              onClick={handleValidateDomain}
+              className={`step-main-domain__primary-btn ${
+                isValidating ? "step-main-domain__primary-btn--loading" : ""
+              }`}
+              disabled={!domain || isValidating}
+              style={{ marginTop: "15px", width: "100%" }}
+            >
+              {isValidating ? (
+                <div className="step-main-domain__loading-state">
+                  <CircularProgress size={20} color="inherit" />
+                  <span>Analyzing...</span>
+                </div>
+              ) : (
+                <>
+                  <span className="step-main-domain__btn-icon">🔍</span>
+                  <span>Analyze Site</span>
+                </>
+              )}
+            </button>
 
             {isValidating && <AnalysisProgress steps={analysisSteps} />}
           </div>{" "}
@@ -1978,7 +1993,7 @@ Phone: (555) 123-4567"
 
       <div className="step-main-domain__footer">
         <button onClick={handleNext} className="step-main-domain__next-btn">
-          Continue to Content decay
+          Continue to Content Decay
           <span className="step-main-domain__next-icon">→</span>
         </button>
       </div>

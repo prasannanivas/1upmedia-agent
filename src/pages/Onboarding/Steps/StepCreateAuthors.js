@@ -28,7 +28,7 @@ const StepCreateAuthors = () => {
   const { authState } = useAuth();
   const { email } = authState;
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("manual");
+  const [activeTab, setActiveTab] = useState("automated"); // State to manage active tab
 
   useEffect(() => {
     const fetchPersonas = async () => {
@@ -97,7 +97,7 @@ const StepCreateAuthors = () => {
           authors: authorsList,
         }),
       });
-      navigate("/onboarding/step-content-strategy");
+      navigate("/onboarding/step-keywords");
     } catch (error) {
       console.error("Error saving authors:", error);
     }

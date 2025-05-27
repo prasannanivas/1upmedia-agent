@@ -288,7 +288,7 @@ const StepKeywords = () => {
       keywords: keywordList,
     }));
     await handleSave();
-    navigate("/onboarding/step-business-details");
+    navigate("/onboarding/step-create-authors");
   };
 
   // Premium tooltips
@@ -451,7 +451,7 @@ const StepKeywords = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          Define Your Keywords
+          Measure Content Decay
         </motion.h2>
 
         {loading ? (
@@ -535,11 +535,10 @@ const StepKeywords = () => {
                     >
                       <FaGoogle />
                     </motion.div>
-                    <h3>Connect Google Search Console and Google Analytics</h3>
-                    <p>
-                      Unlock powerful insights and optimize your keyword
-                      strategy
-                    </p>
+                    <h3>
+                      Unlock the curve of decay before it costs you. We read the
+                      data so you don’t have to.
+                    </h3>
 
                     <button
                       className="gsc-connect-button"
@@ -628,7 +627,7 @@ const StepKeywords = () => {
             </motion.div>
 
             {/* Keyword Management Section - Premium UX */}
-            <motion.div
+            {/* <motion.div
               className="keyword-management-section"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -643,9 +642,9 @@ const StepKeywords = () => {
                   <span className="counter-value">{keywordList.length}</span>
                   <span className="counter-label">Keywords</span>
                 </div>
-              </div>
+              </div> */}
 
-              <div className="step-keywords__input-section">
+            {/* <div className="step-keywords__input-section">
                 <div className="step-keywords__input-group">
                   <div className="input-container">
                     <input
@@ -724,10 +723,10 @@ const StepKeywords = () => {
                     </div>
                   )}
                 </div>
-              </div>
+              </div> */}
 
-              {/* Selected Keywords Section with animations */}
-              {/* <div className="step-keywords__content">
+            {/* Selected Keywords Section with animations */}
+            {/* <div className="step-keywords__content">
                 <AnimatePresence>
                   {relatedKeywords.length > 0 && (
                     <motion.div
@@ -816,8 +815,8 @@ const StepKeywords = () => {
                 </AnimatePresence>
               </div> */}
 
-              {/* Related Keywords Section */}
-            </motion.div>
+            {/* Related Keywords Section */}
+            {/* </motion.div> */}
 
             {/* Show analysis results if data exists */}
             {Object.keys(analysisData).length > 0 && (
