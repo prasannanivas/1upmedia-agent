@@ -172,128 +172,147 @@ const HomePage = () => {
       {/* Content Ledger OS System Activation */}
       <motion.section
         className="content-ledger-os"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
       >
-        <div className="ledger-header">
-          {" "}
-          <h1 className="ledger-title">
-            WELCOME TO YOUR CONTENT LEDGER OS – SYSTEM NOT ACTIVATED
-          </h1>
-          <div className="ledger-divider">
-            <div className="divider-line"></div>
+        <motion.div
+          className="ledger-header"
+          initial={{ y: -20 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div className="activation-badge">
+            <span className="pulse-dot"></span>
+            SYSTEM STATUS
           </div>
-        </div>
+          <h1 className="ledger-title">
+            CONTENT LEDGER OS
+            <span className="activation-status">NOT ACTIVATED</span>
+          </h1>
+          <div className="ledger-divider gradient-divider"></div>
+        </motion.div>
 
-        <div className="ledger-status">
-          <p className="ledger-subtitle">But right now, we don't know:</p>
-          <div className="ledger-unknown-items">
-            <div className="ledger-item">✔️ What you've published</div>
-            <div className="ledger-item">✔️ What your funnel looks like</div>
-            <div className="ledger-item">✔️ What your content costs</div>
-            <div className="ledger-item">✔️ Where your revenue comes from</div>
-          </div>{" "}
-        </div>
-
-        <div className="ledger-divider">
-          <div className="divider-line"></div>
-        </div>
-
-        <div className="ledger-preview">
-          <h2 className="ledger-preview-title">
-            📊 PREVIEW: ONCE CONNECTED, YOU'LL UNLOCK:
-          </h2>
-          <div className="ledger-preview-items">
-            <div className="ledger-preview-item">
-              ▸ Content Investment vs Verified Revenue
+        <div className="ledger-content-grid">
+          <motion.div
+            className="ledger-status-card"
+            initial={{ x: -30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <div className="card-header">
+              <AlertCircle size={22} />
+              <h3> Right now, we don't know:</h3>
             </div>
-            <div className="ledger-preview-item">
-              ▸ Decay Map (Content Losing Visibility)
-            </div>
-            <div className="ledger-preview-item">
-              ▸ Funnel Imbalance (TOFU / MOFU / BOFU Gaps)
-            </div>
-            <div className="ledger-preview-item">
-              ▸ Keyword Efficiency Gap (DA vs KD Mismatch)
-            </div>
-            <div className="ledger-preview-item">
-              ▸ Psychographic Fit Score (Persona Relevance)
-            </div>
-            <div className="ledger-preview-item">
-              ▸ Full Attribution Chain (View → Form → CRM → Closed Deal)
-            </div>
-          </div>{" "}
-        </div>
-
-        <div className="ledger-divider">
-          <div className="divider-line"></div>
-        </div>
-
-        <div className="ledger-activation">
-          <h2 className="ledger-activation-title">
-            🚀 GET STARTED — ACTIVATE THE LEDGER
-          </h2>{" "}
-          <div className="ledger-tasks">
-            {setupTasks.map((task) => (
-              <motion.div
-                key={task.id}
-                className={`ledger-task ${task.category}`}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => handleTaskClick(task)}
-              >
-                <span className="ledger-task-icon">{task.icon}</span>
-                <div className="ledger-task-content">
-                  <span className="ledger-task-number">[{task.id}]</span>
-                  <span className="ledger-task-title">{task.title}</span>
-                  <span className="ledger-task-description">
-                    {task.description}
-                  </span>
-                </div>
-                <span
-                  className={`ledger-task-status ${
-                    task.completed ? "completed" : "pending"
-                  }`}
+            <div className="ledger-unknown-items">
+              {[
+                "What you've published",
+                "What your funnel looks like",
+                "What your content costs",
+                "Where your revenue comes from",
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="ledger-item"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
                 >
-                  {task.completed ? "✓" : "○"}
-                </span>
-              </motion.div>
-            ))}
-          </div>{" "}
-          <div className="ledger-progress">
-            <span className="ledger-progress-text">Progress: </span>
-            <div className="ledger-progress-bar">
-              {Array.from({ length: 12 }, (_, i) => (
-                <div
-                  key={i}
-                  className={`ledger-progress-segment ${
-                    i < (completedTasksCount / setupTasks.length) * 12
-                      ? "filled"
-                      : "empty"
-                  }`}
-                />
+                  <CheckCircle size={18} className="item-icon" />
+                  <span>{item}</span>
+                </motion.div>
               ))}
             </div>
-            <span className="ledger-progress-count">
-              {completedTasksCount}/{setupTasks.length} Setup Tasks Complete
-            </span>
-          </div>{" "}
+          </motion.div>
+
+          <motion.div
+            className="ledger-preview-card"
+            initial={{ x: 30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <div className="card-header">
+              <BarChart3 size={22} />
+              <h3>Unlock Analytics</h3>
+            </div>
+            <div className="ledger-preview-items">
+              {[
+                {
+                  icon: <Link2 size={16} />,
+                  text: "Content Investment vs Verified Revenue",
+                },
+                {
+                  icon: <Target size={16} />,
+                  text: "Decay Map (Content Losing Visibility)",
+                },
+                {
+                  icon: <Database size={16} />,
+                  text: "Funnel Imbalance (TOFU / MOFU / BOFU Gaps)",
+                },
+                {
+                  icon: <Globe size={16} />,
+                  text: "Keyword Efficiency Gap (DA vs KD Mismatch)",
+                },
+                {
+                  icon: <User size={16} />,
+                  text: "Psychographic Fit Score (Persona Relevance)",
+                },
+                {
+                  icon: <Zap size={16} />,
+                  text: "Full Attribution Chain (View → Form → CRM → Closed Deal)",
+                },
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="ledger-preview-item"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
+                >
+                  <span className="item-icon">{item.icon}</span>
+                  <span>{item.text}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
         </div>
 
-        <div className="ledger-divider">
-          <div className="divider-line"></div>
-        </div>
+        <div className="ledger-divider gradient-divider"></div>
 
-        <div className="ledger-quote">
+        <motion.div
+          className="activation-cta-container"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+        >
+          <div className="activation-message">
+            <Zap size={24} className="activation-icon" />
+            <h3>Ready to unlock the full potential of your content?</h3>
+          </div>
+          <motion.button
+            className="activate-button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/onboarding")}
+          >
+            Activate Ledger Now
+          </motion.button>
+        </motion.div>
+
+        <div className="ledger-divider gradient-divider"></div>
+
+        <motion.div
+          className="ledger-quote"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.9 }}
+        >
+          <div className="quote-icon">💡</div>
           <p>
-            💡 "The system is blind by default. But when turned on, it doesn't
+            "The system is blind by default. But when turned on, it doesn't
             blink."
           </p>
-        </div>
-
-        <div className="ledger-divider">
-          ────────────────────────────────────────────────────────────────────────────
-        </div>
+        </motion.div>
       </motion.section>
 
       {/* Content P&L Snapshot Section */}
