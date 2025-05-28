@@ -497,57 +497,36 @@ const HomePage = () => {
           ────────────────────────────────────────────────────────────────────────────
         </div>
         <div className="quick-actions-section">
-          <h3 className="actions-title">🔧 QUICK ACTIONS</h3>
-          <div className="quick-actions-grid">
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/onboarding/step-keywords")}
-            >
-              [1] Connect Google Search Console & GA4
-            </motion.button>
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/integrations")}
-            >
-              [2] Connect CRM to Verify ROI
-            </motion.button>
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/analytics")}
-            >
-              [3] Install Attribution Pixel
-            </motion.button>
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/onboarding/step-main-domain")}
-            >
-              [4] Complete Business Profile
-            </motion.button>
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/onboarding/step-suggestions")}
-            >
-              [5] Set Funnel Ratio (Default: 60 / 20 / 20)
-            </motion.button>
-            <motion.button
-              className="quick-action-btn"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/content/import")}
-            >
-              [6] Upload Existing Content URLs
-            </motion.button>
-            <motion.button
-              className="quick-action-btn primary"
-              whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/onboarding")}
-            >
-              [7] Begin Full Ledger Activation
-            </motion.button>
+          <h3 className="section-title">Quick Actions</h3>
+
+          <div className="quick-actions-container">
+            <button className="quick-action-button primary">
+              <span className="quick-action-icon">
+                <Zap size={18} />
+              </span>
+              <span className="quick-action-label">Create Content</span>
+            </button>
+
+            <button className="quick-action-button success">
+              <span className="quick-action-icon">
+                <Globe size={18} />
+              </span>
+              <span className="quick-action-label">Publish Post</span>
+            </button>
+
+            <button className="quick-action-button info">
+              <span className="quick-action-icon">
+                <BarChart3 size={18} />
+              </span>
+              <span className="quick-action-label">View Analytics</span>
+            </button>
+
+            <button className="quick-action-button warning">
+              <span className="quick-action-icon">
+                <Settings size={18} />
+              </span>
+              <span className="quick-action-label">Configure Settings</span>
+            </button>
           </div>
         </div>
         <div className="pnl-divider">
