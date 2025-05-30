@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/Login";
 import NavBar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
+import LeakDashboard from "./pages/Dashboard/Dashboard";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Agents from "./pages/Agents";
 import Boards from "./pages/Boards";
@@ -113,7 +114,7 @@ const AppWrapper = () => {
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           {/* <Route path="/login" element={<Home />} /> */}
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/leakdashboard" element={<LeakDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />

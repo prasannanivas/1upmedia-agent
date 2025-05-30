@@ -1359,10 +1359,25 @@ Phone: (555) 123-4567"
                 isValidating ? "step-main-domain__primary-btn--loading" : ""
               }`}
               disabled={!domain || isValidating}
-              style={{ marginTop: "15px", width: "100%" }}
+              style={{
+                marginTop: "15px",
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.5rem",
+              }}
             >
               {isValidating ? (
-                <div className="step-main-domain__loading-state">
+                <div
+                  className="step-main-domain__loading-state"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                  }}
+                >
                   <CircularProgress size={20} color="inherit" />
                   <span>Analyzing...</span>
                 </div>

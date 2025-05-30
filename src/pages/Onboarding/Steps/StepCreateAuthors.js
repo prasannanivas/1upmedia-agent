@@ -97,29 +97,24 @@ const StepCreateAuthors = () => {
           authors: authorsList,
         }),
       });
-      navigate("/onboarding/step-keywords");
+
+      // Update onboarding data
+      setOnboardingData((prev) => ({
+        ...prev,
+        authors: authorsList,
+      }));
+
+      // Navigate to dashboard instead of keywords
+      navigate("/leakdashboard");
     } catch (error) {
       console.error("Error saving authors:", error);
+      // Still navigate to dashboard even if save fails
+      navigate("/leakdashboard");
     }
   };
 
   return (
     <div className="authors-container">
-      <div className="authors-tabs">
-        <button
-          className={`tab-button ${activeTab === "automated" ? "active" : ""}`}
-          onClick={() => setActiveTab("automated")}
-        >
-          Automated Author Creation
-        </button>
-        <button
-          className={`tab-button ${activeTab === "manual" ? "active" : ""}`}
-          onClick={() => setActiveTab("manual")}
-        >
-          Manual Author Creation
-        </button>
-      </div>
-
       {loading ? (
         <div className="tab-content">
           <Loader />
@@ -129,6 +124,16 @@ const StepCreateAuthors = () => {
           {activeTab === "automated" ? (
             <div className="tab-pane">
               <RAG />
+              {/* Moved Next button outside of tabs */}
+              <button
+                onClick={handleNext}
+                className={`step-create-authors-next-btn ${
+                  authorsList.length === 0 ? "disabled" : ""
+                }`}
+                disabled={authorsList.length === 0}
+              >
+                Go to Dashboard
+              </button>
             </div>
           ) : (
             <div className="tab-pane">
@@ -334,17 +339,6 @@ const StepCreateAuthors = () => {
           )}
         </div>
       )}
-
-      {/* Moved Next button outside of tabs */}
-      <button
-        onClick={handleNext}
-        className={`step-create-authors-next-btn ${
-          authorsList.length === 0 ? "disabled" : ""
-        }`}
-        disabled={authorsList.length === 0}
-      >
-        Next
-      </button>
     </div>
   );
 };
