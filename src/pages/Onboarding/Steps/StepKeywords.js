@@ -177,6 +177,10 @@ const StepKeywords = () => {
       AverageContentCost:
         onboardingData.domainCostDetails?.AverageContentCost || 0,
     });
+
+    if (!analysisData) {
+      handleAnalyzeSite();
+    }
   }, [onboardingData]);
 
   useEffect(() => {
@@ -534,7 +538,8 @@ const StepKeywords = () => {
                         </>
                       ) : (
                         <>
-                          <FaChartLine /> Analyze Site
+                          <FaChartLine />{" "}
+                          {analysisData ? "Re-fetch data" : "Analyze data"}
                         </>
                       )}
                     </motion.button>
