@@ -13,7 +13,7 @@
   flex-direction: column;
   flex-wrap: wrap;
   gap: 16px;
-  width: 92%;
+  width: 93%;
   margin-top: 16px;
 }
 
@@ -801,7 +801,7 @@
   padding-top: 2rem;
   border-top: 2px solid #e2e8f0;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .step-main-domain__next-btn {
@@ -815,6 +815,8 @@
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
+  justify-content: center;
+  width: 100%;
   align-items: center;
   gap: 0.5rem;
 }

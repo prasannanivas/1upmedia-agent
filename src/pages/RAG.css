@@ -3,6 +3,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  padding-top: 0px;
   background: #f8fafc;
   min-height: 100vh;
   display: flex;
@@ -823,6 +824,7 @@
   background: linear-gradient(145deg, #ffffff, #f8fafc);
   border-radius: 16px;
   padding: 2.5rem;
+  padding-top: 0rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.1);
   position: relative;

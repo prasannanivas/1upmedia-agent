@@ -132,7 +132,7 @@ const StepCreateAuthors = () => {
                 }`}
                 disabled={authorsList.length === 0}
               >
-                Go to Dashboard
+                Launch Content Ledger →
               </button>
             </div>
           ) : (

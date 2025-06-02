@@ -227,8 +227,11 @@ const StepKeywords = () => {
       }
 
       const fd = new FormData();
+      const td = new FormData();
       fd.append("email", email);
-      fd.append("engineType", "signal"); // Signal engine is best for keywords
+      td.append("email", email);
+      fd.append("engineType", "signal"); // Signal engine is best for
+      td.append("engineType", "intent");
 
       // Add keywords as JSON string
       if (keywordList.length > 0) {
@@ -238,15 +241,28 @@ const StepKeywords = () => {
         );
       }
 
+      if (analysisData && Object.keys(analysisData).length > 0) {
+        td.append("templateData", JSON.stringify(analysisData));
+      }
+
       // Include site URL
       if (siteURL) {
         fd.append("domain", siteURL);
+        td.append("domain", siteURL);
       }
 
       // Send to RAG system
       fetch("https://ai.1upmedia.com:443/RAG/analyzeStyleChunks", {
         method: "POST",
         body: fd,
+      }).catch((error) => {
+        console.error("Error sending data to RAG system:", error);
+      });
+
+      // Send to RAG system
+      fetch("https://ai.1upmedia.com:443/RAG/analyzeStyleChunks", {
+        method: "POST",
+        body: td,
       }).catch((error) => {
         console.error("Error sending data to RAG system:", error);
       });
@@ -484,7 +500,7 @@ const StepKeywords = () => {
                       <FaCheck />
                     </motion.div>
                     <div className="gsc-connected-text">
-                      <h3>Google Search Console Connected</h3>
+                      <h3>Google Search Console and GA4 Connected</h3>
                       <p>{connectedSites[0].siteUrl}</p>
                     </div>
                   </div>
@@ -849,7 +865,7 @@ const StepKeywords = () => {
                 whileHover={keywordList.length === 0 ? {} : { scale: 1.05 }}
                 whileTap={keywordList.length === 0 ? {} : { scale: 0.95 }}
               >
-                Next <FaChevronRight />
+                Proceed to Train the Engines <FaChevronRight />
               </motion.button>
             </div>
           </>

@@ -1360,8 +1360,8 @@ Phone: (555) 123-4567"
               }`}
               disabled={!domain || isValidating}
               style={{
-                marginTop: "15px",
-                width: "100%",
+                marginTop: "20px",
+                width: "99%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
