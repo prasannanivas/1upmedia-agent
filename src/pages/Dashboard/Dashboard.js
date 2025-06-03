@@ -204,7 +204,7 @@ const Dashboard = () => {
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
-        <h1>Content Ledger Dashboard</h1>
+        {/* <h1>Content Ledger Dashboard</h1> */}
         <p>
           Content strategy insights for {onboardingData.domain || "your domain"}
         </p>

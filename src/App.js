@@ -6,6 +6,9 @@ import Login from "./pages/Login";
 import NavBar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import LeakDashboard from "./pages/Dashboard/Dashboard";
+import RiskDashboard from "./pages/Dashboard/RiskDashboard";
+import ContentLedgerDashboard from "./pages/Dashboard/ContentLedgerDashboard";
+import CommandCenterDashboard from "./pages/Dashboard/CommandCenterDashboard";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Agents from "./pages/Agents";
 import Boards from "./pages/Boards";
@@ -38,13 +41,11 @@ import { ProgressBar } from "./components/ProgressBar";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import Loader from "./components/Loader";
 import { OnboardingProvider } from "./context/OnboardingContext";
-import StepCreateAuthors from "./pages/Onboarding/Steps/StepCreateAuthors";
 import Home from "./pages/Home";
 import Notifications from "./pages/Notifications";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotFound from "./pages/NotFound";
 import RAG from "./pages/RAG";
-import { i } from "framer-motion/client";
 import TermsOfService from "./TermsOfService";
 import PostAnalytics from "./pages/PostAnalytics";
 
@@ -111,10 +112,14 @@ const AppWrapper = () => {
       </div>
       <div className="MainContent" style={mainContentStyle}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />{" "}
           <Route path="/home" element={<Home />} />
-          {/* <Route path="/login" element={<Home />} /> */}
+          {/* <Route path="/login" element={<Home />} /> */}{" "}
           <Route path="/leakdashboard" element={<LeakDashboard />} />
+          <Route path="/riskdashboard" element={<RiskDashboard />} />
+          <Route path="/strategy-analysis" element={<StrategyAnalysis />} />
+          <Route path="/contentledger" element={<ContentLedgerDashboard />} />
+          <Route path="/commandcenter" element={<CommandCenterDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />

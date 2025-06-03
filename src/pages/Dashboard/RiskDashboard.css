@@ -1,0 +1,538 @@
+/* Risk Dashboard Styles */
+.risk-dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: #0a0a0a;
+  color: #00ff00;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.risk-dashboard-header {
+  border: 2px solid #00ff00;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  background: #111;
+  border-radius: 4px;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.header-icon {
+  font-size: 2rem;
+  color: #00ff00;
+}
+
+.header-title h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #00ff00;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.header-title p {
+  margin: 0;
+  font-size: 1rem;
+  color: #888;
+  font-style: italic;
+}
+
+.site-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.site-info,
+.site-metrics {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.site-info span,
+.site-metrics span {
+  color: #ccc;
+}
+
+/* Risk Sections Grid */
+.risk-sections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Risk Section Styles */
+.risk-section {
+  border: 1px solid #333;
+  background: #111;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.risk-section:hover {
+  border-color: #555;
+  box-shadow: 0 4px 12px rgba(0, 255, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #333;
+  background: #0f0f0f;
+  transition: background 0.2s ease;
+}
+
+.section-header:hover {
+  background: #1a1a1a;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #00ff00;
+}
+
+.section-number {
+  font-size: 1rem;
+  min-width: 2rem;
+}
+
+.chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #666;
+  transition: transform 0.3s ease;
+}
+
+.chevron.expanded {
+  transform: rotate(90deg);
+}
+
+.section-content {
+  padding: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Credit Grades */
+.credit-grades {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.grade {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.grade-a {
+  background: #10b981;
+  color: #000;
+}
+
+.grade-b {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.grade-c {
+  background: #f59e0b;
+  color: #000;
+}
+
+.grade-d {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* Decay Stats */
+.decay-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.decay-stats span {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+/* Efficiency Stats */
+.efficiency-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.efficiency-stats span {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+.overexposed {
+  color: #ef4444 !important;
+  font-weight: bold;
+}
+
+/* Funnel Ratios */
+.funnel-ratios {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.funnel-ratios span {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+/* AI vs Human Stats */
+.ai-human-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.stat-group {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-group span {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+/* Risk Details */
+.risk-details {
+  margin-bottom: 1rem;
+}
+
+.risk-details p {
+  margin: 0.25rem 0;
+  color: #bbb;
+  font-size: 0.8rem;
+}
+
+.dropper-item,
+.overexertion-item {
+  color: #f59e0b !important;
+  font-family: monospace;
+}
+
+/* View More Button */
+.view-more-btn {
+  background: none;
+  border: 1px solid #333;
+  color: #00ff00;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  transition: all 0.2s ease;
+}
+
+.view-more-btn:hover {
+  border-color: #00ff00;
+  background: rgba(0, 255, 0, 0.1);
+}
+
+/* Error Pages Summary */
+.error-pages-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  border: 1px solid #ef4444;
+  border-radius: 4px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.error-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #ef4444;
+  font-weight: bold;
+}
+
+.error-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.error-stats {
+  display: flex;
+  gap: 2rem;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+/* Action Buttons */
+.risk-dashboard-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.action-btn.primary {
+  background: #00ff00;
+  color: #000;
+  border: 2px solid #00ff00;
+}
+
+.action-btn.primary:hover {
+  background: #00cc00;
+  border-color: #00cc00;
+  transform: translateY(-2px);
+}
+
+.action-btn.secondary {
+  background: transparent;
+  color: #00ff00;
+  border: 2px solid #00ff00;
+}
+
+.action-btn.secondary:hover {
+  background: rgba(0, 255, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .risk-dashboard-container {
+    padding: 1rem;
+  }
+
+  .risk-sections-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .site-info,
+  .site-metrics {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .error-pages-summary {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .risk-dashboard-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .action-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .header-title h1 {
+    font-size: 1.2rem;
+  }
+
+  .section-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .section-number {
+    min-width: auto;
+  }
+}
+
+/* Terminal-like scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Terminal cursor effect */
+@keyframes blink {
+
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.terminal-cursor::after {
+  content: '█';
+  animation: blink 1s infinite;
+  color: #00ff00;
+}
+
+/* Glitch effect for important warnings */
+.glitch {
+  position: relative;
+  animation: glitch 2s infinite;
+}
+
+@keyframes glitch {
+  0% {
+    transform: translate(0);
+  }
+
+  20% {
+    transform: translate(-2px, 2px);
+  }
+
+  40% {
+    transform: translate(-2px, -2px);
+  }
+
+  60% {
+    transform: translate(2px, 2px);
+  }
+
+  80% {
+    transform: translate(2px, -2px);
+  }
+
+  100% {
+    transform: translate(0);
+  }
+}
+
+/* Matrix-style text effect */
+.matrix-text {
+  color: #00ff00;
+  text-shadow: 0 0 5px #00ff00;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+/* Loading Spinner Styles */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #333;
+  border-top: 3px solid #00ff00;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner p {
+  color: #888;
+  font-size: 1rem;
+  margin: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* High contrast mode for accessibility */
+@media (prefers-contrast: high) {
+  .risk-dashboard-container {
+    background: #000;
+    color: #fff;
+  }
+
+  .risk-section {
+    border-color: #fff;
+  }
+
+  .section-header:hover {
+    background: #333;
+  }
+}

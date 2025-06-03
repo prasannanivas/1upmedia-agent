@@ -16,6 +16,7 @@ import {
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
 import { useContentPnL } from "../hooks/useContentPnL";
+import LeakDashboard from "../pages/Dashboard/Dashboard";
 
 const quickLinks = [
   { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
@@ -314,7 +315,7 @@ const HomePage = () => {
           </p>
         </motion.div>
       </motion.section>
-
+      <LeakDashboard />
       {/* Content P&L Snapshot Section */}
       <motion.section
         className="content-pnl-snapshot"
@@ -546,7 +547,6 @@ const HomePage = () => {
           ────────────────────────────────────────────────────────────────────────────
         </div>
       </motion.section>
-
       {/* Hero Section */}
       <motion.section
         className="homepage-hero"
@@ -568,11 +568,11 @@ const HomePage = () => {
           </motion.p>
         </AnimatePresence>
 
-        <h1 className="homepage-hero-title">Welcome to 1UP AI</h1>
+        {/* <h1 className="homepage-hero-title">Welcome to 1UP AI</h1>
         <p className="homepage-hero-subtitle">
           Your AI-powered assistant to streamline content, research, and
           strategy in one place.
-        </p>
+        </p> */}
 
         {/* Quick Links */}
         <motion.section
@@ -695,7 +695,6 @@ const HomePage = () => {
           </div>
         </div>
       </motion.section>
-
       {/* About Video Section */}
       <motion.section
         className="homepage-video-section"
@@ -714,7 +713,6 @@ const HomePage = () => {
           ></iframe>
         </div>
       </motion.section>
-
       {/* Software Overview */}
       <motion.section
         className="homepage-overview"
@@ -727,6 +725,136 @@ const HomePage = () => {
           1UP AI enhances your workflow with seamless automation, smart
           recommendations, and powerful integrations.
         </p>
+      </motion.section>
+      {/* Security & Privacy Section */}
+      <motion.section
+        className="security-privacy-section"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="security-privacy-container">
+          <h2>Security & Privacy</h2>
+          <div className="security-features">
+            <div className="security-item">
+              <CheckCircle size={18} className="security-icon" />
+              <span>OAuth 2.0 read-only connections - no write access</span>
+            </div>
+            <div className="security-item">
+              <CheckCircle size={18} className="security-icon" />
+              <span>Revoke anytime from your dashboard</span>
+            </div>
+            <div className="security-item">
+              <CheckCircle size={18} className="security-icon" />
+              <span>Data encrypted at rest & in transit</span>
+            </div>
+          </div>
+        </div>
+      </motion.section>
+      {/* Content MRI Activation CTA */}
+      <motion.section
+        className="content-mri-cta"
+        initial={{ opacity: 0, scale: 0.95 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="mri-cta-container">
+          <h2 className="mri-cta-title">
+            ► PLUG THE LEAKS — ACTIVATE YOUR CONTENT MRI NOW
+          </h2>
+          <motion.button
+            className="mri-activate-button"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/onboarding")}
+          >
+            Activate Content MRI
+          </motion.button>
+        </div>
+      </motion.section>{" "}
+      {/* Content Ledger OS Description */}
+      <motion.section
+        className="content-ledger-description"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="ledger-description-container">
+          <h2 className="ledger-description-title">
+            CONTENT LEDGER OS — THE CONTENT P&L MRI
+          </h2>
+          <p className="ledger-description-subtitle">
+            "Expose hidden revenue leaks before they bankrupt your content
+            budget."
+          </p>
+        </div>
+      </motion.section>
+      {/* Optional Full MRI Checklist */}
+      <motion.section
+        className="full-mri-checklist"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="checklist-container">
+          <h2 className="checklist-title">
+            OPTIONAL FULL MRI & FULL-SITE AUDIT CHECKLIST (Boost Accuracy)
+          </h2>
+          <div className="checklist-items">
+            <div className="checklist-item">
+              <span className="checkbox">[ ]</span>
+              <span className="item-text">
+                Connect Google Search Console – unlock real click data
+              </span>
+            </div>
+            <div className="checklist-item">
+              <span className="checkbox">[ ]</span>
+              <span className="item-text">
+                Connect GA-4 – map revenue to URLs
+              </span>
+            </div>
+            <div className="checklist-item">
+              <span className="checkbox">[ ]</span>
+              <span className="item-text">
+                Install Attribution Pixel – track view → form conversions
+              </span>
+            </div>
+            <div className="checklist-item">
+              <span className="checkbox">[ ]</span>
+              <span className="item-text">
+                Connect CRM (read-only) – trace to closed deals
+              </span>
+            </div>
+            <div className="checklist-item">
+              <span className="checkbox">[ ]</span>
+              <span className="item-text">
+                Upgrade to Full Audit (∞ URLs) – see complete leak report 💵
+              </span>
+            </div>
+          </div>
+          <div className="checklist-notes">
+            <p className="note-item">
+              ► Expect detected leaks to increase 2–3× after these steps.
+            </p>
+            <p className="note-item">
+              ► Full-site audit starts at $XXX (pricing details).
+            </p>
+          </div>
+        </div>
+      </motion.section>
+      {/* Baseline Data Disclaimer */}
+      <motion.section
+        className="baseline-data-disclaimer"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <div className="disclaimer-container">
+          <p className="disclaimer-text">
+            Baseline uses public data only — real leak is 2–3× larger once
+            Search Console & GA-4 are connected for the full MRI.
+          </p>
+        </div>
       </motion.section>
     </div>
   );

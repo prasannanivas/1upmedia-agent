@@ -19,6 +19,24 @@ const searchRoutes = (query) => {
         "overview summary stats dashboard metrics analytics home main view visualization charts graphs",
     },
     {
+      path: "/riskdashboard",
+      label: "Risk Dashboard",
+      keywords:
+        "risk intelligence content decay cannibalization keyword efficiency credit score strategy ratio psychographic mismatch link dilution inventory bloat time roi ai human performance serp volatility anchor meta risk error pages",
+    },
+    {
+      path: "/strategy-analysis",
+      label: "Strategy Dashboard",
+      keywords:
+        "strategy analysis engine dashboard weight class site strength keyword barrier equity leaks funnel health huta chain match-up playbook compliance journey coverage domain authority performance metrics seo analysis",
+    },
+    {
+      path: "/commandcenter",
+      label: "Command Center",
+      keywords:
+        "command center dashboard overview kpi metrics moody credit score roi recovery funnel coverage psych alignment traffic sparks action center waste decay dilution keyword psych funnel gap tofu mofu bofu",
+    },
+    {
       path: "/notifications",
       label: "Notifications",
       keywords:

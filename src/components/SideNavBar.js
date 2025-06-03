@@ -1,5 +1,5 @@
 // SideNavBar.js
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import DropdownMenu from "./DropdownMenu";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -15,7 +15,14 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 
-import { FiKey, FiEdit, FiDatabase, FiLayout, FiShield } from "react-icons/fi";
+import {
+  FiKey,
+  FiEdit,
+  FiDatabase,
+  FiLayout,
+  FiShield,
+  FiTarget,
+} from "react-icons/fi";
 
 export const agentLinks = [
   { path: "/agents/ideation", label: "Keyword Strategy", icon: FiKey },
@@ -59,10 +66,13 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const { unreadCount } = useNotification();
   const { logout } = useAuth();
   const location = useLocation();
-
   const menuItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
+    { path: "/commandcenter", label: "Command Center", icon: FiSettings },
+    { path: "/strategy-analysis", label: "Strategy Dashboard", icon: FiTarget },
     { path: "/dashboard", label: "Posts", icon: FiFileText },
+    { path: "/riskdashboard", label: "Risk Dashboard", icon: FiShield },
+    { path: "/contentledger", label: "Content Ledger", icon: FiDatabase },
     { path: "/onboarding", label: "Setup", icon: FiBox },
     { path: "/analytics", label: "Analytics", icon: FiActivity },
   ];
