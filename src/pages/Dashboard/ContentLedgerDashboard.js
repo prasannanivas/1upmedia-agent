@@ -29,27 +29,6 @@ const ContentLedgerDashboard = () => {
   const [showDrillDown, setShowDrillDown] = useState(false);
 
   // Check for insufficient data and redirect to keywords step
-  useEffect(() => {
-    const hasMinimalData = () => {
-      // Check if we have the minimum required data
-      const hasSearchConsole =
-        Array.isArray(onboardingData.searchConsoleData) &&
-        onboardingData.searchConsoleData.length > 0;
-      const hasDomain =
-        onboardingData.domain && onboardingData.domain.trim() !== "";
-      const hasKeywords =
-        Array.isArray(onboardingData.keywords) &&
-        onboardingData.keywords.length > 0;
-
-      return hasSearchConsole && hasDomain && hasKeywords;
-    };
-
-    // Only check after loading is complete and onboardingData is available
-    if (!loading && onboardingData && !hasMinimalData()) {
-      // Redirect to keywords step if insufficient data
-      navigate("/onboarding/step-keywords");
-    }
-  }, [onboardingData, loading, navigate]);
 
   // Calculate comprehensive P&L data from onboarding context
   const ledgerData = useMemo(() => {
@@ -75,14 +54,14 @@ const ContentLedgerDashboard = () => {
 
     // Generate comprehensive table rows with 27 diagnostic columns using real data
     const rows = searchConsoleData.slice(0, 50).map((page, index) => {
+      console.log(page);
       // Use real search console data
       const impressions = parseInt(page.impressions) || 0;
       const clicks = parseInt(page.clicks) || 0;
       const position = parseFloat(page.position) || 0;
-      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-
-      // Get real page/query data
-      const pageUrl = page.page || page.keys?.[0] || "";
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0; // Get real page/query data
+      // keys[0] = keyword, keys[1] = actual URL
+      const pageUrl = page.page || page.keys?.[1] || "";
       const query = page.query || page.keys?.[0] || `query-${index + 1}`;
 
       // Calculate revenue estimates based on real data
@@ -819,19 +798,29 @@ const ContentLedgerDashboard = () => {
                   className="ledger-row"
                   onClick={() => handleRowClick(row)}
                 >
+                  {" "}
                   <td className="url-cell">
                     <div className="url-content">
                       <ExternalLink size={12} />
-                      {(() => {
-                        try {
-                          return new URL(row.url).pathname || "/";
-                        } catch (e) {
-                          // If URL is invalid, return the raw URL or extract path
-                          return row.url.startsWith("/")
-                            ? row.url
-                            : `/${row.url}`;
-                        }
-                      })()}
+                      <div className="url-keyword-pair">
+                        <div className="url-path">
+                          {(() => {
+                            try {
+                              const url = decodeURIComponent(row.url);
+                              return new URL(url).pathname || "/";
+                            } catch (e) {
+                              // If URL is invalid, decode and return the raw URL or extract path
+                              const decodedUrl = decodeURIComponent(row.url);
+                              return decodedUrl.startsWith("/")
+                                ? decodedUrl
+                                : `/${decodedUrl}`;
+                            }
+                          })()}
+                        </div>
+                        <div className="keyword-tag">
+                          {row.query || "No keyword"}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="status-cell">
@@ -904,16 +893,19 @@ const ContentLedgerDashboard = () => {
             className="drill-down-content"
             onClick={(e) => e.stopPropagation()}
           >
+            {" "}
             <div className="drill-down-header">
               <h3>
                 Content Deep Dive:{" "}
                 {(() => {
                   try {
-                    return new URL(selectedRow.url).pathname;
+                    const url = decodeURIComponent(selectedRow.url);
+                    return new URL(url).pathname;
                   } catch (e) {
-                    return selectedRow.url.startsWith("/")
-                      ? selectedRow.url
-                      : `/${selectedRow.url}`;
+                    const decodedUrl = decodeURIComponent(selectedRow.url);
+                    return decodedUrl.startsWith("/")
+                      ? decodedUrl
+                      : `/${decodedUrl}`;
                   }
                 })()}
               </h3>
@@ -924,7 +916,6 @@ const ContentLedgerDashboard = () => {
                 ×
               </button>
             </div>
-
             <div className="drill-down-body">
               <div className="drill-down-section">
                 <h4>🎯 Strategic Narrative</h4>
@@ -1008,7 +999,6 @@ const ContentLedgerDashboard = () => {
                 </div>
               </div>
             </div>
-
             <div className="drill-down-footer">
               <button
                 className="action-btn secondary"

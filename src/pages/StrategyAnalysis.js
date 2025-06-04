@@ -16,9 +16,10 @@
  * 6. Playbook Compliance
  * 7. Journey Coverage
  */
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../context/OnboardingContext";
+import { generateRecommendations } from "../utils/recommendationEngine";
 import {
   Target,
   AlertTriangle,
@@ -41,28 +42,98 @@ import "./StrategyAnalysis.css";
 const StrategyAnalysis = () => {
   const { onboardingData, loading } = useOnboarding();
   const navigate = useNavigate();
+  const [recommendations, setRecommendations] = useState({});
 
   // Mouse tracking for interactive background effect
 
-  // Redirect if insufficient data
+  // Generate recommendations based on calculated metrics
   useEffect(() => {
-    const hasMinimalData = () => {
-      const hasSearchConsole =
-        Array.isArray(onboardingData.searchConsoleData) &&
-        onboardingData.searchConsoleData.length > 0;
-      const hasDomain =
-        onboardingData.domain && onboardingData.domain.trim() !== "";
-      const hasKeywords =
-        Array.isArray(onboardingData.keywords) &&
-        onboardingData.keywords.length > 0;
+    if (!onboardingData || loading) return;
 
-      return hasSearchConsole && hasDomain && hasKeywords;
+    const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
+      ? onboardingData.searchConsoleData
+      : [];
+    const keywords = Array.isArray(onboardingData.keywords)
+      ? onboardingData.keywords
+      : [];
+
+    if (searchConsoleData.length === 0) return;
+
+    // Calculate basic metrics for recommendation generation
+    const domainAuthority =
+      parseInt(onboardingData.initialAnalysisState?.domainAuthority) ||
+      parseInt(onboardingData.domain_authority) ||
+      50; // Default fallback
+
+    const avgKeywordDifficulty =
+      keywords.length > 0
+        ? keywords.reduce((sum, kw) => sum + parseInt(kw.difficulty || 0), 0) /
+          keywords.length
+        : 0;
+
+    const efficiencyRatio =
+      domainAuthority > 0 ? avgKeywordDifficulty / domainAuthority : 0;
+
+    // Prepare audit data for recommendations
+    const auditData = {
+      domain_authority: domainAuthority,
+      avg_kd: Math.round(avgKeywordDifficulty),
+      efficiency_ratio: Math.round(efficiencyRatio * 100) / 100,
+      total_keywords: keywords.length,
+      total_pages: searchConsoleData.length,
+      kd_threshold_high: domainAuthority + 20,
+      kd_lower: Math.max(10, domainAuthority - 25),
+      kd_upper: Math.max(20, domainAuthority - 10),
+      n_new_kw: 10,
+      n_backlinks: Math.ceil((domainAuthority + 20 - domainAuthority) / 5),
+      backlink_da: domainAuthority + 10,
+      cannibal_urls: Math.floor(searchConsoleData.length * 0.1), // Estimated
+      dilution_pct: Math.floor(Math.random() * 20) + 5, // Placeholder
+      topic: "main topic", // Placeholder
+      n_tofu_posts: Math.ceil(5 + Math.random() * 5),
+      repurpose_count: Math.ceil(2 + Math.random() * 3),
+      new_awareness: Math.ceil(3 + Math.random() * 4),
+      headline_count: 5,
+      n_priority_kw: Math.min(keywords.length, 10),
+      kd_priority_max: domainAuthority - 5,
+      kd_ad_pause: domainAuthority + 15,
+      // Add other metrics as needed
+      hook_score: 50 + Math.random() * 40, // Placeholder scores
+      understand_score: 50 + Math.random() * 40,
+      trust_score: 50 + Math.random() * 40,
+      act_score: 50 + Math.random() * 40,
+      retention_coverage: 30 + Math.random() * 40,
+      advocacy_coverage: 10 + Math.random() * 30,
+      tofu_pct: 45 + Math.random() * 20,
+      bofu_pct: 10 + Math.random() * 20,
+      mofu_pct: 25 + Math.random() * 15,
+      awareness_pct: 15 + Math.random() * 15,
+      decision_pct: 8 + Math.random() * 10,
+      advocacy_pct: 1 + Math.random() * 3,
     };
 
-    if (!loading && onboardingData && !hasMinimalData()) {
-      navigate("/onboarding/step-keywords");
-    }
-  }, [onboardingData, loading, navigate]);
+    // Generate recommendations for all panels
+    const newRecommendations = {};
+    const panelKeys = [
+      "1_site_strength_vs_keyword_barrier",
+      "2_equity_leaks",
+      "3_funnel_mix_health",
+      "4_hook_understand_trust_act_chain",
+      "5_matchup_analysis",
+      "6_playbook_compliance",
+      "7_journey_coverage",
+    ];
+
+    panelKeys.forEach((panelKey) => {
+      newRecommendations[panelKey] = generateRecommendations(
+        panelKey,
+        auditData,
+        3
+      );
+    });
+
+    setRecommendations(newRecommendations);
+  }, [onboardingData, loading]);
 
   // Calculate strategy engine metrics
   const strategyData = useMemo(() => {
@@ -77,11 +148,12 @@ const StrategyAnalysis = () => {
 
     if (searchConsoleData.length === 0) {
       return { isBlind: true };
-    } // Get domain authority for weight class determination - use multiple sources
+    }
+
+    // Enhanced domain authority calculation with multiple sources
     const domainAuthority =
       parseInt(onboardingData.initialAnalysisState?.domainAuthority) ||
       parseInt(onboardingData.domain_authority) ||
-      // Calculate estimated DA based on site performance if none available
       Math.min(
         Math.max(
           Math.floor(
@@ -98,30 +170,55 @@ const StrategyAnalysis = () => {
         85
       );
 
-    // Get additional authority metrics for enhanced analysis
+    // Enhanced authority metrics
     const pageAuthority =
       parseInt(onboardingData.initialAnalysisState?.pageAuthority) ||
       parseInt(onboardingData.page_authority) ||
       Math.floor(domainAuthority * 0.8);
     const trustFlow =
-      parseInt(onboardingData.initialAnalysisState?.trustFlow) || 0;
+      parseInt(onboardingData.initialAnalysisState?.trustFlow) ||
+      Math.floor(domainAuthority * 0.6);
     const citationFlow =
-      parseInt(onboardingData.initialAnalysisState?.citationFlow) || 0;
+      parseInt(onboardingData.initialAnalysisState?.citationFlow) ||
+      Math.floor(domainAuthority * 0.7);
 
-    // Determine weight class
-    let weightClass, targetDifficulty, classColor;
+    // Calculate keyword difficulty average with enhanced fallbacks
+    const avgKeywordDifficulty =
+      keywords.length > 0
+        ? keywords.reduce((sum, kw) => {
+            const difficulty =
+              parseInt(kw.difficulty) ||
+              parseInt(kw.kd) ||
+              parseInt(kw.keywordDifficulty) ||
+              Math.min(
+                Math.max(
+                  (parseInt(kw.searchVolume) || 100) / 100 +
+                    (parseFloat(kw.competition) || 0.5) * 50,
+                  10
+                ),
+                80
+              );
+            return sum + difficulty;
+          }, 0) / keywords.length
+        : 30;
+
+    // Weight class determination with efficiency ratio
+    let weightClass, targetDifficulty, classColor, efficiencyRatio;
+    const deltaAboveClass = Math.max(0, avgKeywordDifficulty - domainAuthority);
+    efficiencyRatio = domainAuthority / Math.max(avgKeywordDifficulty, 1);
+
     if (domainAuthority >= 60) {
       weightClass = "Heavyweight";
       targetDifficulty = "60+ Difficulty";
-      classColor = "#10B981"; // Green
+      classColor = "#10B981";
     } else if (domainAuthority >= 30) {
       weightClass = "Middleweight";
       targetDifficulty = "30-59 Difficulty";
-      classColor = "#F59E0B"; // Yellow
+      classColor = "#F59E0B";
     } else {
       weightClass = "Lightweight";
       targetDifficulty = "<30 Difficulty";
-      classColor = "#EF4444"; // Red
+      classColor = "#EF4444";
     }
 
     // Calculate total metrics
@@ -137,14 +234,16 @@ const StrategyAnalysis = () => {
       searchConsoleData.reduce(
         (sum, page) => sum + (parseFloat(page.position) || 0),
         0
-      ) / searchConsoleData.length; // 1. Site Strength vs Keyword Barrier Analysis - Enhanced with real keyword data
-    const keywordMismatch = keywords.filter((kw) => {
-      // Use actual keyword difficulty from data, with intelligent fallback
+      ) / searchConsoleData.length;
+    const avgCTR =
+      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+
+    // 1. Enhanced Site Strength vs Keyword Barrier Analysis
+    const mismatchedKeywords = keywords.filter((kw) => {
       const difficulty =
         parseInt(kw.difficulty) ||
         parseInt(kw.kd) ||
         parseInt(kw.keywordDifficulty) ||
-        // Estimate difficulty based on search volume and competition
         Math.min(
           Math.max(
             (parseInt(kw.searchVolume) || 100) / 100 +
@@ -154,28 +253,77 @@ const StrategyAnalysis = () => {
           80
         );
 
-      if (domainAuthority >= 60) return difficulty < 30; // Heavyweight targeting too easy
-      if (domainAuthority >= 30) return difficulty > 59 || difficulty < 15; // Middleweight out of range
-      return difficulty > 40; // Lightweight targeting too hard
-    }).length;
+      if (domainAuthority >= 60) return difficulty < 30 || difficulty > 90;
+      if (domainAuthority >= 30) return difficulty > 59 || difficulty < 15;
+      return difficulty > 40;
+    });
 
     const mismatchPercentage =
-      keywords.length > 0 ? (keywordMismatch / keywords.length) * 100 : 0;
+      keywords.length > 0
+        ? (mismatchedKeywords.length / keywords.length) * 100
+        : 0;
 
-    // 2. Equity Leaks (pages losing ranking positions)
-    const equityLeaks = searchConsoleData.filter(
-      (page) => parseFloat(page.position) > 20
+    const quickWinKeywords = keywords.filter((kw) => {
+      const difficulty =
+        parseInt(kw.difficulty) ||
+        parseInt(kw.kd) ||
+        parseInt(kw.keywordDifficulty) ||
+        Math.min(
+          Math.max(
+            (parseInt(kw.searchVolume) || 100) / 100 +
+              (parseFloat(kw.competition) || 0.5) * 50,
+            10
+          ),
+          80
+        );
+      return (
+        difficulty <= domainAuthority - 10 && difficulty >= domainAuthority - 25
+      );
+    });
+
+    // 2. Enhanced Equity Leaks Analysis
+    const cannibalizationPages = searchConsoleData.filter((page, index) => {
+      const query = (page.query || "").toLowerCase();
+      return searchConsoleData.some((otherPage, otherIndex) => {
+        if (index >= otherIndex) return false;
+        const otherQuery = (otherPage.query || "").toLowerCase();
+        return (
+          query.length > 3 &&
+          otherQuery.length > 3 &&
+          (query.includes(otherQuery) || otherQuery.includes(query))
+        );
+      });
+    });
+
+    const orphanPages = searchConsoleData.filter(
+      (page) =>
+        parseFloat(page.position) > 50 && parseInt(page.impressions) < 10
     );
-    const leakPercentage =
-      (equityLeaks.length / searchConsoleData.length) * 100;
 
-    // 3. Funnel Mix Health
+    const cannibalizationPercentage =
+      searchConsoleData.length > 0
+        ? (cannibalizationPages.length / searchConsoleData.length) * 100
+        : 0;
+
+    const dilutionPercentage =
+      searchConsoleData.length > 0
+        ? (orphanPages.length / searchConsoleData.length) * 100
+        : 0;
+
+    // Estimate lost equity value
+    const lostEquityValue = Math.floor(
+      (cannibalizationPages.length * 1200 + orphanPages.length * 800) *
+        (totalClicks / Math.max(searchConsoleData.length, 1))
+    );
+
+    // 3. Enhanced Funnel Mix Health
     const funnelData = onboardingData.funnelAnalysis?.funnelDistribution || {
-      ToF: 0,
-      MoF: 0,
-      BoF: 0,
+      ToF: Math.floor(searchConsoleData.length * 0.38),
+      MoF: Math.floor(searchConsoleData.length * 0.27),
+      BoF: Math.floor(searchConsoleData.length * 0.35),
       Unknown: 0,
     };
+
     const totalFunnelPages =
       funnelData.ToF + funnelData.MoF + funnelData.BoF + funnelData.Unknown;
     const tofPercentage =
@@ -185,71 +333,87 @@ const StrategyAnalysis = () => {
     const bofPercentage =
       totalFunnelPages > 0 ? (funnelData.BoF / totalFunnelPages) * 100 : 0;
 
-    // Ideal funnel distribution: 60% ToF, 30% MoF, 10% BoF
+    // Ideal distribution: 55% ToF, 30% MoF, 15% BoF
+    const idealToF = 55,
+      idealMoF = 30,
+      idealBoF = 15;
     const funnelHealthScore =
       100 -
-      Math.abs(tofPercentage - 60) -
-      Math.abs(mofPercentage - 30) -
-      Math.abs(bofPercentage - 10); // 4. HUTA Chain Analysis (Hook→Understand→Trust→Act) - Enhanced with multiple trust signals
-    const avgCTR =
-      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+      Math.abs(tofPercentage - idealToF) -
+      Math.abs(mofPercentage - idealMoF) -
+      Math.abs(bofPercentage - idealBoF);
 
-    // Hook: Based on CTR performance and title optimization
+    const funnelImbalance = {
+      tofGap: idealToF - tofPercentage,
+      mofGap: idealMoF - mofPercentage,
+      bofGap: idealBoF - bofPercentage,
+    };
+
+    // 4. Enhanced HUTA Chain Analysis
     const hookScore = Math.min(
       100,
-      avgCTR * 20 +
+      avgCTR * 15 +
         (searchConsoleData.filter((page) => parseFloat(page.ctr || 0) > 5)
+          .length /
+          Math.max(searchConsoleData.length, 1)) *
+          40 +
+        (keywords.filter(
+          (kw) =>
+            (kw.query || kw.keyword || "").toLowerCase().includes("how") ||
+            (kw.query || kw.keyword || "").toLowerCase().includes("best")
+        ).length /
+          Math.max(keywords.length, 1)) *
+          20
+    );
+
+    const understandScore = Math.min(
+      100,
+      Math.max(0, 100 - avgPosition * 3) * 0.7 +
+        (searchConsoleData.filter((page) => parseFloat(page.position) <= 5)
           .length /
           Math.max(searchConsoleData.length, 1)) *
           30
     );
 
-    // Understand: Based on position and user engagement signals
-    const understandScore =
-      Math.max(0, 100 - avgPosition * 2) +
-      (searchConsoleData.filter((page) => parseFloat(page.position) <= 3)
-        .length /
-        Math.max(searchConsoleData.length, 1)) *
-        20;
-
-    // Trust: Multi-factor trust score including DA, PA, TF, CF
     const trustScore = Math.min(
       100,
-      domainAuthority * 0.4 +
-        pageAuthority * 0.3 +
-        trustFlow * 0.15 +
-        citationFlow * 0.15 +
-        // Add author credibility if available
-        (onboardingData.authors?.filter(
-          (author) =>
-            !author.name?.toLowerCase().includes("ai") &&
-            !author.name?.toLowerCase().includes("bot")
-        ).length || 0) *
-          5
-    );
-
-    // Act: Based on conversion-oriented content and bottom-funnel performance
-    const actScore = Math.min(
-      100,
-      (funnelData.BoF / Math.max(totalFunnelPages, 1)) * 100 + // BoF content ratio
+      domainAuthority * 0.35 +
+        pageAuthority * 0.25 +
+        trustFlow * 0.2 +
+        citationFlow * 0.2 +
         (searchConsoleData.filter(
           (page) =>
-            page.query?.toLowerCase().includes("buy") ||
-            page.query?.toLowerCase().includes("price") ||
-            page.query?.toLowerCase().includes("review")
+            (page.page || "").includes("about") ||
+            (page.page || "").includes("testimonial") ||
+            (page.page || "").includes("review")
         ).length /
           Math.max(searchConsoleData.length, 1)) *
-          50 + // Commercial intent queries
-        Math.min(
-          (parseFloat(onboardingData.domainCostDetails?.averageOrderValue) ||
-            0) / 100,
-          30
-        ) // AOV indicator
+          20
     );
 
-    const hutaScore = (hookScore + understandScore + trustScore + actScore) / 4; // 5. Match-up Analysis (keyword targeting efficiency) - Enhanced with real keyword data
+    const actScore = Math.min(
+      100,
+      (funnelData.BoF / Math.max(totalFunnelPages, 1)) * 60 +
+        (searchConsoleData.filter((page) => {
+          const query = (page.query || "").toLowerCase();
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            query.includes("buy") ||
+            query.includes("price") ||
+            query.includes("cost") ||
+            pageUrl.includes("pricing") ||
+            pageUrl.includes("buy") ||
+            pageUrl.includes("checkout")
+          );
+        }).length /
+          Math.max(searchConsoleData.length, 1)) *
+          40
+    );
+
+    const hutaScore = (hookScore + understandScore + trustScore + actScore) / 4;
+
+    // 5. Enhanced Match-up Analysis with detailed breakdown
     const wellTargetedKeywords = keywords.filter((kw) => {
-      // Use same enhanced difficulty calculation as above
       const difficulty =
         parseInt(kw.difficulty) ||
         parseInt(kw.kd) ||
@@ -263,72 +427,182 @@ const StrategyAnalysis = () => {
           80
         );
 
-      if (domainAuthority >= 60) return difficulty >= 40;
-      if (domainAuthority >= 30) return difficulty >= 20 && difficulty <= 50;
-      return difficulty <= 30;
-    }).length;
+      if (domainAuthority >= 60) return difficulty >= 40 && difficulty <= 85;
+      if (domainAuthority >= 30) return difficulty >= 20 && difficulty <= 55;
+      return difficulty <= 35;
+    });
 
     const matchupScore =
-      keywords.length > 0 ? (wellTargetedKeywords / keywords.length) * 100 : 0; // 6. Playbook Compliance (content strategy adherence) - Enhanced with real content analysis
+      keywords.length > 0
+        ? (wellTargetedKeywords.length / keywords.length) * 100
+        : 0;
+
+    // 6. Enhanced Playbook Compliance with framework coverage
     const contentStrategies =
       onboardingData.suggestionsFromAi?.content_strategies || [];
     const topicClusters =
       onboardingData.suggestionsFromAi?.topic_clusters || [];
-    const contentTypes = onboardingData.suggestionsFromAi?.content_types || [];
 
-    // Calculate compliance based on actual implementation vs suggestions
-    const strategyCoverage =
-      contentStrategies.length > 0
-        ? Math.min(
-            100,
-            (funnelData.totalAnalyzed / contentStrategies.length) * 20
-          )
-        : 0;
-    const clusterCoverage =
-      topicClusters.length > 0
-        ? Math.min(
-            100,
-            (searchConsoleData.filter((page) =>
-              topicClusters.some(
-                (cluster) =>
-                  page.query?.toLowerCase().includes(cluster.toLowerCase()) ||
-                  page.page?.toLowerCase().includes(cluster.toLowerCase())
-              )
-            ).length /
-              topicClusters.length) *
-              50
-          )
-        : 0;
+    // Framework coverage analysis
+    const frameworkCoverage = {
+      awareness: {
+        coverage: Math.min(
+          167,
+          (funnelData.ToF / Math.max(totalFunnelPages * 0.55, 1)) * 100
+        ),
+        frameworks: ["AIDA", "RACE", "AARRR", "Cialdini"],
+        met: ["AIDA", "RACE", "AARRR", "Cialdini"],
+      },
+      consideration: {
+        coverage: Math.min(
+          140,
+          (funnelData.MoF / Math.max(totalFunnelPages * 0.3, 1)) * 100
+        ),
+        frameworks: ["AIDA", "RACE", "Cialdini"],
+        met: ["AIDA", "RACE", "Cialdini"],
+      },
+      decision: {
+        coverage: Math.min(
+          100,
+          (funnelData.BoF / Math.max(totalFunnelPages * 0.15, 1)) * 100
+        ),
+        frameworks: ["AARRR", "ADA", "RACE", "Cialdini"],
+        met:
+          funnelData.BoF > 0
+            ? ["AARRR", "ADA", "RACE", "Cialdini"]
+            : ["AARRR", "RACE"],
+      },
+      retention: {
+        coverage: Math.min(
+          100,
+          (searchConsoleData.filter(
+            (page) =>
+              (page.page || "").includes("account") ||
+              (page.page || "").includes("dashboard") ||
+              (page.page || "").includes("support")
+          ).length /
+            Math.max(searchConsoleData.length * 0.1, 1)) *
+            100
+        ),
+        frameworks: ["AARRR"],
+        met: [],
+      },
+      advocacy: {
+        coverage: Math.min(
+          100,
+          (searchConsoleData.filter(
+            (page) =>
+              (page.page || "").includes("referral") ||
+              (page.page || "").includes("testimonial") ||
+              (page.page || "").includes("case-study")
+          ).length /
+            Math.max(searchConsoleData.length * 0.05, 1)) *
+            100
+        ),
+        frameworks: ["Cialdini"],
+        met: [],
+      },
+    };
 
-    const complianceScore = Math.min(
-      100,
-      strategyCoverage * 0.4 +
-        clusterCoverage * 0.4 +
-        contentTypes.length * 5 + // Diversity bonus
-        (onboardingData.authors?.length || 0) * 2 // Team structure bonus
-    ); // 7. Journey Coverage (search intent coverage) - Enhanced with intent analysis
+    const overallComplianceScore =
+      Object.values(frameworkCoverage).reduce(
+        (sum, stage) => sum + Math.min(stage.coverage, 100),
+        0
+      ) / 5;
+
+    // 7. Enhanced Journey Coverage with detailed distribution
+    const journeyStages = {
+      awareness: {
+        pages: searchConsoleData.filter((page) => {
+          const query = (page.query || "").toLowerCase();
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            query.includes("what") ||
+            query.includes("how") ||
+            query.includes("guide") ||
+            pageUrl.includes("blog") ||
+            pageUrl.includes("guide") ||
+            pageUrl.includes("what")
+          );
+        }),
+        ideal: 0.218,
+        color: "#3B82F6",
+      },
+      consideration: {
+        pages: searchConsoleData.filter((page) => {
+          const query = (page.query || "").toLowerCase();
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            query.includes("vs") ||
+            query.includes("compare") ||
+            query.includes("best") ||
+            query.includes("review") ||
+            pageUrl.includes("compare") ||
+            pageUrl.includes("vs")
+          );
+        }),
+        ideal: 0.455,
+        color: "#8B5CF6",
+      },
+      decision: {
+        pages: searchConsoleData.filter((page) => {
+          const query = (page.query || "").toLowerCase();
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            query.includes("price") ||
+            query.includes("cost") ||
+            query.includes("buy") ||
+            pageUrl.includes("pricing") ||
+            pageUrl.includes("plans") ||
+            pageUrl.includes("buy")
+          );
+        }),
+        ideal: 0.127,
+        color: "#10B981",
+      },
+      retention: {
+        pages: searchConsoleData.filter((page) => {
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            pageUrl.includes("help") ||
+            pageUrl.includes("support") ||
+            pageUrl.includes("faq") ||
+            pageUrl.includes("tutorial") ||
+            pageUrl.includes("docs") ||
+            pageUrl.includes("account")
+          );
+        }),
+        ideal: 0.182,
+        color: "#F59E0B",
+      },
+      advocacy: {
+        pages: searchConsoleData.filter((page) => {
+          const pageUrl = (page.page || "").toLowerCase();
+          return (
+            pageUrl.includes("testimonial") ||
+            pageUrl.includes("case") ||
+            pageUrl.includes("success") ||
+            pageUrl.includes("referral")
+          );
+        }),
+        ideal: 0.018,
+        color: "#EF4444",
+      },
+    };
+
+    // Calculate actual percentages
+    Object.keys(journeyStages).forEach((stage) => {
+      journeyStages[stage].actual =
+        journeyStages[stage].pages.length / searchConsoleData.length;
+      journeyStages[stage].percentage = journeyStages[stage].actual * 100;
+    });
+
     const journeyCoverage = Math.min(
       100,
-      // Page coverage weighted by funnel distribution
-      (searchConsoleData.length / Math.max(keywords.length, 10)) * 30 +
-        // Click engagement performance
-        avgCTR * 8 +
-        // Search visibility across positions
-        Math.max(0, 100 - avgPosition * 2.5) * 0.4 +
-        // Intent coverage based on query analysis
-        (searchConsoleData.filter((page) => {
-          const query = (page.query || "").toLowerCase();
-          return (
-            query.includes("how") ||
-            query.includes("what") ||
-            query.includes("best") ||
-            query.includes("vs") ||
-            query.includes("buy") ||
-            query.includes("price")
-          );
-        }).length /
-          Math.max(searchConsoleData.length, 1)) *
-          30
+      Object.values(journeyStages).reduce(
+        (sum, stage) => sum + Math.min(stage.actual / stage.ideal, 1) * 20,
+        0
+      )
     );
     return {
       isBlind: false,
@@ -339,11 +613,22 @@ const StrategyAnalysis = () => {
       weightClass,
       targetDifficulty,
       classColor,
+      avgKeywordDifficulty: Math.round(avgKeywordDifficulty),
+      efficiencyRatio: Math.round(efficiencyRatio * 100) / 100,
+      deltaAboveClass: Math.round(deltaAboveClass),
       totalImpressions,
       totalClicks,
       avgPosition,
       avgCTR,
-      // Additional performance indicators
+      // Enhanced metrics
+      cannibalizationPercentage: Math.round(cannibalizationPercentage),
+      dilutionPercentage: Math.round(dilutionPercentage),
+      lostEquityValue,
+      funnelImbalance,
+      overallComplianceScore: Math.round(overallComplianceScore),
+      quickWinKeywords: quickWinKeywords.slice(0, 10), // Top 10 quick wins
+      frameworkCoverage,
+      journeyStages,
       topPerformingPages: searchConsoleData.filter(
         (page) => parseFloat(page.position) <= 5
       ).length,
@@ -363,37 +648,88 @@ const StrategyAnalysis = () => {
       sections: {
         siteStrength: {
           mismatchPercentage: Math.round(mismatchPercentage),
-          wellTargeted: wellTargetedKeywords,
+          wellTargeted: wellTargetedKeywords.length,
           totalKeywords: keywords.length,
+          mismatchedCount: mismatchedKeywords.length,
+          quickWinCount: quickWinKeywords.length,
           recommendation:
             mismatchPercentage > 50
-              ? "Critical: Realign keyword targeting"
+              ? `Critical: Realign keyword targeting (${mismatchedKeywords.length} mismatched)`
               : mismatchPercentage > 25
-              ? "Warning: Review keyword strategy"
+              ? `Warning: Review keyword strategy (${mismatchedKeywords.length} mismatched)`
               : "Good: Keywords match site strength",
+          quickWins: recommendations["1_site_strength_vs_keyword_barrier"] || [
+            `Drop KD > ${domainAuthority + 20} targets for next sprint`,
+            `Secure ${Math.ceil(deltaAboveClass / 5)} DA ${
+              domainAuthority + 10
+            }+ backlinks`,
+            `Prioritize ${quickWinKeywords.length} quick-win keywords (KD ${
+              domainAuthority - 25
+            }-${domainAuthority - 10})`,
+          ],
         },
         equityLeaks: {
-          leakPercentage: Math.round(leakPercentage),
-          leakingPages: equityLeaks.length,
+          cannibalizationPercentage: Math.round(cannibalizationPercentage),
+          dilutionPercentage: Math.round(dilutionPercentage),
+          cannibalizationPages: cannibalizationPages.length,
+          orphanPages: orphanPages.length,
           totalPages: searchConsoleData.length,
+          lostEquityValue,
           recommendation:
-            leakPercentage > 60
-              ? "Critical: Major equity leaks detected"
-              : leakPercentage > 30
-              ? "Warning: Moderate equity leaks"
+            cannibalizationPercentage > 15 || dilutionPercentage > 20
+              ? `Critical: Major equity leaks detected ($${lostEquityValue.toLocaleString()} lost)`
+              : cannibalizationPercentage > 8 || dilutionPercentage > 12
+              ? `Warning: Moderate equity leaks ($${lostEquityValue.toLocaleString()} lost)`
               : "Good: Minimal equity leaks",
+          quickWins: recommendations["2_equity_leaks"] || [
+            `Merge ${Math.min(
+              cannibalizationPages.length,
+              5
+            )} overlapping posts`,
+            `Redirect ${Math.min(
+              orphanPages.length,
+              8
+            )} orphan pages into core hubs`,
+            `Standardize internal-link anchor text on BOFU pages`,
+          ],
         },
         funnelHealth: {
           tofPercentage: Math.round(tofPercentage),
           mofPercentage: Math.round(mofPercentage),
           bofPercentage: Math.round(bofPercentage),
           healthScore: Math.round(funnelHealthScore),
+          tofGap: Math.round(funnelImbalance.tofGap),
+          mofGap: Math.round(funnelImbalance.mofGap),
+          bofGap: Math.round(funnelImbalance.bofGap),
+          isBalanced:
+            Math.abs(funnelImbalance.tofGap) < 10 &&
+            Math.abs(funnelImbalance.mofGap) < 10 &&
+            Math.abs(funnelImbalance.bofGap) < 10,
           recommendation:
             funnelHealthScore < 50
-              ? "Critical: Funnel distribution imbalanced"
+              ? `Critical: Funnel distribution imbalanced (ToF ${
+                  funnelImbalance.tofGap > 0 ? "+" : ""
+                }${Math.round(funnelImbalance.tofGap)}%, BoF ${
+                  funnelImbalance.bofGap > 0 ? "+" : ""
+                }${Math.round(funnelImbalance.bofGap)}%)`
               : funnelHealthScore < 75
               ? "Warning: Funnel needs optimization"
               : "Good: Healthy funnel distribution",
+          quickWins:
+            recommendations["3_funnel_mix_health"] ||
+            [
+              funnelImbalance.tofGap > 5
+                ? `Publish ${Math.ceil(
+                    funnelImbalance.tofGap / 5
+                  )} TOFU primers targeting KD < 40`
+                : "",
+              funnelImbalance.bofGap < -10
+                ? `Convert ${Math.ceil(
+                    Math.abs(funnelImbalance.bofGap) / 5
+                  )} BOFU guides into MOFU comparisons`
+                : "",
+              `Add 3 trust-signals onto high-traffic BOFU pages`,
+            ].filter(Boolean),
         },
         hutaChain: {
           score: Math.round(hutaScore),
@@ -401,53 +737,124 @@ const StrategyAnalysis = () => {
           understandScore: Math.round(understandScore),
           trustScore: Math.round(trustScore),
           actScore: Math.round(actScore),
+          weakestLink:
+            Math.min(hookScore, understandScore, trustScore, actScore) ===
+            hookScore
+              ? "Hook"
+              : Math.min(hookScore, understandScore, trustScore, actScore) ===
+                understandScore
+              ? "Understand"
+              : Math.min(hookScore, understandScore, trustScore, actScore) ===
+                trustScore
+              ? "Trust"
+              : "Act",
           recommendation:
             hutaScore < 40
               ? "Critical: HUTA chain broken"
               : hutaScore < 65
               ? "Warning: HUTA chain needs work"
               : "Good: Strong HUTA performance",
+          quickWins:
+            recommendations["4_hook_understand_trust_act_chain"] ||
+            [
+              hookScore < 60
+                ? `Rewrite ${Math.ceil(
+                    (60 - hookScore) / 8
+                  )} hero headlines with story-led phrasing (Hook +8 pts)`
+                : "",
+              understandScore < 60
+                ? `Add icon + benefit bullets above folds (Clarity +6 pts)`
+                : "",
+              trustScore < 60
+                ? `Insert ${Math.ceil(
+                    (60 - trustScore) / 5
+                  )} third-party reviews on pricing page (Trust +5 pts)`
+                : "",
+              actScore < 60 ? `Single, vivid CTA on /pricing (Act +8 pts)` : "",
+            ].filter(Boolean),
         },
         matchup: {
           score: Math.round(matchupScore),
-          wellTargeted: wellTargetedKeywords,
+          wellTargeted: wellTargetedKeywords.length,
           totalKeywords: keywords.length,
+          efficiencyRatio: Math.round(efficiencyRatio * 100) / 100,
+          ratioStatus:
+            efficiencyRatio >= 1.0
+              ? "Green"
+              : efficiencyRatio >= 0.75
+              ? "Amber"
+              : "Red",
           recommendation:
             matchupScore < 40
-              ? "Critical: Poor keyword match-up"
+              ? `Critical: Poor keyword match-up (Efficiency Ratio ${efficiencyRatio})`
               : matchupScore < 70
-              ? "Warning: Improve keyword targeting"
+              ? `Warning: Improve keyword targeting (Efficiency Ratio ${efficiencyRatio})`
               : "Good: Strong keyword alignment",
+          quickWins: recommendations["5_matchup_analysis"] || [
+            `Prioritize ${Math.min(
+              wellTargetedKeywords.length,
+              10
+            )} keywords KD < ${domainAuthority - 5}`,
+            `Pause ads on KD > ${domainAuthority + 15} terms`,
+            `Re-cluster mid-KD terms into supporting content`,
+          ],
         },
         playbook: {
-          score: Math.round(complianceScore),
+          score: Math.round(overallComplianceScore),
           strategies: contentStrategies.length,
           clusters: topicClusters.length,
-          contentTypes: contentTypes.length,
-          strategyCoverage: Math.round(strategyCoverage),
-          clusterCoverage: Math.round(clusterCoverage),
+          frameworkCoverage,
           recommendation:
-            complianceScore < 40
+            overallComplianceScore < 40
               ? "Critical: Develop content playbook"
-              : complianceScore < 70
+              : overallComplianceScore < 70
               ? "Warning: Expand content strategy"
               : "Good: Strong playbook compliance",
+          quickWins:
+            recommendations["6_playbook_compliance"] ||
+            [
+              frameworkCoverage.retention.coverage < 50
+                ? `Add "Engage" emails to MOFU (RACE gap)`
+                : "",
+              frameworkCoverage.decision.met.length < 3
+                ? `Embed authority proof on BOFU pages (Cialdini gap)`
+                : "",
+              frameworkCoverage.advocacy.coverage < 30
+                ? `Launch loyalty perks email (Retention, AARRR)`
+                : "",
+            ].filter(Boolean),
         },
         journey: {
           score: Math.round(journeyCoverage),
           pageCount: searchConsoleData.length,
           engagement: Math.round(avgCTR),
           visibility: Math.round(Math.max(0, 100 - avgPosition * 3)),
+          stages: journeyStages,
           recommendation:
             journeyCoverage < 40
               ? "Critical: Poor journey coverage"
               : journeyCoverage < 65
               ? "Warning: Expand journey mapping"
               : "Good: Comprehensive journey coverage",
+          quickWins:
+            recommendations["7_journey_coverage"] ||
+            [
+              journeyStages.awareness.percentage < 20
+                ? `Repurpose ${Math.ceil(
+                    (22 - journeyStages.awareness.percentage) / 2
+                  )} Consideration posts into Awareness guides`
+                : "",
+              journeyStages.decision.percentage < 12
+                ? `Deploy Decision-phase ROI calculator widget`
+                : "",
+              journeyStages.advocacy.percentage < 2
+                ? `Replace low-performing Advocacy post with customer video testimonial`
+                : "",
+            ].filter(Boolean),
         },
       },
     };
-  }, [onboardingData, loading]);
+  }, [onboardingData, loading, recommendations]);
 
   if (loading) {
     return (

@@ -317,7 +317,7 @@ const HomePage = () => {
       </motion.section>
       <LeakDashboard />
       {/* Content P&L Snapshot Section */}
-      <motion.section
+      {/* <motion.section
         className="content-pnl-snapshot"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -546,7 +546,7 @@ const HomePage = () => {
         <div className="pnl-divider">
           ────────────────────────────────────────────────────────────────────────────
         </div>
-      </motion.section>
+      </motion.section> */}
       {/* Hero Section */}
       <motion.section
         className="homepage-hero"
@@ -594,7 +594,7 @@ const HomePage = () => {
         </motion.section>
 
         {/* Progress Section */}
-        <div className="homepage-progress-container">
+        {/* <div className="homepage-progress-container">
           <div className="progress-header">
             <p className="homepage-progress-text">
               <strong>{completionPercentage.total}%</strong> Profile Completed
@@ -693,10 +693,10 @@ const HomePage = () => {
               );
             })}
           </div>
-        </div>
+        </div> */}
       </motion.section>
       {/* About Video Section */}
-      <motion.section
+      {/* <motion.section
         className="homepage-video-section"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -712,9 +712,9 @@ const HomePage = () => {
             allowFullScreen
           ></iframe>
         </div>
-      </motion.section>
+      </motion.section> */}
       {/* Software Overview */}
-      <motion.section
+      {/* <motion.section
         className="homepage-overview"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -725,7 +725,7 @@ const HomePage = () => {
           1UP AI enhances your workflow with seamless automation, smart
           recommendations, and powerful integrations.
         </p>
-      </motion.section>
+      </motion.section> */}
       {/* Security & Privacy Section */}
       <motion.section
         className="security-privacy-section"

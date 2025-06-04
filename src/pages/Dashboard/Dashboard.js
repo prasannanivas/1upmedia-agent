@@ -203,12 +203,12 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        {/* <h1>Content Ledger Dashboard</h1> */}
+      {/* <h1>Content Ledger Dashboard</h1> */}
+      {/* <header className="dashboard-header">
         <p>
           Content strategy insights for {onboardingData.domain || "your domain"}
         </p>
-      </header>
+      </header> */}
 
       <section className="dashboard-main">
         <div className="dashboard-revenue-leaks">
@@ -241,7 +241,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="dashboard-funnel-analysis">
+        {/* <div className="dashboard-funnel-analysis">
           <h2 className="section-title">
             <span className="title-icon">📊</span>
             Content Strategy Ratio
@@ -313,7 +313,7 @@ const Dashboard = () => {
               ${formatNumber(keywordEfficiency.mismatchValue)}
             </div>
           </div>
-        </div>
+        </div> */}
       </section>
 
       <div className="dashboard-actions">

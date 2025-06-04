@@ -69,10 +69,10 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const menuItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/commandcenter", label: "Command Center", icon: FiSettings },
+    { path: "/contentledger", label: "Content Ledger", icon: FiDatabase },
+    { path: "/riskdashboard", label: "Risk Dashboard", icon: FiShield },
     { path: "/strategy-analysis", label: "Strategy Dashboard", icon: FiTarget },
     { path: "/dashboard", label: "Posts", icon: FiFileText },
-    { path: "/riskdashboard", label: "Risk Dashboard", icon: FiShield },
-    { path: "/contentledger", label: "Content Ledger", icon: FiDatabase },
     { path: "/onboarding", label: "Setup", icon: FiBox },
     { path: "/analytics", label: "Analytics", icon: FiActivity },
   ];

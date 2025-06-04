@@ -7,9 +7,9 @@
  * - Uses onboardingData.funnelAnalysis.funnelDistribution for ToF/MoF/BoF data
  * - Uses onboardingData.initialAnalysisState for domain authority metrics
  * - Implements same data validation pattern as ContentLedgerDashboard
- * - Redirects to /onboarding/step-keywords when insufficient data is detected
+ * - Shows "Finish Onboarding" button when insufficient data (no automatic redirect)
  */
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import {
@@ -27,8 +27,15 @@ import "./CommandCenterDashboard.css";
 const CommandCenterDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
   const navigate = useNavigate();
-  // Check for insufficient data and redirect to keywords step
-  useEffect(() => {
+
+  // Conversion rate state (1% to 4.5% range)
+  const [conversionRate, setConversionRate] = useState(2.0); // Default 2%
+
+  // Calculate command center metrics from onboarding data
+  const commandCenterData = useMemo(() => {
+    if (!onboardingData || loading) return { isBlind: true };
+
+    // Check for insufficient data (moved inside useMemo to fix dependency issue)
     const hasMinimalData = () => {
       // Check if we have the minimum required data - consistent with ContentLedgerDashboard
       const hasSearchConsole =
@@ -43,15 +50,10 @@ const CommandCenterDashboard = () => {
       return hasSearchConsole && hasDomain && hasKeywords;
     };
 
-    // Only check after loading is complete and onboardingData is available
-    if (!loading && onboardingData && !hasMinimalData()) {
-      // Redirect to keywords step if insufficient data
-      navigate("/onboarding/step-keywords");
+    // Check if we have sufficient data using the hasMinimalData function
+    if (!hasMinimalData()) {
+      return { isBlind: true };
     }
-  }, [onboardingData, loading, navigate]);
-  // Calculate command center metrics from onboarding data
-  const commandCenterData = useMemo(() => {
-    if (!onboardingData || loading) return { isBlind: true };
 
     // Ensure we have the actual searchConsoleData array structure from onboarding context
     const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
@@ -80,11 +82,9 @@ const CommandCenterDashboard = () => {
       searchConsoleData.reduce(
         (sum, page) => sum + (parseFloat(page.position) || 0),
         0
-      ) / searchConsoleData.length;
-
-    // Calculate ROI and cost metrics
-    const conversionRate = 0.02;
-    const totalConversions = totalClicks * conversionRate;
+      ) / searchConsoleData.length; // Calculate ROI and cost metrics
+    const conversionRateDecimal = conversionRate / 100; // Convert percentage to decimal
+    const totalConversions = totalClicks * conversionRateDecimal;
     const totalRevenue = totalConversions * averageOrderValue;
     const totalCost = searchConsoleData.length * contentCost;
     const totalROI =
@@ -122,6 +122,7 @@ const CommandCenterDashboard = () => {
 
     // Ensure score is within bounds
     creditScore = Math.max(0, Math.min(100, creditScore));
+    const baseConversionValue = averageOrderValue * conversionRateDecimal;
 
     // Determine credit grade
     let creditGrade, creditHealth;
@@ -143,14 +144,19 @@ const CommandCenterDashboard = () => {
     } else {
       creditGrade = "DD";
       creditHealth = "🔥 Critical";
-    }
-
-    // Calculate KPI metrics
+    } // Calculate KPI metrics with conversion rate sensitivity
+    // FIXED: Waste should decrease as conversion rate improves
     const wastedSpend = Math.max(
       0,
       searchConsoleData
         .filter((page) => parseFloat(page.position) > 30)
-        .reduce((sum) => sum + contentCost, 0)
+        .reduce(
+          (sum) =>
+            sum +
+            contentCost +
+            ((averageOrderValue * (4.5 - conversionRate)) / 100) * 2,
+          0
+        ) // Waste decreases with better conversion rate
     );
 
     const deepDecayPages = searchConsoleData.filter(
@@ -216,7 +222,60 @@ const CommandCenterDashboard = () => {
       bofuPercentage = 100 - tofuPercentage - mofuPercentage;
     }
 
-    const funnelGap = bofuPercentage < 15 ? "BOFU ↓" : "Balanced"; // Traffic sparks - Generate 90-day trend visualization based on actual data
+    const funnelGap = bofuPercentage < 15 ? "BOFU ↓" : "Balanced"; // Calculate substantial dollar amounts for each KPI metric - made more significant for visibility
+    // Base conversion value that changes with slider
+    // FIXED LOGIC: Higher conversion rates should show LESS loss, not more
+
+    // Deep Decay Dollar Impact: Pages ranking below 50 lose potential revenue
+    // Loss decreases as conversion rate improves (inverse relationship)
+    const deepDecayDollarValue = Math.round(
+      deepDecayPages * contentCost * 8 +
+        deepDecayPages *
+          ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+          totalClicks *
+          0.1 // Loss decreases with better conversion rate
+    );
+
+    // High Dilution Dollar Impact: Pages with poor performance dilute budget
+    // Loss decreases as conversion rate improves
+    const dilutionDollarValue = Math.round(
+      highDilutionPages * contentCost * 5 +
+        highDilutionPages *
+          ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+          totalClicks *
+          0.08 // Loss decreases with better conversion rate
+    );
+
+    // Keyword Mismatch Dollar Impact: High DA URLs not optimized properly
+    // Loss decreases significantly as conversion rate improves
+    const keywordMismatchDollarValue = Math.round(
+      lowKDHighDAUrls *
+        ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+        100 + // Loss decreases with better conversion rate
+        lowKDHighDAUrls * contentCost * 2
+    );
+
+    // Psychographic Mismatch Dollar Impact: Content not resonating with audience
+    // Loss decreases as conversion rate improves
+    const psychoMismatchDollarValue = Math.round(
+      (psychoMismatch / 100) *
+        totalClicks *
+        ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+        5 + // Loss decreases with better conversion rate
+        psychoMismatch * contentCost * 2
+    );
+
+    // Funnel Gap Dollar Impact: Missing funnel content loses conversion opportunities
+    // Loss decreases as conversion rate improves
+    const funnelGapDollarValue = Math.round(
+      (bofuPercentage < 15 ? (15 - bofuPercentage) * contentCost * 25 : 0) +
+        (bofuPercentage < 15
+          ? (15 - bofuPercentage) *
+            ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+            totalClicks *
+            0.2
+          : 0) // Loss decreases with better conversion rate
+    ); // Traffic sparks - Generate 90-day trend visualization based on actual data
     const generateSparkData = (baseValue, volatility = 0.3) => {
       const data = [];
       for (let i = 0; i < 10; i++) {
@@ -229,10 +288,10 @@ const CommandCenterDashboard = () => {
     const impressionsSparkData = generateSparkData(totalImpressions / 10);
     const clicksSparkData = generateSparkData(totalClicks / 10);
     const roiSparkData = generateSparkData(Math.abs(totalROI) / 10);
-    const wasteSparkData = generateSparkData(wastedSpend / 10);
-
-    // ROI Recovery Potential
-    const roiRecoveryPotential = Math.round(wastedSpend * 0.6); // 60% recovery potential
+    const wasteSparkData = generateSparkData(wastedSpend / 10); // ROI Recovery Potential (increases with better conversion rates - this is correct)
+    const roiRecoveryPotential = Math.round(
+      wastedSpend * 0.6 + baseConversionValue * totalClicks * 0.3 // Recovery potential increases with better conversion rate
+    );
     const recoveryTimeframe =
       creditScore > 70 ? 30 : creditScore > 50 ? 60 : 90;
     const recoveryTrend = totalROI > 0 ? "positive" : "negative"; // Psychographic alignment - use actual analysis data when available
@@ -251,9 +310,7 @@ const CommandCenterDashboard = () => {
       // ROI Recovery
       roiRecoveryPotential,
       recoveryTimeframe,
-      recoveryTrend,
-
-      // KPI Grid
+      recoveryTrend, // KPI Grid
       kpiMetrics: {
         wastedSpend: Math.round(wastedSpend),
         deepDecayPages,
@@ -261,6 +318,12 @@ const CommandCenterDashboard = () => {
         lowKDHighDAUrls,
         psychoMismatch,
         funnelGap,
+        // Dollar amounts for each KPI metric
+        deepDecayDollarValue,
+        dilutionDollarValue,
+        keywordMismatchDollarValue,
+        psychoMismatchDollarValue,
+        funnelGapDollarValue,
       },
 
       // Traffic & ROI Sparks
@@ -288,50 +351,7 @@ const CommandCenterDashboard = () => {
       avgCTR,
       totalROI,
     };
-  }, [onboardingData, loading]);
-
-  // Sparkline component
-  const Sparkline = ({ data, type = "default" }) => {
-    if (!data || data.length === 0) return null;
-
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-
-    const points = data
-      .map((value, index) => {
-        const x = (index / (data.length - 1)) * 100;
-        const y = 100 - ((value - min) / range) * 100;
-        return `${x},${y}`;
-      })
-      .join(" ");
-
-    const getStrokeColor = () => {
-      switch (type) {
-        case "positive":
-          return "#10b981";
-        case "negative":
-          return "#ef4444";
-        case "warning":
-          return "#f59e0b";
-        default:
-          return "#6b7280";
-      }
-    };
-
-    return (
-      <svg width="60" height="20" className="sparkline">
-        <polyline
-          points={points}
-          fill="none"
-          stroke={getStrokeColor()}
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    );
-  };
+  }, [onboardingData, loading, conversionRate]);
 
   if (loading) {
     return (
@@ -340,18 +360,17 @@ const CommandCenterDashboard = () => {
         <p>Loading Command Center Dashboard...</p>
       </div>
     );
-  }
-  // Show blind system warning if no data - consistent with ContentLedgerDashboard
+  } // Show blind system warning if no data - with Finish Onboarding button
   if (commandCenterData.isBlind) {
     return (
       <div className="command-center-blind">
         <div className="blind-banner">
           <AlertTriangle className="blind-icon" size={48} />
-          <h1>🚨 COMMAND CENTER INACTIVE – ACTIVATE SETUP WIZARD</h1>
+          <h1>🚨 COMMAND CENTER INACTIVE – SETUP REQUIRED</h1>
           <p>
             The system requires search console data and domain configuration to
-            operate. Complete the setup wizard to unlock your command center
-            dashboard.
+            operate. Please complete the onboarding process to unlock your
+            command center dashboard.
           </p>
           <div className="setup-requirements">
             <p>
@@ -392,7 +411,7 @@ const CommandCenterDashboard = () => {
             onClick={() => navigate("/onboarding/step-keywords")}
           >
             <Play className="activate-icon" />
-            Complete Setup Wizard
+            Finish Onboarding
           </button>
         </div>
       </div>
@@ -461,10 +480,64 @@ const CommandCenterDashboard = () => {
         </div>
       </div>
 
+      {/* Conversion Rate Slider */}
+      <div className="conversion-rate-section">
+        <h3>CONVERSION RATE OPTIMIZER</h3>
+        <div className="slider-container">
+          <div className="slider-info">
+            <span className="slider-label">Conversion Rate:</span>
+            <span className="slider-value">
+              {conversionRate.toFixed(1)}%
+            </span>{" "}
+            <span className="slider-impact">
+              ($
+              {Math.round(
+                (commandCenterData.kpiMetrics?.deepDecayDollarValue || 0) +
+                  (commandCenterData.kpiMetrics?.dilutionDollarValue || 0) +
+                  (commandCenterData.kpiMetrics?.keywordMismatchDollarValue ||
+                    0) +
+                  (commandCenterData.kpiMetrics?.psychoMismatchDollarValue ||
+                    0) +
+                  (commandCenterData.kpiMetrics?.funnelGapDollarValue || 0) +
+                  (commandCenterData.kpiMetrics?.wastedSpend || 0) +
+                  (commandCenterData.totalClicks || 0) *
+                    (conversionRate / 100) *
+                    (parseFloat(
+                      onboardingData?.domainCostDetails?.averageOrderValue
+                    ) || 50) *
+                    0.4
+              ).toLocaleString()}{" "}
+              total KPI impact)
+            </span>
+          </div>
+          <div className="slider-wrapper">
+            <input
+              type="range"
+              min="1.0"
+              max="4.5"
+              step="0.1"
+              value={conversionRate}
+              onChange={(e) => setConversionRate(parseFloat(e.target.value))}
+              className="conversion-slider"
+            />
+            <div className="slider-labels">
+              <span>1.0%</span>
+              <span>2.25%</span>
+              <span>4.5%</span>
+            </div>
+          </div>{" "}
+          <p className="slider-note">
+            💡 Adjust conversion rate to see real-time impact on all KPI dollar
+            calculations and total combined financial impact
+          </p>
+        </div>
+      </div>
+
       {/* KPI Grid */}
       <div className="kpi-grid-section">
         <h3>KPI GRID</h3>
         <div className="kpi-grid">
+          {" "}
           <div
             className="kpi-tile waste"
             onClick={() => navigate("/riskdashboard")}
@@ -472,10 +545,21 @@ const CommandCenterDashboard = () => {
             <div className="kpi-icon">💸</div>
             <div className="kpi-label">Waste $</div>
             <div className="kpi-value">
-              {(commandCenterData.kpiMetrics.wastedSpend / 1000).toFixed(0)}K
+              ${commandCenterData.kpiMetrics.wastedSpend.toLocaleString()}{" "}
+              <div className="kpi-dollar">
+                + $
+                {Math.round(
+                  (commandCenterData.totalClicks || 0) *
+                    ((4.5 - conversionRate) / 100) *
+                    (parseFloat(
+                      onboardingData?.domainCostDetails?.averageOrderValue
+                    ) || 50) *
+                    0.4
+                ).toLocaleString()}{" "}
+                opportunity loss
+              </div>
             </div>
-          </div>
-
+          </div>{" "}
           <div
             className="kpi-tile decay"
             onClick={() => navigate("/contentledger")}
@@ -484,9 +568,13 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">Deep Decay</div>
             <div className="kpi-value">
               {commandCenterData.kpiMetrics.deepDecayPages} pages
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.deepDecayDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
             </div>
-          </div>
-
+          </div>{" "}
           <div
             className="kpi-tile dilution"
             onClick={() => navigate("/riskdashboard")}
@@ -495,9 +583,13 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">Dilution</div>
             <div className="kpi-value">
               {commandCenterData.kpiMetrics.highDilutionPages} pages
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.dilutionDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
             </div>
-          </div>
-
+          </div>{" "}
           <div
             className="kpi-tile keyword"
             onClick={() => navigate("/agents/ideation")}
@@ -506,9 +598,13 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">KD≪DA</div>
             <div className="kpi-value">
               {commandCenterData.kpiMetrics.lowKDHighDAUrls} URLs
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.keywordMismatchDollarValue.toLocaleString()}{" "}
+                potential
+              </div>
             </div>
-          </div>
-
+          </div>{" "}
           <div
             className="kpi-tile psych"
             onClick={() => navigate("/agents/strategy")}
@@ -517,9 +613,13 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">Psych%</div>
             <div className="kpi-value">
               {commandCenterData.kpiMetrics.psychoMismatch}% mis
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.psychoMismatchDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
             </div>
-          </div>
-
+          </div>{" "}
           <div
             className="kpi-tile funnel"
             onClick={() => navigate("/agents/content-creation")}
@@ -528,6 +628,11 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">FunnelGap</div>
             <div className="kpi-value">
               {commandCenterData.kpiMetrics.funnelGap}
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.funnelGapDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
             </div>
           </div>
         </div>
@@ -537,7 +642,7 @@ const CommandCenterDashboard = () => {
       </div>
 
       {/* Traffic & ROI Sparks */}
-      <div className="sparks-section">
+      {/* <div className="sparks-section">
         <h3>TRAFFIC & ROI SPARKS (Last 90 days)</h3>
         <div className="sparks-grid">
           <div className="spark-item">
@@ -569,10 +674,10 @@ const CommandCenterDashboard = () => {
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Funnel Coverage & Psych Alignment */}
-      <div className="funnel-psych-section">
+      {/* <div className="funnel-psych-section">
         <h3>FUNNEL COVERAGE & PSYCH ALIGNMENT</h3>
         <div className="funnel-coverage">
           <div className="funnel-stage tofu">
@@ -641,7 +746,7 @@ const CommandCenterDashboard = () => {
         >
           ► Generate TOFU Briefs
         </button>
-      </div>
+      </div> */}
 
       {/* Action Center */}
       <div className="action-center-section">
