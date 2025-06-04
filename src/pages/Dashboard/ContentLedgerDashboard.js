@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import {
@@ -17,9 +17,7 @@ import "./ContentLedgerDashboard.css";
 
 const ContentLedgerDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
-  const navigate = useNavigate();
-
-  // State for filters and sorting
+  const navigate = useNavigate(); // State for filters and sorting
   const [activeFilters, setActiveFilters] = useState(new Set(["all"]));
   const [sortConfig, setSortConfig] = useState({
     key: "roi",
@@ -29,19 +27,53 @@ const ContentLedgerDashboard = () => {
   const [showDrillDown, setShowDrillDown] = useState(false);
 
   // Check for insufficient data and redirect to keywords step
-
   // Calculate comprehensive P&L data from onboarding context
   const ledgerData = useMemo(() => {
     if (!onboardingData || loading) return { summary: {}, rows: [] };
-
     const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
       ? onboardingData.searchConsoleData
-      : [];
+      : []; // Return empty state if no data
 
-    // Return empty state if no data
     if (searchConsoleData.length === 0) {
       return { summary: {}, rows: [] };
     }
+
+    // Since GSC data only has 2 keys (query, URL), we'll use the raw data
+    // and note that country/device filters are not available with current data structure
+    const filteredData = searchConsoleData.filter((item) => {
+      return item.keys && item.keys.length >= 2; // Only need query and URL
+    }); // Aggregate data by URL
+    const urlMap = new Map();
+
+    filteredData.forEach((item) => {
+      if (!item.keys || item.keys.length < 2) return;
+
+      const url = item.keys[1]; // URL/page
+      const keyword = item.keys[0]; // query/keyword
+
+      if (!urlMap.has(url)) {
+        urlMap.set(url, {
+          url,
+          keywords: new Set(),
+          totalClicks: 0,
+          totalImpressions: 0,
+          avgPosition: 0,
+          avgCTR: 0,
+          positionSum: 0,
+          positionCount: 0,
+        });
+      }
+
+      const urlData = urlMap.get(url);
+      urlData.keywords.add(keyword);
+      urlData.totalClicks += item.clicks || 0;
+      urlData.totalImpressions += item.impressions || 0;
+
+      if (item.position) {
+        urlData.positionSum += item.position;
+        urlData.positionCount += 1;
+      }
+    });
 
     const averageOrderValue =
       parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
@@ -50,94 +82,94 @@ const ContentLedgerDashboard = () => {
 
     // Get funnel analysis data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const funnelDetails = funnelAnalysis.details || [];
+    const funnelDetails = funnelAnalysis.details || []; // Process aggregated data and calculate metrics
+    const rows = Array.from(urlMap.values()).map((item, index) => {
+      const keywordCount = item.keywords.size;
+      const avgPosition =
+        item.positionCount > 0 ? item.positionSum / item.positionCount : 0;
+      const avgCTR =
+        item.totalImpressions > 0
+          ? (item.totalClicks / item.totalImpressions) * 100
+          : 0;
 
-    // Generate comprehensive table rows with 27 diagnostic columns using real data
-    const rows = searchConsoleData.slice(0, 50).map((page, index) => {
-      console.log(page);
-      // Use real search console data
-      const impressions = parseInt(page.impressions) || 0;
-      const clicks = parseInt(page.clicks) || 0;
-      const position = parseFloat(page.position) || 0;
-      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0; // Get real page/query data
-      // keys[0] = keyword, keys[1] = actual URL
-      const pageUrl = page.page || page.keys?.[1] || "";
-      const query = page.query || page.keys?.[0] || `query-${index + 1}`;
-
-      // Calculate revenue estimates based on real data
+      // Calculate revenue estimates based on aggregated data
       const conversionRate = 0.02; // 2% default conversion rate
-      const estimatedConversions = clicks * conversionRate;
+      const estimatedConversions = item.totalClicks * conversionRate;
       const revenue = estimatedConversions * averageOrderValue;
       const roi =
         contentCost > 0 ? ((revenue - contentCost) / contentCost) * 100 : 0;
 
-      // Find matching funnel data for this page/URL
+      // Find matching funnel data for this URL
       const matchingFunnelData =
         funnelDetails.find(
-          (item) => item.url === pageUrl || item.page === pageUrl
+          (funnelItem) =>
+            funnelItem.url === item.url || funnelItem.page === item.url
         ) || {};
 
       // Use real funnel stage or derive from position
       const funnelStage =
         matchingFunnelData.funnelStage ||
-        (position <= 10 ? "TOFU" : position <= 20 ? "MOFU" : "BOFU");
+        (avgPosition <= 10 ? "TOFU" : avgPosition <= 20 ? "MOFU" : "BOFU");
 
       // Calculate decay metrics based on real performance
       const decayScore =
-        position > 20
-          ? Math.min(position * 2, 100)
-          : Math.max(50 - position * 2, 0);
-      const decayTrend = ctr < 2 ? "declining" : ctr > 5 ? "growing" : "stable";
+        avgPosition > 20
+          ? Math.min(avgPosition * 2, 100)
+          : Math.max(50 - avgPosition * 2, 0);
+      const decayTrend =
+        avgCTR < 2 ? "declining" : avgCTR > 5 ? "growing" : "stable";
 
       // Psychographic data from real analysis or intelligent defaults
       const intentMatch =
         matchingFunnelData.intentMatch ||
-        (ctr > 3
+        (avgCTR > 3
           ? Math.floor(80 + Math.random() * 20)
           : Math.floor(Math.random() * 60 + 20));
 
       const audienceMatch =
         matchingFunnelData.audienceMatch ||
-        (clicks > impressions * 0.03
+        (item.totalClicks > item.totalImpressions * 0.03
           ? Math.floor(70 + Math.random() * 30)
           : Math.floor(Math.random() * 70 + 10));
 
       // Technical metrics based on position and performance
       const loadTime =
-        position > 30 ? 2 + Math.random() * 2 : 0.5 + Math.random() * 1.5;
-      const coreWebVitals = Math.max(100 - position * 2, 20);
-      const mobileScore = Math.max(95 - position, 50);
+        avgPosition > 30 ? 2 + Math.random() * 2 : 0.5 + Math.random() * 1.5;
+      const coreWebVitals = Math.max(100 - avgPosition * 2, 20);
+      const mobileScore = Math.max(95 - avgPosition, 50);
 
       // Competitive data based on position
-      const competitorCount = Math.min(Math.floor(position / 2), 50);
+      const competitorCount = Math.min(Math.floor(avgPosition / 2), 50);
       const marketShare =
-        position <= 3
+        avgPosition <= 3
           ? 15 + Math.random() * 10
-          : position <= 10
+          : avgPosition <= 10
           ? 5 + Math.random() * 10
           : Math.random() * 5;
 
       // Content quality metrics
-      const readabilityScore = Math.max(90 - position, 40);
+      const readabilityScore = Math.max(90 - avgPosition, 40);
       const expertiseScore =
-        matchingFunnelData.expertise || Math.max(85 - position, 30);
+        matchingFunnelData.expertise || Math.max(85 - avgPosition, 30);
       const freshnessScore = Math.max(
-        100 -
-          (Date.now() - new Date(page.date || Date.now())) /
-            (1000 * 60 * 60 * 24 * 30),
+        100 - (Date.now() - new Date(Date.now())) / (1000 * 60 * 60 * 24 * 30),
         10
-      ); // Create proper URL
+      );
+
+      // Create proper URL
       const baseUrl = onboardingData.domain || "https://example.com";
       let fullUrl;
 
       try {
-        if (pageUrl && pageUrl.startsWith("http")) {
-          fullUrl = pageUrl;
-        } else if (pageUrl) {
+        if (item.url && item.url.startsWith("http")) {
+          fullUrl = item.url;
+        } else if (item.url) {
           const cleanBaseUrl = baseUrl.startsWith("http")
             ? baseUrl
             : `https://${baseUrl}`;
-          const cleanPath = pageUrl.startsWith("/") ? pageUrl : `/${pageUrl}`;
+          const cleanPath = item.url.startsWith("/")
+            ? item.url
+            : `/${item.url}`;
           fullUrl = `${cleanBaseUrl}${cleanPath}`;
         } else {
           fullUrl = `${
@@ -151,7 +183,7 @@ const ContentLedgerDashboard = () => {
       return {
         id: `row-${index}`,
         url: fullUrl,
-        query: query,
+        keywordCount: keywordCount,
         status:
           decayTrend === "declining"
             ? "At Risk"
@@ -161,17 +193,17 @@ const ContentLedgerDashboard = () => {
         roi: roi,
         cost: contentCost,
         revenue: revenue,
-        impressions: impressions,
-        clicks: clicks,
-        ctr: ctr,
-        position: position,
+        impressions: item.totalImpressions,
+        clicks: item.totalClicks,
+        ctr: avgCTR,
+        position: Math.round(avgPosition * 10) / 10,
         conversions: estimatedConversions,
 
         // Decay & Performance
         decayScore: decayScore,
         decayTrend: decayTrend,
-        visibilityChange: ctr - 3, // CTR vs average baseline
-        rankingStability: Math.max(100 - position, 20),
+        visibilityChange: avgCTR - 3, // CTR vs average baseline
+        rankingStability: Math.max(100 - avgPosition, 20),
 
         // Psychographic & Intent
         intentMatch: intentMatch,
@@ -179,7 +211,7 @@ const ContentLedgerDashboard = () => {
         audienceMatch: audienceMatch,
         psychoProfile:
           matchingFunnelData.psychoProfile ||
-          (ctr > 4 ? "Emotional" : ctr > 2 ? "Practical" : "Analytical"),
+          (avgCTR > 4 ? "Emotional" : avgCTR > 2 ? "Practical" : "Analytical"),
 
         // Technical Performance
         loadTime: loadTime,
@@ -189,7 +221,7 @@ const ContentLedgerDashboard = () => {
         // Competitive Intelligence
         competitorCount: competitorCount,
         marketShare: marketShare,
-        difficultyScore: Math.min(position * 2, 100),
+        difficultyScore: Math.min(avgPosition * 2, 100),
 
         // Content Quality
         readabilityScore: readabilityScore,
@@ -199,15 +231,17 @@ const ContentLedgerDashboard = () => {
         // Additional metrics
         backlinks:
           matchingFunnelData.backlinks ||
-          Math.floor(Math.max(50 - position, 5)),
-        internalLinks: Math.floor(Math.max(25 - position / 2, 1)),
-        lastUpdated:
-          page.date ||
-          new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
+          Math.floor(Math.max(50 - avgPosition, 5)),
+        internalLinks: Math.floor(Math.max(25 - avgPosition / 2, 1)),
+        lastUpdated: new Date(
+          Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
+        )
+          .toISOString()
+          .split("T")[0],
       };
-    }); // Calculate summary metrics based on real data
+    });
+
+    // Calculate summary metrics based on real data
     const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
     const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
     const totalWastedSpend = rows
@@ -255,7 +289,6 @@ const ContentLedgerDashboard = () => {
       totalRows: rows.length,
       avgROI,
     };
-
     return { summary, rows };
   }, [onboardingData, loading]);
 
@@ -303,7 +336,6 @@ const ContentLedgerDashboard = () => {
       count: ledgerData.rows.filter((r) => r.funnelStage === "BOFU").length,
     },
   ];
-
   // Apply filters and sorting
   const filteredAndSortedRows = useMemo(() => {
     let filtered = ledgerData.rows;
@@ -564,7 +596,6 @@ const ContentLedgerDashboard = () => {
           </div>
         </div>
       </div>
-
       {/* KPI Summary Cards */}
       <div className="kpi-summary">
         <div className="kpi-card wasted-spend">
@@ -601,8 +632,7 @@ const ContentLedgerDashboard = () => {
             <div className="kpi-label">ROI Recovery Window</div>
           </div>
         </div>
-      </div>
-
+      </div>{" "}
       {/* Quick Filter Pills */}
       <div className="filter-pills">
         <div className="filter-pills-header">
@@ -622,10 +652,10 @@ const ContentLedgerDashboard = () => {
             </button>
           ))}
         </div>
-      </div>
-
+      </div>{" "}
       {/* Main P&L Table */}
       <div className="ledger-table-container">
+        {" "}
         <div className="table-header">
           <h2>Content P&L Analysis ({filteredAndSortedRows.length} URLs)</h2>
           <div className="table-controls">
@@ -635,14 +665,22 @@ const ContentLedgerDashboard = () => {
             </button>
           </div>
         </div>
-
         <div className="table-wrapper">
           <table className="ledger-table">
             <thead>
               <tr>
+                {" "}
                 <th onClick={() => handleSort("url")} className="sortable">
                   URL{" "}
                   {sortConfig.key === "url" &&
+                    (sortConfig.direction === "desc" ? "↓" : "↑")}
+                </th>
+                <th
+                  onClick={() => handleSort("keywordCount")}
+                  className="sortable"
+                >
+                  Keywords{" "}
+                  {sortConfig.key === "keywordCount" &&
                     (sortConfig.direction === "desc" ? "↓" : "↑")}
                 </th>
                 <th onClick={() => handleSort("status")} className="sortable">
@@ -802,26 +840,27 @@ const ContentLedgerDashboard = () => {
                   <td className="url-cell">
                     <div className="url-content">
                       <ExternalLink size={12} />
-                      <div className="url-keyword-pair">
-                        <div className="url-path">
-                          {(() => {
-                            try {
-                              const url = decodeURIComponent(row.url);
-                              return new URL(url).pathname || "/";
-                            } catch (e) {
-                              // If URL is invalid, decode and return the raw URL or extract path
-                              const decodedUrl = decodeURIComponent(row.url);
-                              return decodedUrl.startsWith("/")
-                                ? decodedUrl
-                                : `/${decodedUrl}`;
-                            }
-                          })()}
-                        </div>
-                        <div className="keyword-tag">
-                          {row.query || "No keyword"}
-                        </div>
+                      <div className="url-path">
+                        {(() => {
+                          try {
+                            const url = decodeURIComponent(row.url);
+                            return new URL(url).pathname || "/";
+                          } catch (e) {
+                            // If URL is invalid, decode and return the raw URL or extract path
+                            const decodedUrl = decodeURIComponent(row.url);
+                            return decodedUrl.startsWith("/")
+                              ? decodedUrl
+                              : `/${decodedUrl}`;
+                          }
+                        })()}
                       </div>
                     </div>
+                  </td>
+                  <td className="keyword-count-cell">
+                    <span className="keyword-count-badge">
+                      {row.keywordCount}
+                    </span>
+                    <span className="keyword-count-label">keywords</span>
                   </td>
                   <td className="status-cell">
                     {getStatusIndicator(row.status)}
@@ -882,7 +921,6 @@ const ContentLedgerDashboard = () => {
           </table>
         </div>
       </div>
-
       {/* Drill-down Modal */}
       {showDrillDown && selectedRow && (
         <div
