@@ -69,6 +69,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const menuItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/commandcenter", label: "Command Center", icon: FiSettings },
+    { path: "/keyword-intel", label: "Keyword Intel", icon: FiKey },
     { path: "/contentledger", label: "Content Ledger", icon: FiDatabase },
     { path: "/riskdashboard", label: "Risk Dashboard", icon: FiShield },
     { path: "/strategy-analysis", label: "Strategy Dashboard", icon: FiTarget },
@@ -117,7 +118,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <h2>AI Agent</h2>
+          <h2 className="logo">AI Agent</h2>
         </motion.div>
       </div>
 

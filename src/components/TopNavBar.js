@@ -37,6 +37,12 @@ const searchRoutes = (query) => {
         "command center dashboard overview kpi metrics moody credit score roi recovery funnel coverage psych alignment traffic sparks action center waste decay dilution keyword psych funnel gap tofu mofu bofu",
     },
     {
+      path: "/keyword-intel",
+      label: "Keyword Intelligence",
+      keywords:
+        "keyword intelligence console blended authority ba score kd guard rail portfolio market tape revenue momentum risk remediation opportunity stack anchor text inventory intent journey mix action queue moz gsc ga4 dcf irr baa weight class featherweight lightweight middleweight heavyweight",
+    },
+    {
       path: "/notifications",
       label: "Notifications",
       keywords:

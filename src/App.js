@@ -9,6 +9,7 @@ import LeakDashboard from "./pages/Dashboard/Dashboard";
 import RiskDashboard from "./pages/Dashboard/RiskDashboard";
 import ContentLedgerDashboard from "./pages/Dashboard/ContentLedgerDashboard";
 import CommandCenterDashboard from "./pages/Dashboard/CommandCenterDashboard";
+import KeywordIntelDashboard from "./pages/Dashboard/KeywordIntelDashboard";
 import PrivacyPolicy from "./PrivacyPolicy";
 import Agents from "./pages/Agents";
 import Boards from "./pages/Boards";
@@ -117,9 +118,13 @@ const AppWrapper = () => {
           {/* <Route path="/login" element={<Home />} /> */}{" "}
           <Route path="/leakdashboard" element={<LeakDashboard />} />
           <Route path="/riskdashboard" element={<RiskDashboard />} />
-          <Route path="/strategy-analysis" element={<StrategyAnalysis />} />
+          <Route
+            path="/strategy-analysis"
+            element={<StrategyAnalysis />}
+          />{" "}
           <Route path="/contentledger" element={<ContentLedgerDashboard />} />
           <Route path="/commandcenter" element={<CommandCenterDashboard />} />
+          <Route path="/keyword-intel" element={<KeywordIntelDashboard />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/boards" element={<Boards />} />
