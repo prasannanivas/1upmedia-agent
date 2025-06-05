@@ -586,16 +586,26 @@ const CommandCenterDashboard = () => {
               ).toLocaleString()}{" "}
               total KPI impact)
             </span>
-          </div>
-          <div className="slider-wrapper">
+          </div>{" "}
+          <div className="slider-wrapper" onClick={(e) => e.stopPropagation()}>
+            {" "}
             <input
               type="range"
               min="1.0"
               max="4.5"
               step="0.1"
               value={conversionRate}
-              onChange={(e) => setConversionRate(parseFloat(e.target.value))}
+              onChange={(e) => {
+                const newValue = parseFloat(e.target.value);
+                setConversionRate(newValue);
+              }}
+              onInput={(e) => {
+                const newValue = parseFloat(e.target.value);
+                setConversionRate(newValue);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
               className="conversion-slider"
+              aria-label="Adjust conversion rate"
             />
             <div className="slider-labels">
               <span>1.0%</span>

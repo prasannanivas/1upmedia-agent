@@ -908,7 +908,7 @@ const KeywordIntelDashboard = () => {
         </div>
         {/* Row 2: Market Tape */}
         <div className="market-tape-tile full-width">
-          <h3>• KW MARKET TAPE (full‑width)</h3>
+          <h3>• KW MARKET TAPE</h3>
           <div className="market-metrics">
             <div className="market-cap">
               <span>
