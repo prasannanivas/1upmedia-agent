@@ -26,26 +26,28 @@ const ContentLedgerDashboard = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [showDrillDown, setShowDrillDown] = useState(false);
 
-  // Check for insufficient data and redirect to keywords step
-  // Calculate comprehensive P&L data from onboarding context
+  // Check for insufficient data and redirect to keywords step  // Calculate comprehensive P&L data from onboarding context
   const ledgerData = useMemo(() => {
     if (!onboardingData || loading) return { summary: {}, rows: [] };
+
     const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
       ? onboardingData.searchConsoleData
-      : []; // Return empty state if no data
+      : [];
+    const gscAnalysisData = onboardingData.GSCAnalysisData || {};
+    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
+    const linkDilutionData = gscAnalysisData.linkDilution || [];
+    const gaData = gscAnalysisData.gaData?.urlMetrics || {};
 
+    // Return empty state if no data
     if (searchConsoleData.length === 0) {
       return { summary: {}, rows: [] };
     }
 
-    // Since GSC data only has 2 keys (query, URL), we'll use the raw data
-    // and note that country/device filters are not available with current data structure
-    const filteredData = searchConsoleData.filter((item) => {
-      return item.keys && item.keys.length >= 2; // Only need query and URL
-    }); // Aggregate data by URL
+    // Aggregate data by URL from search console data
     const urlMap = new Map();
 
-    filteredData.forEach((item) => {
+    searchConsoleData.forEach((item) => {
       if (!item.keys || item.keys.length < 2) return;
 
       const url = item.keys[1]; // URL/page
@@ -76,13 +78,15 @@ const ContentLedgerDashboard = () => {
     });
 
     const averageOrderValue =
-      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
+      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 10;
     const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
+      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 7.3;
 
     // Get funnel analysis data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const funnelDetails = funnelAnalysis.details || []; // Process aggregated data and calculate metrics
+    const funnelDetails = funnelAnalysis.details || [];
+
+    // Process aggregated data and calculate metrics
     const rows = Array.from(urlMap.values()).map((item, index) => {
       const keywordCount = item.keywords.size;
       const avgPosition =
@@ -92,93 +96,110 @@ const ContentLedgerDashboard = () => {
           ? (item.totalClicks / item.totalImpressions) * 100
           : 0;
 
-      // Calculate revenue estimates based on aggregated data
+      // Find matching content decay data
+      const decayData =
+        contentDecayData.find((decay) => decay.url === item.url) || {};
+
+      // Find matching cost waste data
+      const costWasteData =
+        contentCostWasteData.find((waste) => waste.url === item.url) || {};
+
+      // Find matching link dilution data
+      const dilutionData =
+        linkDilutionData.find((dilution) => dilution.url === item.url) || {};
+      // Find matching GA data
+      const urlPath = item.url.replace(/https?:\/\/[^/]+/, "") || "/";
+      const gaMetrics = gaData[urlPath] || {};
+
+      // Calculate revenue from real data or estimates
+      const realRevenue = costWasteData.estimatedMonthlyRevenue;
+      const realROI = costWasteData.roi;
+      const realCost = costWasteData.contentCost || contentCost;
+
+      // Use real data if available, otherwise calculate estimates
       const conversionRate = 0.02; // 2% default conversion rate
       const estimatedConversions = item.totalClicks * conversionRate;
-      const revenue = estimatedConversions * averageOrderValue;
+      const revenue =
+        realRevenue !== undefined
+          ? realRevenue
+          : estimatedConversions * averageOrderValue;
       const roi =
-        contentCost > 0 ? ((revenue - contentCost) / contentCost) * 100 : 0;
+        realROI !== undefined
+          ? realROI * 100
+          : realCost > 0
+          ? ((revenue - realCost) / realCost) * 100
+          : 0;
 
-      // Find matching funnel data for this URL
+      // Find matching funnel data
       const matchingFunnelData =
         funnelDetails.find(
           (funnelItem) =>
             funnelItem.url === item.url || funnelItem.page === item.url
         ) || {};
 
-      // Use real funnel stage or derive from position
+      // Use real funnel stage or map from GA data or derive from position
       const funnelStage =
-        matchingFunnelData.funnelStage ||
-        (avgPosition <= 10 ? "TOFU" : avgPosition <= 20 ? "MOFU" : "BOFU");
+        matchingFunnelData.stage ||
+        (avgPosition <= 10 ? "ToF" : avgPosition <= 20 ? "MoF" : "BoF");
 
-      // Calculate decay metrics based on real performance
+      // Use real decay metrics from analysis data
       const decayScore =
-        avgPosition > 20
+        decayData.slopeI !== undefined
+          ? Math.max(0, Math.min(100, Math.abs(decayData.slopeI) * 100))
+          : avgPosition > 20
           ? Math.min(avgPosition * 2, 100)
           : Math.max(50 - avgPosition * 2, 0);
-      const decayTrend =
-        avgCTR < 2 ? "declining" : avgCTR > 5 ? "growing" : "stable";
 
-      // Psychographic data from real analysis or intelligent defaults
+      const decayTrend =
+        decayData.status ||
+        (avgCTR < 2 ? "declining" : avgCTR > 5 ? "growing" : "stable");
+
+      // Use real psychographic data from funnel analysis
       const intentMatch =
-        matchingFunnelData.intentMatch ||
+        matchingFunnelData.emotionalResonance ||
         (avgCTR > 3
           ? Math.floor(80 + Math.random() * 20)
           : Math.floor(Math.random() * 60 + 20));
 
       const audienceMatch =
-        matchingFunnelData.audienceMatch ||
+        matchingFunnelData.cognitiveClarity ||
         (item.totalClicks > item.totalImpressions * 0.03
           ? Math.floor(70 + Math.random() * 30)
           : Math.floor(Math.random() * 70 + 10));
 
-      // Technical metrics based on position and performance
-      const loadTime =
-        avgPosition > 30 ? 2 + Math.random() * 2 : 0.5 + Math.random() * 1.5;
-      const coreWebVitals = Math.max(100 - avgPosition * 2, 20);
-      const mobileScore = Math.max(95 - avgPosition, 50);
+      // Use real GA performance data
+      const loadTime = gaMetrics.avgSessionDuration
+        ? Math.max(0.5, Math.min(5, gaMetrics.avgSessionDuration / 60))
+        : avgPosition > 30
+        ? 2 + Math.random() * 2
+        : 0.5 + Math.random() * 1.5;
 
-      // Competitive data based on position
-      const competitorCount = Math.min(Math.floor(avgPosition / 2), 50);
-      const marketShare =
-        avgPosition <= 3
-          ? 15 + Math.random() * 10
-          : avgPosition <= 10
-          ? 5 + Math.random() * 10
-          : Math.random() * 5;
+      const bounceRate =
+        gaMetrics.bounceRate !== undefined ? gaMetrics.bounceRate * 100 : null;
+      const sessions = gaMetrics.sessions || 0;
+      const pageViews = gaMetrics.pageViews || 0;
 
-      // Content quality metrics
+      // Use real link dilution data
+      const competitorCount =
+        dilutionData.externalLinks || Math.min(Math.floor(avgPosition / 2), 50);
+
+      const dilutionScore = dilutionData.dilutionScore || 0;
+
+      // Calculate content quality metrics
       const readabilityScore = Math.max(90 - avgPosition, 40);
       const expertiseScore =
-        matchingFunnelData.expertise || Math.max(85 - avgPosition, 30);
-      const freshnessScore = Math.max(
-        100 - (Date.now() - new Date(Date.now())) / (1000 * 60 * 60 * 24 * 30),
-        10
-      );
+        matchingFunnelData.persuasionLeverage || Math.max(85 - avgPosition, 30);
+
+      // Calculate freshness from decay data
+      const freshnessScore =
+        decayData.halfLifePassed === false
+          ? 85
+          : Math.max(30, 100 - avgPosition * 1.5);
 
       // Create proper URL
-      const baseUrl = onboardingData.domain || "https://example.com";
-      let fullUrl;
-
-      try {
-        if (item.url && item.url.startsWith("http")) {
-          fullUrl = item.url;
-        } else if (item.url) {
-          const cleanBaseUrl = baseUrl.startsWith("http")
-            ? baseUrl
-            : `https://${baseUrl}`;
-          const cleanPath = item.url.startsWith("/")
-            ? item.url
-            : `/${item.url}`;
-          fullUrl = `${cleanBaseUrl}${cleanPath}`;
-        } else {
-          fullUrl = `${
-            baseUrl.startsWith("http") ? baseUrl : `https://${baseUrl}`
-          }/page-${index + 1}`;
-        }
-      } catch (e) {
-        fullUrl = `https://example.com/page-${index + 1}`;
-      }
+      const fullUrl = item.url.startsWith("http")
+        ? item.url
+        : `https://${onboardingData.domain}${item.url}`;
 
       return {
         id: `row-${index}`,
@@ -191,48 +212,70 @@ const ContentLedgerDashboard = () => {
             ? "Winning"
             : "Stable",
         roi: roi,
-        cost: contentCost,
+        cost: realCost,
         revenue: revenue,
         impressions: item.totalImpressions,
         clicks: item.totalClicks,
         ctr: avgCTR,
         position: Math.round(avgPosition * 10) / 10,
         conversions: estimatedConversions,
+        sessions: sessions,
+        pageViews: pageViews,
+        bounceRate: bounceRate,
 
-        // Decay & Performance
+        // Decay & Performance (from real analysis data)
         decayScore: decayScore,
         decayTrend: decayTrend,
-        visibilityChange: avgCTR - 3, // CTR vs average baseline
-        rankingStability: Math.max(100 - avgPosition, 20),
+        visibilityChange: decayData.slopeS || avgCTR - 3,
+        rankingStability:
+          decayData.halfLifePassed === false
+            ? 90
+            : Math.max(100 - avgPosition, 20),
 
-        // Psychographic & Intent
+        // Psychographic & Intent (from real funnel analysis)
         intentMatch: intentMatch,
         funnelStage: funnelStage,
         audienceMatch: audienceMatch,
         psychoProfile:
-          matchingFunnelData.psychoProfile ||
-          (avgCTR > 4 ? "Emotional" : avgCTR > 2 ? "Practical" : "Analytical"),
+          matchingFunnelData.behavioralMomentum > 50
+            ? "Emotional"
+            : matchingFunnelData.cognitiveClarity > 60
+            ? "Practical"
+            : "Analytical",
 
-        // Technical Performance
+        // Technical Performance (from real GA data)
         loadTime: loadTime,
-        coreWebVitals: coreWebVitals,
-        mobileScore: mobileScore,
+        coreWebVitals:
+          bounceRate !== null
+            ? Math.max(20, 100 - bounceRate)
+            : Math.max(100 - avgPosition * 2, 20),
+        mobileScore: Math.max(95 - avgPosition, 50),
 
-        // Competitive Intelligence
+        // Competitive Intelligence (from real link dilution data)
         competitorCount: competitorCount,
-        marketShare: marketShare,
+        marketShare:
+          sessions > 100
+            ? Math.min(25, sessions / 20)
+            : avgPosition <= 3
+            ? 15 + Math.random() * 10
+            : avgPosition <= 10
+            ? 5 + Math.random() * 10
+            : Math.random() * 5,
         difficultyScore: Math.min(avgPosition * 2, 100),
+        dilutionScore: dilutionScore,
 
         // Content Quality
         readabilityScore: readabilityScore,
         expertiseScore: expertiseScore,
         freshnessScore: freshnessScore,
 
-        // Additional metrics
+        // Additional metrics (from real data where available)
         backlinks:
-          matchingFunnelData.backlinks ||
+          dilutionData.externalLinks ||
           Math.floor(Math.max(50 - avgPosition, 5)),
-        internalLinks: Math.floor(Math.max(25 - avgPosition / 2, 1)),
+        internalLinks:
+          dilutionData.internalLinks ||
+          Math.floor(Math.max(25 - avgPosition / 2, 1)),
         lastUpdated: new Date(
           Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000
         )
@@ -321,19 +364,19 @@ const ContentLedgerDashboard = () => {
       count: ledgerData.rows.filter((r) => r.roi < 0).length,
     },
     {
-      key: "tofu",
-      label: "TOFU",
-      count: ledgerData.rows.filter((r) => r.funnelStage === "TOFU").length,
+      key: "tof",
+      label: "ToF",
+      count: ledgerData.rows.filter((r) => r.funnelStage === "ToF").length,
     },
     {
-      key: "mofu",
-      label: "MOFU",
-      count: ledgerData.rows.filter((r) => r.funnelStage === "MOFU").length,
+      key: "mof",
+      label: "MoF",
+      count: ledgerData.rows.filter((r) => r.funnelStage === "MoF").length,
     },
     {
-      key: "bofu",
-      label: "BOFU",
-      count: ledgerData.rows.filter((r) => r.funnelStage === "BOFU").length,
+      key: "bof",
+      label: "BoF",
+      count: ledgerData.rows.filter((r) => r.funnelStage === "BoF").length,
     },
   ];
   // Apply filters and sorting
@@ -356,11 +399,11 @@ const ContentLedgerDashboard = () => {
             case "negative-roi":
               return row.roi < 0;
             case "tofu":
-              return row.funnelStage === "TOFU";
+              return row.funnelStage === "ToF";
             case "mofu":
-              return row.funnelStage === "MOFU";
+              return row.funnelStage === "MoF";
             case "bofu":
-              return row.funnelStage === "BOFU";
+              return row.funnelStage === "BoF";
             default:
               return true;
           }

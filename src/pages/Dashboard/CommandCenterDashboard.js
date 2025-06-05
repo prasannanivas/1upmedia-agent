@@ -35,6 +35,15 @@ const CommandCenterDashboard = () => {
   const commandCenterData = useMemo(() => {
     if (!onboardingData || loading) return { isBlind: true };
 
+    // DEBUGGING: Log the actual onboardingData structure
+    console.log(
+      "🔍 ONBOARDING DATA STRUCTURE:",
+      JSON.stringify(onboardingData, null, 2)
+    );
+    console.log("🔍 SEARCH CONSOLE DATA:", onboardingData.searchConsoleData);
+    console.log("🔍 DOMAIN COST DETAILS:", onboardingData.domainCostDetails);
+    console.log("🔍 FUNNEL ANALYSIS:", onboardingData.funnelAnalysis);
+
     // Check for insufficient data (moved inside useMemo to fix dependency issue)
     const hasMinimalData = () => {
       // Check if we have the minimum required data - consistent with ContentLedgerDashboard
@@ -53,34 +62,37 @@ const CommandCenterDashboard = () => {
     // Check if we have sufficient data using the hasMinimalData function
     if (!hasMinimalData()) {
       return { isBlind: true };
-    }
-
-    // Ensure we have the actual searchConsoleData array structure from onboarding context
+    } // Ensure we have the actual searchConsoleData array structure from onboarding context
     const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
       ? onboardingData.searchConsoleData
       : [];
 
     if (searchConsoleData.length === 0) {
       return { isBlind: true };
-    }
-
-    // Use actual domain cost details from onboardingData.domainCostDetails structure
+    } // Use actual domain cost details from onboardingData.domainCostDetails structure
     const averageOrderValue =
-      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
+      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 10;
     const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200; // Calculate comprehensive metrics using actual search console data
-    // Field mapping: page.impressions, page.clicks, page.position, page.ctr
+      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 7.3;
+
+    // DEBUGGING: Log the calculated values
+    console.log("💰 CALCULATED VALUES:");
+    console.log("  - Average Order Value:", averageOrderValue);
+    console.log("  - Content Cost:", contentCost);
+
+    // Calculate comprehensive metrics using actual search console data
+    // Field mapping: item.impressions, item.clicks, item.position, item.ctr
     const totalImpressions = searchConsoleData.reduce(
-      (sum, page) => sum + (parseInt(page.impressions) || 0),
+      (sum, item) => sum + (parseInt(item.impressions) || 0),
       0
     );
     const totalClicks = searchConsoleData.reduce(
-      (sum, page) => sum + (parseInt(page.clicks) || 0),
+      (sum, item) => sum + (parseInt(item.clicks) || 0),
       0
     );
     const avgPosition =
       searchConsoleData.reduce(
-        (sum, page) => sum + (parseFloat(page.position) || 0),
+        (sum, item) => sum + (parseFloat(item.position) || 0),
         0
       ) / searchConsoleData.length; // Calculate ROI and cost metrics
     const conversionRateDecimal = conversionRate / 100; // Convert percentage to decimal
@@ -110,11 +122,9 @@ const CommandCenterDashboard = () => {
       totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     if (avgCTR > 5) creditScore += 10;
     else if (avgCTR > 2) creditScore += 5;
-    else if (avgCTR < 1) creditScore -= 10;
-
-    // Content decay analysis
+    else if (avgCTR < 1) creditScore -= 10; // Content decay analysis
     const decayingPages = searchConsoleData.filter(
-      (page) => parseFloat(page.position) > 30
+      (item) => parseFloat(item.position) > 30
     ).length;
     const decayPercentage = (decayingPages / searchConsoleData.length) * 100;
     if (decayPercentage > 50) creditScore -= 15;
@@ -144,39 +154,31 @@ const CommandCenterDashboard = () => {
     } else {
       creditGrade = "DD";
       creditHealth = "🔥 Critical";
-    } // Calculate KPI metrics with conversion rate sensitivity
-    // FIXED: Waste should decrease as conversion rate improves
+    } // Calculate KPI metrics with conversion rate sensitivity    // FIXED: Waste should decrease as conversion rate improves
     const wastedSpend = Math.max(
       0,
       searchConsoleData
-        .filter((page) => parseFloat(page.position) > 30)
+        .filter((item) => parseFloat(item.position) > 30)
         .reduce(
           (sum) =>
             sum +
-            contentCost +
-            ((averageOrderValue * (4.5 - conversionRate)) / 100) * 2,
+            contentCost * 2 + // Realistic multiplier for $7.30 content cost
+            ((averageOrderValue * (1.5 / conversionRate)) / 100) * 3, // Fixed: inverse relationship
           0
         ) // Waste decreases with better conversion rate
     );
 
     const deepDecayPages = searchConsoleData.filter(
-      (page) => parseFloat(page.position) > 50
+      (item) => parseFloat(item.position) > 50
     ).length;
 
     const highDilutionPages = searchConsoleData.filter(
-      (page) => parseFloat(page.position) > 20 && parseInt(page.clicks) < 5
+      (item) => parseFloat(item.position) > 20 && parseInt(item.clicks) < 5
     ).length;
 
     const lowKDHighDAUrls = searchConsoleData.filter(
-      (page) => parseFloat(page.position) <= 20
-    ).length;
-    const psychoMismatch = Math.round(
-      (searchConsoleData.filter((page) => avgCTR < 2).length /
-        searchConsoleData.length) *
-        100
-    );
-
-    // Use actual funnel analysis data if available, otherwise derive from search data
+      (item) => parseFloat(item.position) <= 20
+    ).length; // Use actual funnel analysis data if available, otherwise derive from search data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
     const actualFunnelDistribution = funnelAnalysis.funnelDistribution;
 
@@ -206,15 +208,15 @@ const CommandCenterDashboard = () => {
     } else {
       // Fallback to derived funnel analysis from search console position data
       tofuPercentage = Math.round(
-        (searchConsoleData.filter((page) => parseFloat(page.position) <= 10)
+        (searchConsoleData.filter((item) => parseFloat(item.position) <= 10)
           .length /
           searchConsoleData.length) *
           100
       );
       mofuPercentage = Math.round(
         (searchConsoleData.filter(
-          (page) =>
-            parseFloat(page.position) > 10 && parseFloat(page.position) <= 30
+          (item) =>
+            parseFloat(item.position) > 10 && parseFloat(item.position) <= 30
         ).length /
           searchConsoleData.length) *
           100
@@ -222,60 +224,115 @@ const CommandCenterDashboard = () => {
       bofuPercentage = 100 - tofuPercentage - mofuPercentage;
     }
 
-    const funnelGap = bofuPercentage < 15 ? "BOFU ↓" : "Balanced"; // Calculate substantial dollar amounts for each KPI metric - made more significant for visibility
-    // Base conversion value that changes with slider
-    // FIXED LOGIC: Higher conversion rates should show LESS loss, not more
+    // FIXED: Funnel gap analysis - detect multiple types of imbalances
+    let funnelGap = "Balanced";
+    if (mofuPercentage < 10)
+      funnelGap = "MoF Crisis"; // Less than 10% middle funnel is critical
+    else if (tofuPercentage < 20)
+      funnelGap = "ToF Deficit"; // Less than 20% top funnel
+    else if (bofuPercentage > 60) funnelGap = "BoF Heavy";
+    // More than 60% bottom funnel indicates imbalance
+    else if (bofuPercentage < 15) funnelGap = "BoF Deficit"; // Less than 15% bottom funnel
 
-    // Deep Decay Dollar Impact: Pages ranking below 50 lose potential revenue
+    // FIXED: Psychographic mismatch using actual psychographic data when available
+    let psychoMismatch;
+    if (funnelAnalysis.psychCompositeSummary) {
+      // Use actual psychographic analysis data
+      const psychData = funnelAnalysis.psychCompositeSummary.overall;
+      // Convert composite scores to mismatch percentage (lower scores = higher mismatch)
+      const avgPsychScore =
+        (psychData.emotionalResonance +
+          psychData.cognitiveClarity +
+          psychData.persuasionLeverage +
+          psychData.behavioralMomentum) /
+        4;
+      psychoMismatch = Math.round(100 - avgPsychScore); // Invert to show mismatch
+    } else {
+      // Fallback to CTR-based calculation
+      psychoMismatch = Math.round(
+        (searchConsoleData.filter((item) => parseFloat(item.ctr) < 2).length /
+          searchConsoleData.length) *
+          100
+      );
+    } // Calculate substantial dollar amounts for each KPI metric - made more significant for visibility
+    // Base conversion value that changes with slider
+    // FIXED LOGIC: Higher conversion rates should show LESS loss, not more    // Deep Decay Dollar Impact: Pages ranking below 50 lose potential revenue
     // Loss decreases as conversion rate improves (inverse relationship)
     const deepDecayDollarValue = Math.round(
-      deepDecayPages * contentCost * 8 +
+      deepDecayPages * contentCost * 3 + // Realistic multiplier: 3x content cost
         deepDecayPages *
-          ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+          ((averageOrderValue * (3.0 / conversionRate)) / 100) *
           totalClicks *
-          0.1 // Loss decreases with better conversion rate
-    );
-
-    // High Dilution Dollar Impact: Pages with poor performance dilute budget
+          0.2 // Fixed logic: lower conversion = higher loss
+    ); // High Dilution Dollar Impact: Pages with poor performance dilute budget
     // Loss decreases as conversion rate improves
     const dilutionDollarValue = Math.round(
-      highDilutionPages * contentCost * 5 +
+      highDilutionPages * contentCost * 2 + // Realistic multiplier: 2x content cost
         highDilutionPages *
-          ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+          ((averageOrderValue * (2.0 / conversionRate)) / 100) *
           totalClicks *
-          0.08 // Loss decreases with better conversion rate
-    );
-
-    // Keyword Mismatch Dollar Impact: High DA URLs not optimized properly
+          0.25 // Fixed logic: inverse relationship with conversion rate
+    ); // Keyword Mismatch Dollar Impact: High DA URLs not optimized properly
     // Loss decreases significantly as conversion rate improves
     const keywordMismatchDollarValue = Math.round(
       lowKDHighDAUrls *
-        ((averageOrderValue * (4.5 - conversionRate)) / 100) *
-        100 + // Loss decreases with better conversion rate
+        ((averageOrderValue * (3.0 / conversionRate)) / 100) *
+        25 + // Realistic multiplier for $10 AOV business
         lowKDHighDAUrls * contentCost * 2
-    );
-
-    // Psychographic Mismatch Dollar Impact: Content not resonating with audience
+    ); // Psychographic Mismatch Dollar Impact: Content not resonating with audience
     // Loss decreases as conversion rate improves
     const psychoMismatchDollarValue = Math.round(
       (psychoMismatch / 100) *
         totalClicks *
-        ((averageOrderValue * (4.5 - conversionRate)) / 100) *
-        5 + // Loss decreases with better conversion rate
-        psychoMismatch * contentCost * 2
-    );
-
-    // Funnel Gap Dollar Impact: Missing funnel content loses conversion opportunities
+        ((averageOrderValue * (2.5 / conversionRate)) / 100) *
+        6 + // Realistic multiplier for $10 AOV business
+        psychoMismatch * contentCost * 1.5
+    ); // Funnel Gap Dollar Impact: Different types of funnel imbalances cause different losses
     // Loss decreases as conversion rate improves
-    const funnelGapDollarValue = Math.round(
-      (bofuPercentage < 15 ? (15 - bofuPercentage) * contentCost * 25 : 0) +
-        (bofuPercentage < 15
-          ? (15 - bofuPercentage) *
-            ((averageOrderValue * (4.5 - conversionRate)) / 100) *
+    let funnelGapDollarValue = 0;
+    if (funnelGap === "MoF Crisis") {
+      // Most critical - missing middle funnel loses qualified leads
+      // With only 4% MoF vs ideal 15-25%, this is a massive problem
+      const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
+      funnelGapDollarValue = Math.round(
+        mofDeficit * contentCost * 8 + // Moderate multiplier for MoF crisis
+          mofDeficit *
+            ((averageOrderValue * (2.5 / conversionRate)) / 100) *
             totalClicks *
-            0.2
-          : 0) // Loss decreases with better conversion rate
-    ); // Traffic sparks - Generate 90-day trend visualization based on actual data
+            4 // Impact from conversion rate
+      );
+    } else if (funnelGap === "BoF Heavy") {
+      // Too bottom-heavy loses awareness traffic
+      // With 71% BoF vs ideal max 40%, this indicates over-focus on conversion content
+      const bofExcess = Math.max(bofuPercentage - 40, 0);
+      funnelGapDollarValue = Math.round(
+        bofExcess * contentCost * 6 + // Penalty for being too bottom-heavy
+          bofExcess *
+            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
+            totalClicks *
+            3
+      );
+    } else if (funnelGap === "ToF Deficit") {
+      // Missing top funnel loses new audience acquisition
+      const tofDeficit = Math.max(20 - tofuPercentage, 0);
+      funnelGapDollarValue = Math.round(
+        tofDeficit * contentCost * 5 +
+          tofDeficit *
+            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
+            totalClicks *
+            3
+      );
+    } else if (funnelGap === "BoF Deficit") {
+      // Missing bottom funnel loses conversions
+      const bofDeficit = Math.max(15 - bofuPercentage, 0);
+      funnelGapDollarValue = Math.round(
+        bofDeficit * contentCost * 7 +
+          bofDeficit *
+            ((averageOrderValue * (3.0 / conversionRate)) / 100) *
+            totalClicks *
+            5 // High impact on conversion
+      );
+    } // Traffic sparks - Generate 90-day trend visualization based on actual data
     const generateSparkData = (baseValue, volatility = 0.3) => {
       const data = [];
       for (let i = 0; i < 10; i++) {
@@ -290,12 +347,32 @@ const CommandCenterDashboard = () => {
     const roiSparkData = generateSparkData(Math.abs(totalROI) / 10);
     const wasteSparkData = generateSparkData(wastedSpend / 10); // ROI Recovery Potential (increases with better conversion rates - this is correct)
     const roiRecoveryPotential = Math.round(
-      wastedSpend * 0.6 + baseConversionValue * totalClicks * 0.3 // Recovery potential increases with better conversion rate
+      wastedSpend * 0.6 + baseConversionValue * totalClicks * 3 // Realistic recovery multiplier
     );
     const recoveryTimeframe =
       creditScore > 70 ? 30 : creditScore > 50 ? 60 : 90;
     const recoveryTrend = totalROI > 0 ? "positive" : "negative"; // Psychographic alignment - use actual analysis data when available
-    const psychMatch = Math.max(40, 100 - psychoMismatch);
+    const psychMatch = Math.max(40, 100 - psychoMismatch); // DEBUGGING: Log the final calculated metrics
+    console.log("📊 FINAL CALCULATED METRICS:");
+    console.log("  - Total ROI:", totalROI);
+    console.log("  - Credit Score:", creditScore);
+    console.log("  - Wasted Spend:", Math.round(wastedSpend));
+    console.log("  - ROI Recovery Potential:", roiRecoveryPotential);
+    console.log("🔍 FUNNEL ANALYSIS:");
+    console.log("  - ToF Percentage:", tofuPercentage + "%");
+    console.log("  - MoF Percentage:", mofuPercentage + "%");
+    console.log("  - BoF Percentage:", bofuPercentage + "%");
+    console.log("  - Funnel Gap:", funnelGap);
+    console.log("  - Psycho Mismatch:", psychoMismatch + "%");
+    console.log("💰 DOLLAR LOSS VALUES:");
+    console.log("  - Deep Decay Dollar Value:", deepDecayDollarValue);
+    console.log("  - Dilution Dollar Value:", dilutionDollarValue);
+    console.log(
+      "  - Keyword Mismatch Dollar Value:",
+      keywordMismatchDollarValue
+    );
+    console.log("  - Psycho Mismatch Dollar Value:", psychoMismatchDollarValue);
+    console.log("  - Funnel Gap Dollar Value:", funnelGapDollarValue);
 
     return {
       isBlind: false,

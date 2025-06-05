@@ -1,42 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
-import {
-  TrendingDown,
-  AlertTriangle,
-  BarChart2,
-  Link2,
-  Zap,
-  DollarSign,
-  FileText,
-  Activity,
-  ExternalLink,
-  Brain,
-  Target,
-  Shield,
-  Search,
-  Eye,
-  Clock,
-  Users,
-  Database,
-  Settings,
-  ChevronRight,
-  TrendingUp,
-  AlertCircle,
-  ArrowDown,
-  ArrowUp,
-} from "lucide-react";
+import { AlertTriangle, Brain, ChevronRight } from "lucide-react";
 import "./RiskDashboard.css";
 
 const RiskDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
   const navigate = useNavigate();
-
   // Calculate risk metrics from real onboarding data
-  const calculateRiskMetrics = () => {
-    const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
+  const calculateRiskMetrics = useCallback(() => {
+    // Safely extract data with fallbacks
+    const searchConsoleData = Array.isArray(onboardingData?.searchConsoleData)
       ? onboardingData.searchConsoleData
       : [];
+
+    const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
+    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const cannibalizationData = gscAnalysisData.cannibalization || [];
+    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
 
     // Calculate aggregated search console metrics
     const totalImpressions = searchConsoleData.reduce(
@@ -59,87 +40,140 @@ const RiskDashboard = () => {
 
     // Get domain authority from initial analysis
     const domainAuthority =
-      parseInt(onboardingData.initialAnalysisState?.domainAuthority) || 0;
+      parseInt(onboardingData?.initialAnalysisState?.domainAuthority) || 0;
     const pageAuthority =
-      parseInt(onboardingData.initialAnalysisState?.pageAuthority) || 0;
+      parseInt(onboardingData?.initialAnalysisState?.pageAuthority) || 0;
     const trustFlow =
-      parseInt(onboardingData.initialAnalysisState?.trustFlow) || 0;
+      parseInt(onboardingData?.initialAnalysisState?.trustFlow) || 0;
     const citationFlow =
-      parseInt(onboardingData.initialAnalysisState?.citationFlow) || 0;
+      parseInt(onboardingData?.initialAnalysisState?.citationFlow) || 0;
 
-    // Calculate funnel distribution ratios
-    const funnelData = onboardingData.funnelAnalysis || {
+    // Get funnel distribution data
+    const funnelData = onboardingData?.funnelAnalysis || {
       totalAnalyzed: 0,
-      funnelDistribution: { ToF: 0, MoF: 0, BoF: 0, Unknown: 0 },
+      funnelDistribution: {
+        ToF: 0,
+        MoF: 0,
+        BoF: 0,
+        Retention: 0,
+        Advocacy: 0,
+        Unknown: 0,
+      },
     };
-    const totalFunnelPages = funnelData.totalAnalyzed || 0;
+    const totalFunnelPages = funnelData.totalAnalyzed || 0; // Get keywords data
+    const keywordList = onboardingData?.keywords || [];
 
-    // Calculate keyword difficulty estimates
-    const keywordCount = onboardingData.keywords?.length || 0;
-    const estimatedKD = keywordCount > 0 ? Math.min(50, keywordCount * 2.5) : 0; // Estimate based on keyword count
+    // Calculate content decay metrics from real data
+    const stablePages = contentDecayData.filter(
+      (item) => item.status === "Stable"
+    ).length;
+    const decayPages = contentDecayData.filter(
+      (item) => item.status === "Deep Decay"
+    ).length;
+    const growingPages = contentDecayData.filter(
+      (item) => item.status === "Growing"
+    ).length; // Calculate content cost waste from real data
+    const negativeROIPages = contentCostWasteData.filter(
+      (item) => item.roi === -1
+    ).length;
 
-    // Calculate author performance
-    const authorCount = onboardingData.authors?.length || 0;
-    const hasAIAuthors =
-      onboardingData.authors?.some(
-        (author) =>
-          author.name?.toLowerCase().includes("ai") ||
-          author.name?.toLowerCase().includes("bot") ||
-          author.name?.toLowerCase().includes("automated")
-      ) || false;
+    // Calculate average keyword difficulty from search console positions
+    const avgKD =
+      searchConsoleData.length > 0
+        ? Math.min(80, Math.max(10, avgPosition * 2)) // Estimate KD based on average position
+        : 30; // Calculate author performance
+    const authors = onboardingData?.authors || [];
+    const hasAIAuthors = authors.some(
+      (author) =>
+        author.name?.toLowerCase().includes("ai") ||
+        author.name?.toLowerCase().includes("bot") ||
+        author.name?.toLowerCase().includes("automated")
+    );
+
+    // Calculate domain cost details
+    const avgOrderValue =
+      onboardingData?.domainCostDetails?.averageOrderValue || 0;
+    const avgContentCost =
+      onboardingData?.domainCostDetails?.AverageContentCost || 0;
 
     return {
       siteInfo: {
-        domain: onboardingData.domain || "No domain set",
+        domain: onboardingData?.domain || "No domain set",
         date: new Date().toISOString().split("T")[0],
         pages: totalFunnelPages,
         impressions: totalImpressions,
         clicks: totalClicks,
         avgCTR: parseFloat(avgCTR.toFixed(2)),
         avgDA: domainAuthority,
-        avgKD: parseFloat(estimatedKD.toFixed(1)),
+        avgKD: parseFloat(avgKD.toFixed(1)),
       },
       creditScore: {
-        aGrade: Math.floor(totalFunnelPages * 0.03), // 3% A-grade assumption
-        bGrade: Math.floor(totalFunnelPages * 0.18), // 18% B-grade
-        cGrade: Math.floor(totalFunnelPages * 0.62), // 62% C-grade
-        dGrade: Math.floor(totalFunnelPages * 0.17), // 17% D-grade
-        downgraded: Math.floor(totalFunnelPages * 0.04), // 4% downgraded
-        dGradeCTRLoss: Math.floor(avgCTR * 0.7), // Estimated CTR loss for D-grade
+        // Use funnel distribution as proxy for content grades
+        aGrade: funnelData.funnelDistribution?.ToF || 0, // Top of funnel = high quality
+        bGrade: funnelData.funnelDistribution?.MoF || 0, // Middle of funnel = good quality
+        cGrade: funnelData.funnelDistribution?.BoF || 0, // Bottom of funnel = average quality
+        dGrade: funnelData.funnelDistribution?.Unknown || 0, // Unknown = poor quality
+        downgraded: contentCostWasteData.length, // Pages with negative ROI
+        dGradeCTRLoss: Math.max(0, parseFloat((avgCTR * 0.7).toFixed(2))),
       },
       contentDecay: {
-        stable: Math.floor(totalFunnelPages * 0.85),
-        deepDecay: Math.floor(totalFunnelPages * 0.12),
-        growing: Math.floor(totalFunnelPages * 0.03),
-        avgDropPercent: avgPosition > 10 ? -15.5 : -8.2,
-        noROIPages: Math.floor(totalFunnelPages * 0.08),
-        topDroppers: searchConsoleData
-          .filter((item) => item.position > 20)
+        stable: stablePages,
+        deepDecay: decayPages,
+        growing: growingPages,
+        avgDropPercent:
+          contentDecayData.length > 0
+            ? parseFloat(
+                (
+                  (contentDecayData.reduce(
+                    (sum, item) => sum + (item.dropRatio || 0),
+                    0
+                  ) /
+                    contentDecayData.length) *
+                  -100
+                ).toFixed(1)
+              )
+            : 0,
+        noROIPages: negativeROIPages,
+        topDroppers: contentDecayData
+          .filter((item) => item.dropRatio && item.dropRatio < -0.3)
           .slice(0, 2)
           .map((item) => ({
-            url: item.page || item.query || "Unknown page",
-            drop: -(Math.random() * 50 + 30), // Random drop between -30% to -80%
+            url: item.url || "Unknown page",
+            drop: parseFloat((item.dropRatio * 100).toFixed(1)),
           })),
       },
       cannibalization: {
-        keywordOverlaps: Math.floor(keywordCount * 0.15),
-        impressionShareLoss: Math.floor(totalImpressions * 0.08),
-        similarityPages: Math.floor(totalFunnelPages * 0.12),
-        exampleKeyword: onboardingData.keywords?.[0] || "target keyword",
+        keywordOverlaps: cannibalizationData.length,
+        impressionShareLoss: cannibalizationData.reduce(
+          (sum, item) =>
+            sum +
+            (item.primaryUrl?.impressions || 0) +
+            (item.competingUrls?.reduce(
+              (urlSum, url) => urlSum + (url.impressions || 0),
+              0
+            ) || 0),
+          0
+        ),
+        similarityPages: cannibalizationData.reduce(
+          (sum, item) => sum + 1 + (item.competingUrls?.length || 0),
+          0
+        ),
+        exampleKeyword:
+          cannibalizationData[0]?.keyword || keywordList[0] || "target keyword",
       },
       keywordEfficiency: {
-        avgKD: parseFloat(estimatedKD.toFixed(1)),
+        avgKD: parseFloat(avgKD.toFixed(1)),
         avgDA: domainAuthority,
         overreachRatio:
           domainAuthority > 0
-            ? parseFloat((estimatedKD / domainAuthority).toFixed(1))
+            ? parseFloat((avgKD / domainAuthority).toFixed(1))
             : 1.0,
         topOverexertions: searchConsoleData
-          .filter((item) => item.position > 15)
+          .filter((item) => item.position > 50)
           .slice(0, 2)
           .map((item) => ({
-            url: item.page || item.query || "Unknown page",
-            kd: Math.floor(Math.random() * 30 + 40), // Random KD 40-70
+            url: item.keys?.[1] || "Unknown page",
+            kd: Math.min(80, Math.max(30, item.position)),
             da: domainAuthority,
           })),
       },
@@ -147,30 +181,40 @@ const RiskDashboard = () => {
         tofu: funnelData.funnelDistribution?.ToF || 0,
         mofu: funnelData.funnelDistribution?.MoF || 0,
         bofu: funnelData.funnelDistribution?.BoF || 0,
+        retention: funnelData.funnelDistribution?.Retention || 0,
+        advocacy: funnelData.funnelDistribution?.Advocacy || 0,
         modu: funnelData.funnelDistribution?.Unknown || 0,
         bofuDecay: Math.floor((funnelData.funnelDistribution?.BoF || 0) * 0.6),
       },
       psychographicMismatch: {
-        driftPages: Math.floor(totalFunnelPages * 0.08),
+        driftPages: funnelData.funnelDistribution?.Unknown || 0, // Unknown stage pages indicate mismatch
         avgCTR: parseFloat((avgCTR * 0.3).toFixed(2)), // Lower CTR for mismatched content
       },
       linkDilution: {
-        lowDALinks: Math.floor(domainAuthority * 0.8),
-        conflictingAnchors: Math.floor(totalFunnelPages * 0.05),
-        lostBacklinks: Math.floor(domainAuthority * 0.15),
+        lowDALinks: Math.max(0, pageAuthority - domainAuthority), // Difference indicates dilution
+        conflictingAnchors: cannibalizationData.length, // Cannibalization indicates anchor conflicts
+        lostBacklinks: Math.max(0, citationFlow - trustFlow), // Citation vs Trust flow gap
       },
       inventoryBloat: {
-        lowImpressionPages: Math.floor(totalFunnelPages * 0.25),
-        noBacklinks: Math.floor(totalFunnelPages * 0.18),
-        crawlBudgetWaste: Math.floor(totalFunnelPages * 0.03),
+        lowImpressionPages: searchConsoleData.filter(
+          (item) => (item.impressions || 0) < 10
+        ).length,
+        noBacklinks: contentCostWasteData.filter(
+          (item) => (item.impressions || 0) === 0
+        ).length,
+        crawlBudgetWaste: contentCostWasteData.length,
       },
       timeToROI: {
-        avgBreakeven: Math.floor(120 + keywordCount * 2), // Estimated based on keyword complexity
-        negativePages: Math.floor(totalFunnelPages * 0.12),
+        avgBreakeven:
+          avgContentCost > 0 && avgOrderValue > 0
+            ? Math.ceil(avgContentCost / (avgOrderValue * (avgCTR / 100)))
+            : 120,
+        negativePages: negativeROIPages,
         highestBurn:
-          searchConsoleData.length > 0
-            ? searchConsoleData.find((item) => item.position > 30)?.page ||
-              "High-cost page"
+          contentCostWasteData.length > 0
+            ? contentCostWasteData.reduce((max, item) =>
+                (item.wastedSpend || 0) > (max.wastedSpend || 0) ? item : max
+              ).url || "No data"
             : "No data available",
       },
       aiVsHuman: {
@@ -184,38 +228,56 @@ const RiskDashboard = () => {
         humanConversion: 1.12,
       },
       serpVolatility: {
-        volatileKeywords: Math.floor(keywordCount * 0.3),
+        volatileKeywords: searchConsoleData.filter(
+          (item) => (item.position || 0) > 50
+        ).length,
         mismatchURL:
-          searchConsoleData.length > 0
-            ? searchConsoleData.find((item) => item.position > 25)?.page ||
-              "volatile-page"
-            : "No volatile pages detected",
+          searchConsoleData.find((item) => (item.position || 0) > 100)
+            ?.keys?.[1] || "No volatile pages detected",
         volatilityScore: parseFloat((avgPosition / 10).toFixed(1)),
       },
       anchorOverload: {
-        overloadedPages: Math.floor(totalFunnelPages * 0.08),
+        overloadedPages: cannibalizationData.length, // Pages with keyword cannibalization
       },
       metaRisk: {
-        siloBleed: `${onboardingData.domain}/blog vs ${onboardingData.domain}/services/`,
-        bounceRateIncrease: Math.floor(Math.random() * 15 + 5), // Random 5-20%
-        outdatedPages: Math.floor(totalFunnelPages * 0.15),
+        siloBleed: `${onboardingData?.domain}/blog vs ${onboardingData?.domain}/services/`,
+        bounceRateIncrease:
+          contentDecayData.length > 0
+            ? Math.floor(
+                (contentDecayData.reduce(
+                  (sum, item) => sum + Math.abs(item.dropRatio || 0),
+                  0
+                ) /
+                  contentDecayData.length) *
+                  100
+              )
+            : 10,
+        outdatedPages: contentDecayData.filter(
+          (item) => item.status === "Deep Decay"
+        ).length,
       },
       errorPages: {
-        count: Math.floor(totalFunnelPages * 0.12),
-        estimatedLoss: parseFloat((totalImpressions * 0.05 * 0.12).toFixed(1)), // Estimated revenue loss
+        count: contentCostWasteData.filter(
+          (item) => (item.impressions || 0) === 0
+        ).length,
+        estimatedLoss: parseFloat(
+          contentCostWasteData
+            .filter((item) => (item.impressions || 0) === 0)
+            .reduce((sum, item) => sum + (item.wastedSpend || 0), 0)
+            .toFixed(1)
+        ),
       },
     };
-  };
+  }, [onboardingData]);
 
   // Initialize risk metrics state with calculated values
   const [riskMetrics, setRiskMetrics] = useState(calculateRiskMetrics());
-
   // Update risk metrics when onboarding data changes
   useEffect(() => {
     if (!loading && onboardingData) {
       setRiskMetrics(calculateRiskMetrics());
     }
-  }, [onboardingData, loading]);
+  }, [onboardingData, loading, calculateRiskMetrics]);
 
   const [expandedSections, setExpandedSections] = useState({});
 
@@ -235,21 +297,6 @@ const RiskDashboard = () => {
       minimumFractionDigits: 0,
     }).format(amount);
   };
-
-  // Get risk level color
-  const getRiskColor = (level) => {
-    switch (level) {
-      case "high":
-        return "#ef4444";
-      case "medium":
-        return "#f59e0b";
-      case "low":
-        return "#10b981";
-      default:
-        return "#6b7280";
-    }
-  };
-
   // Show loading spinner while data is being fetched
   if (loading) {
     return (

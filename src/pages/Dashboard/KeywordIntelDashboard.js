@@ -160,8 +160,7 @@ const KeywordIntelDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Conversion rate state (1% to 4.5% range) - same as CommandCenterDashboard
-  const [conversionRate, setConversionRate] = useState(2.0); // Default 2%
-  // Calculate keyword intelligence metrics
+  const [conversionRate, setConversionRate] = useState(2.0); // Default 2%  // Calculate keyword intelligence metrics
   const keywordIntelData = useMemo(() => {
     if (!onboardingData || loading) return { isBlind: true };
 
@@ -184,7 +183,9 @@ const KeywordIntelDashboard = () => {
 
     const searchConsoleData = onboardingData.searchConsoleData || [];
     const mozData = getRealMozData(onboardingData); // Use real data instead of mock
+
     const domain = onboardingData.domain;
+    const gscAnalysisData = onboardingData.GSCAnalysisData || {};
 
     // 1. Calculate Blended Authority (BA Score)
     const domain_authority = mozData.domain_authority;
@@ -305,37 +306,106 @@ const KeywordIntelDashboard = () => {
       return "BB";
     }; // 5. Risk calculations - enhanced with real data analysis
     const high_ctr_leak_pages = searchConsoleData.filter(
-      (page) => parseInt(page.impressions) >= 10000 && parseFloat(page.ctr) < 1
+      (page) => parseInt(page.impressions) >= 500 && parseFloat(page.ctr) < 1.5 // Lowered threshold for more realistic detection
     ).length;
 
-    const high_ctr_leak_risk = high_ctr_leak_pages * 48000; // $48k per page risk
+    // Calculate more realistic high CTR leak risk
+    const baseRiskPerPage = Math.max(averageOrderValue * 50, 2000); // Minimum $2k risk per leaking page
+    const high_ctr_leak_risk = high_ctr_leak_pages * baseRiskPerPage; // Enhanced cannibal clashes using real cannibalization data from GSC analysis
+    const cannibalizationData = gscAnalysisData.cannibalization || [];
+    let cannibal_risk = 0;
+    let cannibal_conflicts_count = 0;
+    let competitive_conflicts = [];
 
-    // Calculate cannibal clashes from search console data
-    const keyword_groups = {};
-    searchConsoleData.forEach((page) => {
-      if (page.query) {
-        const words = page.query.toLowerCase().split(" ");
-        words.forEach((word) => {
-          if (word.length > 3) {
-            // Only consider meaningful words
-            if (!keyword_groups[word]) keyword_groups[word] = [];
-            keyword_groups[word].push(page);
-          }
-        });
-      }
-    });
+    if (cannibalizationData.length > 0) {
+      // Use real cannibalization analysis data
+      cannibal_conflicts_count = cannibalizationData.length;
+      // Process competitive conflicts for intelligence dashboard
+      competitive_conflicts = cannibalizationData
+        .map((conflict) => {
+          const primaryPosition = Math.round(
+            conflict.primaryUrl?.position || 0
+          );
+          const competingPosition = conflict.competingUrls?.[0]?.position
+            ? Math.round(conflict.competingUrls[0].position)
+            : 0;
 
-    // Find groups with multiple pages (potential cannibalization)
-    const cannibal_groups = Object.values(keyword_groups).filter(
-      (group) => group.length > 1
-    );
-    const cannibal_risk = cannibal_groups.length * 12000; // $12k per group
+          // Calculate impact level based on position difference and impressions
+          const positionGap = Math.abs(primaryPosition - competingPosition);
+          const totalImpressions =
+            (conflict.primaryUrl?.impressions || 0) +
+            (conflict.competingUrls?.[0]?.impressions || 0);
 
-    // DA/KD mismatch exposure
+          let impact_level = "low";
+          if (totalImpressions > 100 && positionGap < 5) impact_level = "high";
+          else if (totalImpressions > 50 || positionGap < 10)
+            impact_level = "medium";
+
+          return {
+            keyword: conflict.keyword,
+            primary_position: primaryPosition,
+            competing_position: competingPosition,
+            competing_urls: conflict.competingUrls?.length || 1,
+            impact_level: impact_level,
+            total_impressions: totalImpressions,
+            primary_clicks: conflict.primaryUrl?.clicks || 0,
+            competing_clicks: conflict.competingUrls?.[0]?.clicks || 0,
+          };
+        })
+        .sort((a, b) => b.total_impressions - a.total_impressions);
+      cannibal_risk = cannibalizationData.reduce((total, conflict) => {
+        // Calculate competing URLs impact with more realistic revenue calculations
+        const competingImpact =
+          conflict.competingUrls?.reduce((sum, competing) => {
+            const competingImpressions = competing.impressions || 0;
+            const competingClicks = competing.clicks || 0;
+            const primaryClicks = conflict.primaryUrl?.clicks || 0;
+
+            // Calculate lost opportunity from traffic split
+            const totalClicks = competingClicks + primaryClicks;
+            const potentialClicks = competingImpressions * 0.03; // 3% target CTR
+            const actualClicks = totalClicks;
+            const lostClicks = Math.max(0, potentialClicks - actualClicks);
+
+            // Use higher multiplier for keyword cannibalization impact
+            const revenueMultiplier = Math.max(averageOrderValue * 5, 200); // Minimum $200 impact per lost conversion
+            return (
+              sum + lostClicks * conversionRateDecimal * revenueMultiplier * 12
+            ); // Annual impact
+          }, 0) || 0;
+
+        return total + competingImpact;
+      }, 0);
+    } else {
+      // Fallback to search console pattern analysis
+      const keyword_groups = {};
+      searchConsoleData.forEach((page) => {
+        if (page.query) {
+          const words = page.query.toLowerCase().split(" ");
+          words.forEach((word) => {
+            if (word.length > 3) {
+              if (!keyword_groups[word]) keyword_groups[word] = [];
+              keyword_groups[word].push(page);
+            }
+          });
+        }
+      });
+      const cannibal_groups = Object.values(keyword_groups).filter(
+        (group) => group.length > 1
+      );
+      cannibal_conflicts_count = cannibal_groups.length;
+      cannibal_risk = cannibal_groups.length * 12000; // $12k per group fallback
+    } // DA/KD mismatch exposure with enhanced calculation
     const mismatch_keywords = mozData.keywords.filter(
       (kw) => kw.kd > blended_authority + 15
     );
-    const mismatch_risk = mismatch_keywords.length * 18000; // $18k per keyword
+    // Calculate more realistic mismatch risk based on actual search volume and competition
+    const mismatch_risk = mismatch_keywords.reduce((total, kw) => {
+      const searchVolume = kw.search_volume || 100;
+      const kdGap = kw.kd - blended_authority;
+      const riskMultiplier = Math.max(averageOrderValue * 20, 1000); // Minimum $1k per mismatch
+      return total + (kdGap * searchVolume * 0.1 * riskMultiplier) / 1000; // Scale by volume and gap
+    }, 0);
 
     // Calculate crawl errors and other technical issues
     const crawl_error_pages = searchConsoleData.filter(
@@ -345,7 +415,59 @@ const KeywordIntelDashboard = () => {
     const crawl_error_percentage =
       searchConsoleData.length > 0
         ? Math.round((crawl_error_pages / searchConsoleData.length) * 100)
-        : 0; // 6. Intent distribution - Use actual funnel analysis data from onboardingData
+        : 0;
+
+    // Enhanced content cost waste analysis using real GSC data
+    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
+    let total_wasted_spend = 0;
+    let content_waste_pages = 0;
+    if (contentCostWasteData.length > 0) {
+      // Use real content cost waste analysis with enhanced calculation
+      total_wasted_spend = contentCostWasteData.reduce((sum, waste) => {
+        // Calculate more realistic waste impact
+        const pageImpressions = waste.impressions || 0;
+        const pagePosition = waste.position || 100;
+        const wastedPotential =
+          pageImpressions > 100 && pagePosition > 20
+            ? Math.max(contentCost * 2, 500) // Minimum $500 waste for high-impression, poor-position pages
+            : contentCost;
+        return sum + wastedPotential;
+      }, 0);
+      content_waste_pages = contentCostWasteData.filter(
+        (waste) => (waste.impressions || 0) > 50 && (waste.position || 100) > 25 // Pages with traffic but poor position
+      ).length;
+    } else {
+      // Fallback calculation based on poor performing pages
+      const poorPerformingPages = searchConsoleData.filter(
+        (page) =>
+          parseFloat(page.position) > 30 && parseInt(page.impressions) < 50
+      );
+      content_waste_pages = poorPerformingPages.length;
+      total_wasted_spend = content_waste_pages * contentCost;
+    }
+
+    // Enhanced link dilution analysis using real GSC data
+    const linkDilutionData = gscAnalysisData.linkDilution || [];
+    let link_dilution_risk = 0;
+    let high_dilution_pages = 0;
+    if (linkDilutionData.length > 0) {
+      // Calculate dilution risk based on real analysis with enhanced impact
+      link_dilution_risk = linkDilutionData.reduce((sum, dilution) => {
+        const estimatedLoss = dilution.estimatedLoss || {};
+        const midLoss = estimatedLoss.mid || 0;
+        const highLoss = estimatedLoss.high || 0;
+        // Use higher multiplier for link dilution impact
+        const revenueMultiplier = Math.max(averageOrderValue * 10, 800); // Minimum $800 impact per dilution
+        return sum + (midLoss + highLoss) * revenueMultiplier;
+      }, 0);
+      high_dilution_pages = linkDilutionData.filter(
+        (dilution) => (dilution.dilutionScore || 0) > 0.02 // High dilution threshold
+      ).length;
+    } else {
+      // Fallback - estimate based on pages with many external links
+      high_dilution_pages = Math.floor(searchConsoleData.length * 0.1); // 10% estimate
+      link_dilution_risk = high_dilution_pages * 3000; // $3k per page estimate
+    } // 6. Intent distribution - Use actual funnel analysis data from onboardingData
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
     const actualFunnelDistribution = funnelAnalysis.funnelDistribution || {
       ToF: 0,
@@ -399,46 +521,89 @@ const KeywordIntelDashboard = () => {
           intent: kw.intent,
         };
       })
-      .sort((a, b) => b.baa - a.baa || b.irr - a.irr); // 8. Momentum data (30-day changes) - using GSC analysis data with real comparison
-    const gscAnalysisData = onboardingData.GSCAnalysisData || {};
+      .sort((a, b) => b.baa - a.baa || b.irr - a.irr); // 8. Enhanced momentum data with real GA4 metrics and revenue calculations
+    const gaDataMetrics = gscAnalysisData.gaData || {};
+    const urlMetricsData = gaDataMetrics.urlMetrics || {};
+    // Calculate 30-day revenue momentum using real GA4 data
+    let totalRevenue = 0;
+    let totalSessions = 0;
+    let engagedSessionsTotal = 0;
+
+    Object.entries(urlMetricsData).forEach(([url, metrics]) => {
+      const sessions = metrics.sessions || 0;
+      const engagedSessions = metrics.engagedSessions || 0;
+
+      totalSessions += sessions;
+      engagedSessionsTotal += engagedSessions;
+
+      // Calculate revenue using engagement-based conversion rates
+      const engagementRate = sessions > 0 ? engagedSessions / sessions : 0;
+      const adjustedConversionRate =
+        conversionRateDecimal * (1 + engagementRate);
+      const pageRevenue = sessions * adjustedConversionRate * averageOrderValue;
+      totalRevenue += pageRevenue;
+    });
+
+    // Calculate content attribution metrics
+    const contentAttributedRevenue = Math.round(totalRevenue);
+    const avgEngagementRate =
+      totalSessions > 0 ? (engagedSessionsTotal / totalSessions) * 100 : 0;
+
+    // Calculate CAC payback using content costs and revenue
+    const totalContentInvestment = searchConsoleData.length * contentCost;
+    const cacPaybackMonths =
+      totalContentInvestment > 0 && contentAttributedRevenue > 0
+        ? totalContentInvestment / (contentAttributedRevenue / 12)
+        : 0; // months to payback
+
+    // Enhanced momentum keywords with real performance data
     const momentum_keywords = [];
 
-    // Try to use real momentum data from GSC analysis first
+    // Use actual GSC performance comparison data
     if (
-      gscAnalysisData.topPerformingKeywords &&
-      Array.isArray(gscAnalysisData.topPerformingKeywords)
+      gscAnalysisData.contentDecay &&
+      Array.isArray(gscAnalysisData.contentDecay)
     ) {
-      // Use real performance comparison data
-      gscAnalysisData.topPerformingKeywords
+      gscAnalysisData.contentDecay
+        .filter((item) => item.gscData && item.gscData.monthly)
         .slice(0, 3)
-        .forEach((keyword, index) => {
-          const change_types = ["clicks", "impressions", "position"];
-          const change_type = change_types[index % change_types.length];
+        .forEach((content, index) => {
+          const monthlyData = content.gscData.monthly;
+          if (monthlyData.length >= 2) {
+            const latest = monthlyData[monthlyData.length - 1];
+            const previous = monthlyData[monthlyData.length - 2];
 
-          let change_value = "N/A";
-          if (keyword.clicksChange !== undefined) {
-            change_value =
-              keyword.clicksChange > 0
-                ? `+${keyword.clicksChange}`
-                : `${keyword.clicksChange}`;
-          } else if (keyword.impressionsChange !== undefined) {
-            change_value =
-              keyword.impressionsChange > 0
-                ? `+${keyword.impressionsChange}`
-                : `${keyword.impressionsChange}`;
-          } else if (keyword.positionChange !== undefined) {
-            // Position change (negative is better)
-            change_value =
-              keyword.positionChange < 0
-                ? `${keyword.positionChange.toFixed(1)}`
-                : `+${keyword.positionChange.toFixed(1)}`;
+            const clicksChange = latest.clicks - previous.clicks;
+            const impressionsChange = latest.impressions - previous.impressions;
+
+            // Extract domain from URL for cleaner display
+            const urlParts = content.url.split("/");
+            const domain = urlParts[2] || content.url;
+
+            momentum_keywords.push({
+              keyword: domain,
+              change_type:
+                index === 0
+                  ? "clicks"
+                  : index === 1
+                  ? "impressions"
+                  : "position",
+              change:
+                index === 0
+                  ? clicksChange > 0
+                    ? `+${clicksChange}`
+                    : `${clicksChange}`
+                  : index === 1
+                  ? impressionsChange > 0
+                    ? `+${impressionsChange}`
+                    : `${impressionsChange}`
+                  : content.slopeP
+                  ? `${content.slopeP > 0 ? "+" : ""}${content.slopeP.toFixed(
+                      1
+                    )}`
+                  : "N/A",
+            });
           }
-
-          momentum_keywords.push({
-            keyword: keyword.query || keyword.keyword || `Keyword ${index + 1}`,
-            change_type: change_type,
-            change: change_value,
-          });
         });
     }
 
@@ -506,8 +671,28 @@ const KeywordIntelDashboard = () => {
       high_ctr_leak_risk,
       high_ctr_leak_pages,
       cannibal_risk,
+      cannibal_conflicts_count, // Number of actual keyword conflicts
+      competitive_conflicts, // Detailed competitive conflict data
+      competitive_strength:
+        competitive_conflicts.length > 0
+          ? Math.round(
+              (competitive_conflicts.filter(
+                (c) => c.primary_position < c.competing_position
+              ).length /
+                competitive_conflicts.length) *
+                100
+            )
+          : 0,
+      competitive_gaps: competitive_conflicts.filter(
+        (c) => c.impact_level === "high"
+      ).length,
       mismatch_risk,
       crawl_error_percentage,
+      // Real content analysis metrics
+      total_wasted_spend: Math.round(total_wasted_spend),
+      content_waste_pages,
+      link_dilution_risk: Math.round(link_dilution_risk),
+      high_dilution_pages,
       intent_percentages,
       opportunity_stack,
       momentum_keywords,
@@ -515,6 +700,11 @@ const KeywordIntelDashboard = () => {
       anchor_text_data: mozData.anchor_text_data,
       total_clicks,
       total_impressions,
+      // Real calculated metrics from enhanced momentum calculations
+      content_attributed_revenue: Math.round(contentAttributedRevenue),
+      total_sessions: Math.round(totalSessions),
+      avg_engagement_rate: Math.round(avgEngagementRate * 10) / 10,
+      cac_payback_months: Math.round(cacPaybackMonths * 10) / 10,
       hasRealMozData: mozData.hasRealMozData,
       isBlind: false,
     };
@@ -714,9 +904,6 @@ const KeywordIntelDashboard = () => {
                 </span>
               </div>
             </div>
-            <div className="filter-pipe">
-              _________________________ Filter pipe _______________________
-            </div>
           </div>
         </div>
         {/* Row 2: Market Tape */}
@@ -756,53 +943,51 @@ const KeywordIntelDashboard = () => {
             <div className="revenue-metrics">
               <div className="metric-line">
                 <span>30‑Day Content‑Attributed Revenue</span>
-                <span className="value-locked">N/A</span>
+                <span className="value-unlocked">
+                  $
+                  {keywordIntelData.content_attributed_revenue?.toLocaleString() ||
+                    0}
+                </span>
               </div>
               <div className="metric-line">
-                <span>QoQ CAGR</span>
-                <span className="value-locked">N/A</span>
+                <span>Total Sessions</span>
+                <span className="value-unlocked">
+                  {keywordIntelData.total_sessions?.toLocaleString() || 0}
+                </span>
                 <span className="spark-line">▇▇▇▇▇</span>
               </div>
               <div className="metric-line">
                 <span>CAC Payback (SEO only)</span>
-                <span className="value-locked">N/A</span>
-              </div>
-              <div className="metric-line">
-                <span>Avg Content Yield</span>
-                <span className="value-locked">
-                  {keywordIntelData.portfolio_yield}%
+                <span className="value-unlocked">
+                  {keywordIntelData.cac_payback_months > 0
+                    ? `${keywordIntelData.cac_payback_months} mo`
+                    : "Immediate"}
                 </span>
               </div>
-            </div>
-            <div className="delta-metrics">
+              <div className="metric-line">
+                <span>Avg Engagement Rate</span>
+                <span className="value-unlocked">
+                  {keywordIntelData.avg_engagement_rate}%
+                </span>
+              </div>
+            </div>{" "}
+            {/* <div className="delta-metrics">
               <span>ΔImpr</span>
               <span>ΔCTR</span>
               <span>ΔPos</span>
               <br />
               <span>
-                {keywordIntelData.total_impressions > 1000
-                  ? `+${Math.round(
-                      (keywordIntelData.total_impressions * 0.05) / 1000
-                    )}k`
-                  : "N/A"}
+                {keywordIntelData.revenue_momentum_data?.delta_impressions ||
+                  "N/A"}
               </span>
               <span>
-                {keywordIntelData.avg_ctr > 0
-                  ? `${keywordIntelData.avg_ctr > 2 ? "-" : "+"}${Math.abs(
-                      keywordIntelData.avg_ctr * 0.1
-                    ).toFixed(1)}%`
-                  : "N/A"}
+                {keywordIntelData.revenue_momentum_data?.delta_ctr || "N/A"}
               </span>
               <span>
-                {keywordIntelData.avg_position > 0
-                  ? `${
-                      keywordIntelData.avg_position > 10 ? "+" : "-"
-                    }${Math.abs(keywordIntelData.avg_position * 0.1).toFixed(
-                      1
-                    )}`
-                  : "N/A"}
+                {keywordIntelData.revenue_momentum_data?.delta_position ||
+                  "N/A"}
               </span>
-            </div>
+            </div> */}
           </div>
 
           <div className="risk-board-tile">
@@ -840,7 +1025,7 @@ const KeywordIntelDashboard = () => {
                     ? "Amber"
                     : "Green"}
                 </span>
-              </div>
+              </div>{" "}
               <div className="risk-item">
                 <span>Cannibal Risk</span>
                 <span className="risk-status">
@@ -849,6 +1034,39 @@ const KeywordIntelDashboard = () => {
                     : keywordIntelData.cannibal_risk > 20000
                     ? "▲Medium"
                     : "▼Low"}
+                </span>
+              </div>
+              <div className="risk-item">
+                <span>
+                  Content Cost Waste ({keywordIntelData.content_waste_pages}{" "}
+                  URLs)
+                </span>
+                <span className="risk-value">
+                  ${Math.round(keywordIntelData.total_wasted_spend / 1000)}k
+                  waste
+                </span>
+              </div>
+              <div className="risk-item">
+                <span>
+                  Link Dilution ({keywordIntelData.high_dilution_pages}{" "}
+                  high-risk)
+                </span>
+                <span className="risk-value">
+                  ${Math.round(keywordIntelData.link_dilution_risk / 1000)}k
+                  risk
+                </span>
+              </div>
+              <div className="risk-item">
+                <span>
+                  Keyword Conflicts ({keywordIntelData.cannibal_conflicts_count}{" "}
+                  detected)
+                </span>
+                <span className="risk-status">
+                  {keywordIntelData.cannibal_conflicts_count > 10
+                    ? "▲Critical"
+                    : keywordIntelData.cannibal_conflicts_count > 5
+                    ? "▲High"
+                    : "▼Manageable"}
                 </span>
               </div>
             </div>
@@ -894,20 +1112,81 @@ const KeywordIntelDashboard = () => {
               </div>
             </div>
           </div>{" "}
-          <div className="anchor-text-tile">
-            <h3>• ANCHOR‑TEXT INVENTORY (Top)</h3>
-            <div className="anchor-items">
-              {keywordIntelData.anchor_text_data.map((item, index) => (
-                <div key={index} className="anchor-item">
-                  <span className="anchor-text">"{item.anchor}"</span>
-                  <span className="anchor-percentage">
-                    {item.hasRealData ? `${item.percentage}%` : "N/A"}
+          <div className="competitive-intel-tile">
+            <h3>• COMPETITIVE INTELLIGENCE</h3>
+            <div className="competitive-sections">
+              <div className="competitive-header">
+                <div className="competitive-metric">
+                  <span className="metric-label">Keyword Conflicts:</span>
+                  <span className="metric-value">
+                    {keywordIntelData.cannibal_conflicts_count}
                   </span>
                 </div>
-              ))}
-              {!keywordIntelData.hasRealMozData && (
-                <div className="anchor-note">
-                  * Connect MOZ API for real anchor text data
+                <div className="competitive-metric">
+                  <span className="metric-label">Competitive Strength:</span>
+                  <span
+                    className={`metric-value ${
+                      keywordIntelData.competitive_strength > 60
+                        ? "strong"
+                        : keywordIntelData.competitive_strength > 30
+                        ? "moderate"
+                        : "weak"
+                    }`}
+                  >
+                    {keywordIntelData.competitive_strength}%
+                  </span>
+                </div>
+                <div className="competitive-metric">
+                  <span className="metric-label">High-Impact Gaps:</span>
+                  <span
+                    className={`metric-value ${
+                      keywordIntelData.competitive_gaps > 3
+                        ? "high-risk"
+                        : "moderate-risk"
+                    }`}
+                  >
+                    {keywordIntelData.competitive_gaps}
+                  </span>
+                </div>
+              </div>
+              <div className="competitive-conflicts">
+                {keywordIntelData.competitive_conflicts
+                  .slice(0, 4)
+                  .map((conflict, index) => (
+                    <div key={index} className="conflict-item">
+                      <div className="conflict-keyword">
+                        <span className="keyword-text">{conflict.keyword}</span>
+                        <span className="conflict-count">
+                          {conflict.total_impressions}+ impr
+                        </span>
+                      </div>
+                      <div className="conflict-positions">
+                        <span className="primary-pos">
+                          #{conflict.primary_position}
+                        </span>
+                        <span className="vs">vs</span>
+                        <span className="competing-pos">
+                          #{conflict.competing_position}
+                        </span>
+                      </div>
+                      <div className="traffic-impact">
+                        <span
+                          className={`impact-level ${conflict.impact_level}`}
+                        >
+                          {conflict.impact_level.toUpperCase()}
+                        </span>
+                        <div className="clicks-split">
+                          {conflict.primary_clicks}:{conflict.competing_clicks}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              {keywordIntelData.cannibal_conflicts_count > 4 && (
+                <div className="conflicts-note">
+                  +{keywordIntelData.cannibal_conflicts_count - 4} more
+                  conflicts • Strength: {keywordIntelData.competitive_strength}%
+                  win rate
                 </div>
               )}
             </div>
