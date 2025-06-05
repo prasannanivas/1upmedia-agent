@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.css": "/1upmedia-agent/static/css/main.c42bec67.css",
+    "main.css": "/1upmedia-agent/static/css/main.c8033742.css",
     "main.js": "/1upmedia-agent/static/js/main.6e73f9a0.js",
     "static/media/instagram-logo.png": "/1upmedia-agent/static/media/instagram-logo.8813ee4ddfbe23739448.png",
     "static/media/wordpress-logo.png": "/1upmedia-agent/static/media/wordpress-logo.8be7749da6c714d49c9d.png",
@@ -11,11 +11,11 @@
     "static/media/logo1.png": "/1upmedia-agent/static/media/logo1.5f49ec9498f65e0e4659.png",
     "static/media/linkedin-logo.png": "/1upmedia-agent/static/media/linkedin-logo.68ac41e1459436bfd38f.png",
     "index.html": "/1upmedia-agent/index.html",
-    "main.c42bec67.css.map": "/1upmedia-agent/static/css/main.c42bec67.css.map",
+    "main.c8033742.css.map": "/1upmedia-agent/static/css/main.c8033742.css.map",
     "main.6e73f9a0.js.map": "/1upmedia-agent/static/js/main.6e73f9a0.js.map"
   },
   "entrypoints": [
-    "static/css/main.c42bec67.css",
+    "static/css/main.c8033742.css",
     "static/js/main.6e73f9a0.js"
   ]
 }
