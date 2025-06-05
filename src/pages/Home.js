@@ -575,7 +575,7 @@ const HomePage = () => {
         </p> */}
 
         {/* Quick Links */}
-        <motion.section
+        {/* <motion.section
           className="homepage-quick-links"
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -591,7 +591,7 @@ const HomePage = () => {
               <h3>{link.name}</h3>
             </Link>
           ))}
-        </motion.section>
+        </motion.section> */}
 
         {/* Progress Section */}
         {/* <div className="homepage-progress-container">

@@ -316,7 +316,7 @@ const Dashboard = () => {
         </div> */}
       </section>
 
-      <div className="dashboard-actions">
+      {/* <div className="dashboard-actions">
         <button
           className="btn-secondary"
           onClick={() => navigate("/onboarding/step-keywords")}
@@ -329,7 +329,7 @@ const Dashboard = () => {
         >
           Start Creating Content
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };
