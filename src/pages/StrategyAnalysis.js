@@ -6,7 +6,36 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../context/OnboardingContext";
-import { AlertTriangle, RefreshCw, ArrowRight } from "lucide-react";
+import {
+  AlertTriangle,
+  RefreshCw,
+  ArrowRight,
+  Target,
+  BarChart3,
+  Download,
+  Settings,
+  ExternalLink,
+  Database,
+  TrendingUp,
+  TrendingDown,
+  BarChart2,
+  PieChart,
+  LineChart,
+  Zap,
+  Award,
+  ShieldCheck,
+  Activity,
+  Layers,
+  HeartPulse,
+  Scale,
+  Lightbulb,
+  Link,
+  Gauge,
+  CheckCircle,
+  BookOpen,
+  UserCheck,
+  Workflow,
+} from "lucide-react";
 import "./StrategyAnalysis.css";
 
 const StrategyAnalysis = () => {
@@ -417,34 +446,73 @@ const StrategyAnalysis = () => {
       },
     };
   }, [onboardingData, loading]);
-
   if (loading) {
     return (
-      <div className="strategy-lab loading">
-        <div className="loading-spinner">
-          <RefreshCw className="animate-spin" size={32} />
-          <p>Loading Strategy Lab™...</p>
-        </div>
+      <div className="strategy-analysis-loading">
+        <RefreshCw className="loading-spinner" />
+        <p>Loading Strategy Analysis...</p>
       </div>
     );
   }
 
   if (strategyData.isBlind) {
     return (
-      <div className="strategy-lab no-data">
-        <div className="no-data-content">
-          <AlertTriangle size={48} color="#F59E0B" />
+      <div className="strategy-analysis-insufficient-data">
+        <div className="insufficient-data-container">
+          <AlertTriangle className="warning-icon" size={48} />
           <h2>Insufficient Data for Strategy Analysis</h2>
-          <p>
-            Connect your search data and add keywords to unlock the Strategy
-            Lab™ dashboard.
-          </p>
-          <button
-            onClick={() => navigate("/onboarding/step-keywords")}
-            className="cta-button"
-          >
-            Set Up Keywords <ArrowRight size={16} />
-          </button>
+          <div className="data-requirements">
+            <p>To display your Strategy Analysis, we need:</p>
+            <ul>
+              <li>
+                <span
+                  className={
+                    onboardingData?.domain
+                      ? "requirement-met"
+                      : "requirement-missing"
+                  }
+                >
+                  ✓ Domain configuration
+                </span>
+              </li>
+              <li>
+                <span
+                  className={
+                    onboardingData?.keywords?.length > 0
+                      ? "requirement-met"
+                      : "requirement-missing"
+                  }
+                >
+                  ✓ Target keywords
+                </span>
+              </li>
+              <li>
+                <span
+                  className={
+                    onboardingData?.searchConsoleData?.length > 0
+                      ? "requirement-met"
+                      : "requirement-missing"
+                  }
+                >
+                  ✓ Google Search Console data
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div className="insufficient-data-actions">
+            <button
+              className="action-btn primary"
+              onClick={() => navigate("/onboarding/step-keywords")}
+            >
+              Complete Setup
+            </button>
+            <button
+              className="action-btn secondary"
+              onClick={() => navigate("/dashboard")}
+            >
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -454,49 +522,116 @@ const StrategyAnalysis = () => {
 
   return (
     <div className="strategy-lab">
-      {/* Header with Weight-Class Principle */}
-      <div className="strategy-header">
-        <div className="header-box">
-          <div className="title-section">
-            <h1>Strategy Lab™ — Unified Performance Command Center</h1>
-            <p>
-              Real‑time intelligence that turns raw URL metrics into an
-              executive‑level game plan.
-            </p>
+      {/* Header Section */}
+      <div className="ledger-header">
+        <div className="header-top">
+          <div className="header-title">
+            <Database className="header-icon" />
+            <div>
+              <h1>STRATEGY LAB™</h1>
+              <p>Unified Performance Command Center</p>
+            </div>
           </div>
-          <div className="weight-class-section">
-            <h3>⚖ WEIGHT‑CLASS PRINCIPLE</h3>
-            <p>
-              Your <strong>Site Strength (DA)</strong> decides the division you
-              fight in.
-            </p>
-            <p>
-              Targeting keywords tougher than that weight class spawns{" "}
-              <strong>content cannibalization</strong>
-            </p>
-            <p>
-              and <strong>link dilution</strong> (see HubSpot, Dec 2024). Keep{" "}
-              <strong>Efficiency Ratio ≤ 1.00</strong> to
-            </p>
-            <p>scale clean.</p>
+          <div className="header-actions">
+            <button className="action-btn secondary">
+              <Download size={16} />
+              Export Analysis
+            </button>
+            <button className="action-btn primary">
+              <RefreshCw size={16} />
+              Refresh Data
+            </button>
+          </div>
+        </div>
+
+        {/* Site Overview */}
+        <div className="site-overview">
+          <div className="overview-grid">
+            <div className="overview-item">
+              <span className="overview-label">Domain Authority:</span>
+              <span className="overview-value">
+                {strategyData.domainAuthority}
+              </span>
+            </div>
+            <div className="overview-item">
+              <span className="overview-label">Efficiency Ratio:</span>
+              <span className="overview-value">
+                {strategyData.efficiencyRatio}
+              </span>
+            </div>
+            <div className="overview-item">
+              <span className="overview-label">Avg Keyword Difficulty:</span>
+              <span className="overview-value">
+                {strategyData.avgKeywordDifficulty}
+              </span>
+            </div>
           </div>
         </div>
       </div>
-
+      {/* KPI Summary Cards */}{" "}
+      <div className="kpi-summary">
+        <div className="kpi-card lost-equity">
+          <div className="kpi-icon">
+            <TrendingDown size={24} />
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value">
+              ${panels.equityLeaks.lostEquityValue.toLocaleString()}
+            </div>
+            <div className="kpi-label">Lost Equity Value</div>
+          </div>
+        </div>
+        <div className="kpi-card cannibalization">
+          <div className="kpi-icon">
+            <BarChart2 size={24} />
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value">
+              {panels.equityLeaks.cannibalizationUrls}
+            </div>
+            <div className="kpi-label">Cannibalization URLs</div>
+          </div>
+        </div>
+        <div className="kpi-card dilution">
+          <div className="kpi-icon">
+            <Link size={24} />
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value">
+              {panels.equityLeaks.dilutionPercentage}%
+            </div>
+            <div className="kpi-label">Link Dilution</div>
+          </div>
+        </div>
+        <div className="kpi-card huta-score">
+          <div className="kpi-icon">
+            <Target size={24} />
+          </div>
+          <div className="kpi-content">
+            <div className="kpi-value">
+              {panels.playbookCompliance.overallScore}%
+            </div>
+            <div className="kpi-label">Playbook Compliance</div>
+          </div>
+        </div>
+      </div>
       {/* Strategy Panels */}
       <div className="strategy-panels">
+        {" "}
         {/* 1. Site Strength vs Keyword Barrier */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              1. SITE STRENGTH vs KEYWORD BARRIER{" "}
+              <div className="panel-title">
+                <Gauge size={18} className="panel-icon" />
+                1. SITE STRENGTH vs KEYWORD BARRIER
+              </div>
               <em>
                 *(DA {strategyData.domainAuthority} | KD avg{" "}
                 {strategyData.avgKeywordDifficulty})*
               </em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>Checks if you're throwing punches above your weight.</em>
             </p>
           </div>
@@ -534,19 +669,21 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 2. Equity Leaks */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              2. EQUITY LEAKS{" "}
+              <div className="panel-title">
+                <Link size={18} className="panel-icon" />
+                2. EQUITY LEAKS
+              </div>
               <em>
                 *(Cannibal {panels.equityLeaks.cannibalizationPercentage} % |
                 Dilution {panels.equityLeaks.dilutionPercentage} %)*
               </em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>
                 Shows where authority leaks before it can rank or convert.
               </em>
@@ -606,12 +743,15 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 3. Funnel Mix Health */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              3. FUNNEL MIX HEALTH{" "}
+              <div className="panel-title">
+                <Layers size={18} className="panel-icon" />
+                3. FUNNEL MIX HEALTH
+              </div>
               <em>
                 *(TOFU {panels.funnelMix.tofPercentage} % | MOFU{" "}
                 {panels.funnelMix.mofPercentage} % | BOFU{" "}
@@ -619,7 +759,6 @@ const StrategyAnalysis = () => {
               </em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>
                 Balances content inventory so strength converts across the
                 journey.
@@ -696,12 +835,15 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 4. HUTA Chain */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              4. HOOK → UNDERSTAND → TRUST → ACT CHAIN{" "}
+              <div className="panel-title">
+                <HeartPulse size={18} className="panel-icon" />
+                4. HOOK → UNDERSTAND → TRUST → ACT CHAIN
+              </div>
               <em>
                 *({panels.hutaChain.hookScore} % |{" "}
                 {panels.hutaChain.understandScore} % |{" "}
@@ -710,7 +852,6 @@ const StrategyAnalysis = () => {
               </em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>Psych sequence that turns traffic into momentum.</em>
             </p>
           </div>
@@ -744,12 +885,15 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 5. Match-up Analysis */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              5. MATCH‑UP ANALYSIS{" "}
+              <div className="panel-title">
+                <Scale size={18} className="panel-icon" />
+                5. MATCH‑UP ANALYSIS
+              </div>
               <em>
                 *(Efficiency Ratio {panels.matchupAnalysis.efficiencyRatio}{" "}
                 {panels.matchupAnalysis.status === "Amber"
@@ -761,7 +905,6 @@ const StrategyAnalysis = () => {
               </em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>Quantifies how well keyword targets fit the weight class.</em>
             </p>
           </div>
@@ -790,15 +933,18 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 6. Playbook Compliance */}
         <div className="strategy-panel">
           <div className="panel-header">
             <h3>
-              6. PLAYBOOK COMPLIANCE <em>*(Framework Coverage)*</em>
+              <div className="panel-title">
+                <CheckCircle size={18} className="panel-icon" />
+                6. PLAYBOOK COMPLIANCE
+              </div>
+              <em>*(Framework Coverage)*</em>
             </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>
                 Confirms every stage follows an approved persuasion framework.
               </em>
@@ -837,16 +983,21 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>
+        </div>{" "}
         {/* 7. Journey Coverage */}
         <div className="strategy-panel">
           <div className="panel-header">
-            <h3>7. JOURNEY COVERAGE</h3>
+            <h3>
+              <div className="panel-title">
+                <Workflow size={18} className="panel-icon" />
+                7. JOURNEY COVERAGE
+              </div>
+            </h3>
             <p className="subtitle">
-              ▸ Subtitle:{" "}
               <em>Maps live URL distribution to the ideal customer journey.</em>
             </p>
-          </div>{" "}
+          </div>
+
           <div className="journey-distribution">
             <div className="journey-stage">
               <span>Awareness</span>
@@ -974,6 +1125,7 @@ const StrategyAnalysis = () => {
               </span>
             </div>
           </div>
+
           <div className="quick-wins">
             <h4>🔧 Quick Wins</h4>
             <ul>
@@ -982,7 +1134,7 @@ const StrategyAnalysis = () => {
               ))}
             </ul>
           </div>
-        </div>{" "}
+        </div>
       </div>
     </div>
   );
