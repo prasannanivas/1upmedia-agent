@@ -37,6 +37,29 @@ const ConnectGoogleModal = ({
     }
   }, [isOpen]);
 
+  // Pre-select connected sites and GA properties when data is available
+  useEffect(() => {
+    if (
+      connectedSites &&
+      connectedSites.length > 0 &&
+      gaProperties.length > 0
+    ) {
+      // Find and pre-select the connected GA property
+      const connectedSite = connectedSites[0];
+      if (connectedSite.google_analytics) {
+        const matchingProperty = gaProperties.find(
+          (property) =>
+            property.propertyId === connectedSite.google_analytics.propertyId ||
+            property.propertyName ===
+              connectedSite.google_analytics.propertyName
+        );
+        if (matchingProperty) {
+          setSelectedGAProperty(matchingProperty);
+        }
+      }
+    }
+  }, [connectedSites, gaProperties]);
+
   useEffect(() => {
     setUpdatedGoogleProfiles(googleProfiles);
   }, [googleProfiles]);
@@ -218,11 +241,10 @@ const ConnectGoogleModal = ({
     // If no connected sites, proceed directly
     await connectSite(site, selectedGAProperty);
   };
-
   // Add new function to handle the actual connection after confirmation
   const connectSite = async (site, gaProperty) => {
     console.log("Fetching analytics for site:", site);
-    const { siteUrl, accessToken } = site;
+    let { siteUrl, accessToken, refreshToken } = site;
     setLoadingPages(true);
     setError(null);
 
@@ -233,51 +255,115 @@ const ConnectGoogleModal = ({
     const endDate = today.toISOString().split("T")[0];
 
     try {
-      const response = await fetch(
-        `https://ai.1upmedia.com:443/google/sites/${encodeURIComponent(
-          siteUrl
-        )}/analytics`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            startDate,
-            endDate,
-            accessToken,
-            set_minimum: true,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        setError(errorResponse.error || "Unknown error occurred.");
-        console.error(
-          "Error fetching analytics:",
-          errorResponse.error || "Unknown error occurred."
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await fetch(
+          `https://ai.1upmedia.com:443/google/sites/${encodeURIComponent(
+            siteUrl
+          )}/analytics`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              startDate,
+              endDate,
+              accessToken,
+              set_minimum: true,
+            }),
+          }
         );
-        return;
-      }
 
-      const data = await response.json();
-      console.log("Analytics Data:", data);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Analytics Data:", data);
 
-      if (data.length > 0) {
-        onGSCreceived(data);
-        const allKeywords = data.map((item) => item.keys?.[0]).filter(Boolean);
-        const uniqueKeywords = [...new Set(allKeywords)];
+          if (data.length > 0) {
+            onGSCreceived(data);
+            const allKeywords = data
+              .map((item) => item.keys?.[0])
+              .filter(Boolean);
+            const uniqueKeywords = [...new Set(allKeywords)];
 
-        // Store or update the site data based on its current status
-        await storeOrUpdateSiteData(site, data, gaProperty);
+            // Update site object with potentially new access token
+            const updatedSite = { ...site, accessToken };
 
-        if (uniqueKeywords.length > 0) {
-          onKeywordsSelected(uniqueKeywords);
-          onClose();
+            // Store or update the site data based on its current status
+            await storeOrUpdateSiteData(updatedSite, data, gaProperty);
+            if (uniqueKeywords.length > 0) {
+              onKeywordsSelected(uniqueKeywords);
+              handleModalClose();
+            } else {
+              setError("No relevant keywords found.");
+            }
+          } else {
+            setError("No keywords found.");
+          }
+          break; // Exit retry loop on success
+        } else if (response.status === 401 && attempt === 0) {
+          // Unauthorized, try refreshing the token
+          console.log(
+            `Access token expired for ${site.accountName}. Refreshing...`
+          );
+          try {
+            const refreshResponse = await fetch(
+              "https://ai.1upmedia.com:443/google/fetch-new-access-token",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  refreshToken: refreshToken,
+                }),
+              }
+            );
+
+            if (refreshResponse.ok) {
+              const { access_token: newAccessToken } =
+                await refreshResponse.json();
+              accessToken = newAccessToken; // Update the token
+              console.log(`Access token refreshed for ${site.accountName}`);
+
+              // Update the token in storage for the profile
+              const profile = updatedGoogleProfiles.find(
+                (p) => p.account_name === site.accountName
+              );
+              if (profile) {
+                await storeSocialMediaToken({
+                  email,
+                  social_media: {
+                    social_media_name: profile.social_media_name,
+                    account_name: profile.account_name,
+                    profile_picture: profile.profile_picture,
+                    access_token: newAccessToken,
+                    ...(profile.dynamic_fields?.refreshToken && {
+                      dynamic_fields: {
+                        refreshToken: profile.dynamic_fields.refreshToken,
+                      },
+                    }),
+                  },
+                });
+              }
+            } else {
+              throw new Error("Failed to refresh access token");
+            }
+          } catch (error) {
+            console.error(
+              `Error refreshing access token for ${site.accountName}:`,
+              error.message
+            );
+            setError("Failed to refresh access token. Please try again.");
+            break; // Stop retrying
+          }
         } else {
-          setError("No relevant keywords found.");
+          // Non-401 error or failed refresh
+          const errorResponse = await response.json();
+          setError(errorResponse.error || "Unknown error occurred.");
+          console.error(
+            "Error fetching analytics:",
+            errorResponse.error || "Unknown error occurred."
+          );
+          break; // Stop retrying
         }
-      } else {
-        setError("No keywords found.");
       }
     } catch (error) {
       console.error("Error fetching site analytics:", error.message);
@@ -329,27 +415,105 @@ const ConnectGoogleModal = ({
       setError("Failed to delete connected site.");
     }
   };
-
   const handleGoogleLogin = (provider) => {
     handleAuthorize(provider);
-    onClose();
+    handleModalClose();
   };
 
+  // Enhanced close handler with GA property warning
+  const handleModalClose = () => {
+    // Check if any GA properties are available but none selected
+    if (gaProperties.length > 0 && !selectedGAProperty) {
+      const confirmClose = window.confirm(
+        "You have Google Analytics properties available but haven't selected one. Are you sure you want to close without selecting a GA property? This will limit your analytics capabilities."
+      );
+      if (!confirmClose) {
+        return; // Don't close the modal
+      }
+    }
+    onClose();
+  };
   // New function to fetch GA properties
   const fetchGAProperties = async () => {
     setLoadingGAProperties(true);
 
-    const gaToken = updatedGoogleProfiles.find(
+    const profile = updatedGoogleProfiles.find(
       (profile) => profile.social_media_name === "google"
-    )?.access_token;
+    );
+
+    if (!profile) {
+      console.log("No Google profile found");
+      setLoadingGAProperties(false);
+      return;
+    }
+
+    let gaToken = profile.access_token;
 
     try {
-      const response = await fetch(
-        `https://ai.1upmedia.com:443/google/ga-properties?gaToken=${gaToken}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setGaProperties(data.properties || []);
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await fetch(
+          `https://ai.1upmedia.com:443/google/ga-properties?gaToken=${gaToken}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setGaProperties(data.properties || []);
+          break; // Exit retry loop on success
+        } else if (response.status === 401 && attempt === 0) {
+          // Unauthorized, try refreshing the token
+          console.log(
+            `Access token expired for ${profile.account_name}. Refreshing...`
+          );
+          try {
+            const refreshResponse = await fetch(
+              "https://ai.1upmedia.com:443/google/fetch-new-access-token",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  refreshToken: profile.dynamic_fields?.refreshToken,
+                }),
+              }
+            );
+
+            if (refreshResponse.ok) {
+              const { access_token: newAccessToken } =
+                await refreshResponse.json();
+              gaToken = newAccessToken; // Update the token
+              console.log(`Access token refreshed for ${profile.account_name}`);
+
+              // Call storeSocialMediaToken to update the token in storage
+              await storeSocialMediaToken({
+                email,
+                social_media: {
+                  social_media_name: profile.social_media_name,
+                  account_name: profile.account_name,
+                  profile_picture: profile.profile_picture,
+                  access_token: newAccessToken,
+                  ...(profile.dynamic_fields?.refreshToken && {
+                    dynamic_fields: {
+                      refreshToken: profile.dynamic_fields.refreshToken,
+                    },
+                  }),
+                },
+              });
+            } else {
+              throw new Error("Failed to refresh access token");
+            }
+          } catch (error) {
+            console.error(
+              `Error refreshing access token for ${profile.account_name}:`,
+              error.message
+            );
+            break; // Stop retrying
+          }
+        } else {
+          // Non-401 error or failed refresh, stop retrying
+          console.error("Failed to fetch GA properties");
+          break;
+        }
       }
     } catch (error) {
       console.error("Error fetching GA properties:", error);
@@ -359,77 +523,158 @@ const ConnectGoogleModal = ({
   };
 
   if (!isOpen) return null;
-
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        {/* Connected sites list (with delete buttons) */}
-        {connectedSites.length > 0 && (
-          <div className="connected-sites">
-            <h4>Connected Sites</h4>
-            <ul>
-              {connectedSites.map((site) => (
-                <li key={site.siteUrl} className="connected-site-item">
-                  <span>
-                    {" "}
-                    {"URL: "}
-                    {site.siteUrl}
-                  </span>
-                  <span>
-                    {"Property: "}
-                    {site.google_analytics
-                      ? site.google_analytics.accountName
-                      : ""}{" "}
-                  </span>
-                  <button onClick={() => deleteConnectedSite(site.siteUrl)}>
-                    Delete
-                  </button>
-                </li>
-              ))}
+        {/* Modal Header with Close Button */}
+        <div className="modal-header">
+          <button className="modal-close-btn-x" onClick={handleModalClose}>
+            ×
+          </button>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="modal-body">
+          {/* Connected sites list (with delete buttons) */}
+          {connectedSites.length > 0 && (
+            <div className="connected-sites">
+              <h4>Connected Sites</h4>
+              <ul>
+                {connectedSites.map((site) => (
+                  <li key={site.siteUrl} className="connected-site-item">
+                    <span>
+                      {" "}
+                      {"URL: "}
+                      {site.siteUrl}
+                    </span>
+                    <span>
+                      {"Property: "}
+                      {site.google_analytics
+                        ? site.google_analytics.accountName
+                        : ""}{" "}
+                    </span>
+                    <button onClick={() => deleteConnectedSite(site.siteUrl)}>
+                      Delete
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}{" "}
+          <h3 className="gsc-section-header">Google Search Console Accounts</h3>
+          <button
+            className="google-login-btn"
+            onClick={() => handleGoogleLogin("google")}
+          >
+            Login with Google
+          </button>
+          {loadingPages && (
+            <div className="loading-indicator">
+              <div className="spinner"></div>
+              <p>Loading accounts...</p>
+            </div>
+          )}
+          {googleSites.length === 0 ? (
+            <p>No sites found.</p>
+          ) : (
+            <ul className="google-sites-list">
+              {googleSites.map((site, index) => {
+                const isConnected = connectedSites.some(
+                  (connectedSite) => connectedSite.siteUrl === site.siteUrl
+                );
+                return (
+                  <li key={index} className="google-site-item">
+                    <img
+                      src={site.profilePicture}
+                      alt="Profile"
+                      className="google-profile-img"
+                    />
+                    <span>{site.accountName}</span>
+                    <span className="google-site-url">{site.siteUrl}</span>
+                    <button
+                      className={`google-connect-btn ${
+                        isConnected ? "connected" : ""
+                      }`}
+                      onClick={() => fetchSiteAnalytics(site)}
+                      disabled={isConnected}
+                    >
+                      {isConnected ? "Connected" : "Connect"}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
-          </div>
-        )}
+          )}
+          {error && <p className="error-message">❌ {error}</p>}
+          <h3 className="ga-section-header">Google Analytics Properties</h3>
+          {loadingGAProperties ? (
+            <div className="loading-indicator">
+              <div className="spinner"></div>
+              <p>Loading GA properties...</p>
+            </div>
+          ) : gaProperties.length === 0 ? (
+            <p>No GA properties found.</p>
+          ) : (
+            <ul className="ga-properties-list">
+              {gaProperties.map((property) => {
+                const isCurrentlyConnected = connectedSites.some(
+                  (site) =>
+                    site.google_analytics?.propertyId === property.propertyId
+                );
+                const isSelected =
+                  selectedGAProperty?.propertyId === property.propertyId;
 
-        <h3>Select a Google Search Console Account</h3>
-        <button
-          className="google-login-btn"
-          onClick={() => handleGoogleLogin("google")}
-        >
-          Login with Google
-        </button>
+                return (
+                  <li key={property.propertyId} className="ga-property-item">
+                    <img
+                      src="https://developers.google.com/analytics/images/terms/logo_lockup_analytics_icon_vertical_black_2x.png"
+                      alt="Google Analytics"
+                      className="ga-property-img"
+                    />
+                    <div className="ga-property-details">
+                      <span className="ga-account-name">
+                        {property.accountName}
+                      </span>
+                      <span className="ga-property-name">
+                        {property.propertyName} (ID: {property.propertyId})
+                      </span>
+                      {property.streams && property.streams.length > 0 && (
+                        <span className="ga-streams">
+                          Streams:{" "}
+                          {property.streams.map((s) => s.name).join(", ")}
+                        </span>
+                      )}
+                      {isCurrentlyConnected && (
+                        <span className="ga-connected-badge">
+                          ✓ Currently Connected
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      className={`ga-select-btn ${
+                        isSelected ? "selected" : ""
+                      } ${isCurrentlyConnected ? "connected" : ""}`}
+                      onClick={() => setSelectedGAProperty(property)}
+                    >
+                      {isCurrentlyConnected
+                        ? "Connected"
+                        : isSelected
+                        ? "Selected"
+                        : "Select"}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
-        {loadingPages && (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>Loading accounts...</p>
-          </div>
-        )}
-
-        {googleSites.length === 0 ? (
-          <p>No sites found.</p>
-        ) : (
-          <ul className="google-sites-list">
-            {googleSites.map((site, index) => (
-              <li key={index} className="google-site-item">
-                <img
-                  src={site.profilePicture}
-                  alt="Profile"
-                  className="google-profile-img"
-                />
-                <span>{site.accountName}</span>
-                <span className="google-site-url">{site.siteUrl}</span>
-                <button
-                  className="google-connect-btn"
-                  onClick={() => fetchSiteAnalytics(site)}
-                >
-                  Connect
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {error && <p className="error-message">❌ {error}</p>}
+        {/* Modal Footer with Close Button */}
+        <div className="modal-footer">
+          <button className="modal-close-btn" onClick={handleModalClose}>
+            Close
+          </button>
+        </div>
 
         {/* Add confirmation dialog */}
         {showConfirmation && (
@@ -451,60 +696,6 @@ const ConnectGoogleModal = ({
             </div>
           </div>
         )}
-
-        <h3>Select a Google Analytics Property</h3>
-        {loadingGAProperties ? (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>Loading GA properties...</p>
-          </div>
-        ) : gaProperties.length === 0 ? (
-          <p>No GA properties found.</p>
-        ) : (
-          <ul className="ga-properties-list">
-            {gaProperties.map((property) => (
-              <li
-                key={property.propertyId}
-                className={`ga-property-item${
-                  selectedGAProperty?.propertyId === property.propertyId
-                    ? " selected"
-                    : ""
-                }`}
-                style={{
-                  cursor: "pointer",
-                  padding: "8px",
-                  border: "1px solid #eee",
-                  marginBottom: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="ga-property"
-                  checked={
-                    selectedGAProperty?.propertyId === property.propertyId
-                  }
-                  onChange={() => setSelectedGAProperty(property)}
-                  style={{ marginRight: "10px" }}
-                />
-                <div style={{ flex: 1 }}>
-                  <strong>{property.accountName}</strong> —{" "}
-                  {property.propertyName} ({property.propertyId})
-                  {property.streams && property.streams.length > 0 && (
-                    <div style={{ fontSize: "0.9em", color: "#666" }}>
-                      Streams: {property.streams.map((s) => s.name).join(", ")}
-                    </div>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <button className="modal-close-btn" onClick={onClose}>
-          Close
-        </button>
       </div>
     </div>
   );

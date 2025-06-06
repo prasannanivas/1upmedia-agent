@@ -502,10 +502,35 @@ const StepKeywords = () => {
                       }}
                     >
                       <FaCheck />
-                    </motion.div>
+                    </motion.div>{" "}
                     <div className="gsc-connected-text">
-                      <h3>Google Search Console and GA4 Connected</h3>
-                      <p>{connectedSites[0].siteUrl}</p>
+                      <h3>Google Services Connected</h3>
+                      <div className="connection-details">
+                        <div className="connection-item">
+                          <span className="service-icon">🔍</span>
+                          <div className="property-id">
+                            <strong>Search Console:</strong>{" "}
+                            {connectedSites[0].siteUrl}
+                          </div>
+                        </div>
+                        {connectedSites[0].google_analytics && (
+                          <div className="connection-item">
+                            <span className="service-icon">📊</span>
+                            <div className="service-info">
+                              <strong>Analytics:</strong>{" "}
+                              {connectedSites[0].google_analytics.accountName}
+                              <span className="property-id">
+                                (Property:{" "}
+                                {
+                                  connectedSites[0].google_analytics
+                                    .propertyName
+                                }
+                                )
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 

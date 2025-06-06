@@ -327,7 +327,6 @@ export const processKeywordIntelligence = (rawData) => {
     searchConsoleData = [],
     mozDomainData = {},
     mozKeywordData = [],
-    mozLinkData = [],
     averageOrderValue = 75,
     contentCost = 200,
   } = rawData;
