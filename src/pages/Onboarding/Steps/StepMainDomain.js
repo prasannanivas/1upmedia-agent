@@ -25,6 +25,7 @@ const StepMainDomain = () => {
   const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
   const [selectedSitemaps, setSelectedSitemaps] = useState([]);
   const [isSitemapValidated, setIsSitemapValidated] = useState(false);
+  const [uniqueUrlCount, setUniqueUrlCount] = useState(0);
   const [domainCostDetails, setDomainCostDetails] = useState({
     averageOrderValue: 0,
     AverageContentCost: 0,
@@ -444,6 +445,7 @@ const StepMainDomain = () => {
     setLocation("");
     setSitemaps([]);
     setSelectedSitemaps([]);
+    setUniqueUrlCount(0);
 
     // Reset all steps
     setAnalysisSteps((prev) =>
@@ -466,21 +468,35 @@ const StepMainDomain = () => {
       const sitemapResponse = await fetch(
         `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(
           domainValidation.formattedDomain
-        )}`,
+        )}&includeSites=true`,
         { headers: { Accept: "application/json" } }
       );
-
       const sitemapData = await sitemapResponse.json();
       if (!sitemapResponse.ok) {
         updateStepStatus(1, "error", "Failed to fetch sitemaps");
         throw new Error(sitemapData.error || "Failed to fetch sitemaps");
       }
 
+      const uniqueUrls = new Set();
+
+      console.log("Sitemap data:", sitemapData.data.sites);
+
+      // Extract URLs from the API response data.sites if available
+      if (sitemapData.data.sites && Array.isArray(sitemapData.data.sites)) {
+        sitemapData.data.sites.forEach((url) => {
+          uniqueUrls.add(url);
+        });
+      }
+
+      console.log("Unique URLs from API:", uniqueUrls);
+
+      // If we don't have URLs from the API response, fetch XML sitemaps and parse them
       const xmlList = [
         ...(sitemapData.data.mainXML || []),
         ...(sitemapData.data.blindXML || []),
       ];
       setSitemaps(xmlList);
+      setUniqueUrlCount(uniqueUrls.size);
       setIsSitemapValidated(xmlList.length > 0);
       updateStepStatus(1, "completed");
 
@@ -628,6 +644,7 @@ const StepMainDomain = () => {
           ...(selectedSitemaps && { selectedSitemaps }),
           ...(funnelAnalysis && { funnelAnalysis }),
           ...(domainCostDetails && { domainCostDetails }),
+          uniqueUrlCount,
           ...(onboardingData.suggestionsFromAi && {
             suggestions: {
               ...onboardingData.suggestionsFromAi,
@@ -638,9 +655,7 @@ const StepMainDomain = () => {
 
       if (Object.keys(filteredSiteData.dynamic_fields).length === 0) {
         delete filteredSiteData.dynamic_fields;
-      }
-
-      // Update the onboarding context
+      } // Update the onboarding context
       const updatedData = {
         ...onboardingData,
         domain,
@@ -652,6 +667,7 @@ const StepMainDomain = () => {
         domainCostDetails,
         isSitemapValidated,
         funnelAnalysis,
+        uniqueUrlCount,
         lastUpdated: new Date().toISOString(),
       };
       setOnboardingData(updatedData);
@@ -1336,7 +1352,7 @@ Phone: (555) 123-4567"
                   <span role="img" aria-label="content">
                     📝
                   </span>{" "}
-                  Average Article Cost ($)
+                  Content Cost Per Page ($)
                 </label>
                 <input
                   type="number"
@@ -1351,6 +1367,33 @@ Phone: (555) 123-4567"
                   className="step-main-domain__cost-input"
                   min="0"
                 />
+              </div>
+
+              <div className="step-main-domain__input-group">
+                <label className="step-main-domain__input-label">
+                  <span role="img" aria-label="investment">
+                    💵
+                  </span>{" "}
+                  Estimated Total Website Investment ($)
+                </label>{" "}
+                <input
+                  type="text"
+                  value={
+                    uniqueUrlCount > 0
+                      ? (
+                          domainCostDetails.AverageContentCost * uniqueUrlCount
+                        ).toFixed(2)
+                      : "0.00"
+                  }
+                  className="step-main-domain__cost-input"
+                  disabled
+                  readOnly
+                  title="Calculated as: Content Cost Per Page × Number of unique URLs in all sitemaps"
+                />
+                <div className="step-main-domain__input-hint">
+                  {uniqueUrlCount > 0 ? uniqueUrlCount : sitemaps.length} URLs ×
+                  ${domainCostDetails.AverageContentCost} per page
+                </div>
               </div>
             </div>
             <button

@@ -27,6 +27,7 @@ export const OnboardingProvider = ({ children }) => {
     },
     domainCostDetails: {
       averageOrderValue: "",
+      totalCost: "",
       AverageContentCost: "",
     },
     socialIntegrations: [],
@@ -70,6 +71,7 @@ export const OnboardingProvider = ({ children }) => {
             domainCostDetails: firstSite.dynamic_fields?.domainCostDetails || {
               averageOrderValue: "",
               AverageContentCost: "",
+              totalCost: "",
             },
             sitemaps: firstSite.dynamic_fields?.sitemaps || [],
             selectedSitemaps: firstSite.dynamic_fields?.selectedSitemaps || [],
