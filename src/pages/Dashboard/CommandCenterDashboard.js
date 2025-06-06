@@ -38,7 +38,7 @@ const CommandCenterDashboard = () => {
 
     // CONSISTENT DATA ACCESS: Use GSCAnalysisData structure like other dashboards
     const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
-    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const contentDecayData = gscAnalysisData?.contentDecay || [];
     const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
     const linkDilutionData = gscAnalysisData.linkDilution || [];
 
@@ -49,11 +49,8 @@ const CommandCenterDashboard = () => {
         onboardingData.searchConsoleData.length > 0;
       const hasDomain =
         onboardingData.domain && onboardingData.domain.trim() !== "";
-      const hasKeywords =
-        Array.isArray(onboardingData.keywords) &&
-        onboardingData.keywords.length > 0;
 
-      return hasSearchConsole && hasDomain && hasKeywords;
+      return hasSearchConsole && hasDomain;
     };
 
     // Check if we have sufficient data using the hasMinimalData function
