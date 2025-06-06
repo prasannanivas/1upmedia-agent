@@ -555,7 +555,7 @@ const HomePage = () => {
         transition={{ duration: 1 }}
       >
         {/* Rotating Features */}
-        <AnimatePresence mode="wait">
+        {/* <AnimatePresence mode="wait">
           <motion.p
             key={index}
             className="homepage-rotating-text"
@@ -566,7 +566,7 @@ const HomePage = () => {
           >
             {featureTexts[index]}
           </motion.p>
-        </AnimatePresence>
+        </AnimatePresence> */}
 
         {/* <h1 className="homepage-hero-title">Welcome to 1UP AI</h1>
         <p className="homepage-hero-subtitle">
