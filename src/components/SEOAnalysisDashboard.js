@@ -83,43 +83,43 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
   const totalWastedSpend = calculateContentWaste(
     { ...onboardingData, GSCAnalysisData: analysisData },
     contentCostWaste
-  ).toFixed(2);
+  )?.toFixed(2);
 
   const totalContentCost = Array.isArray(contentCostWaste)
     ? contentCostWaste
         .reduce((sum, item) => sum + (item.contentCost || 0), 0)
-        .toFixed(2)
+        ?.toFixed(2)
     : "0.00";
 
   const totalEstimatedRevenue = Array.isArray(contentCostWaste)
     ? contentCostWaste
         .reduce((sum, item) => sum + (item.estimatedMonthlyRevenue || 0), 0)
-        .toFixed(2)
+        ?.toFixed(2)
     : "0.00";
 
   const totalROI = calculateROI(
     parseFloat(totalEstimatedRevenue),
     parseFloat(totalContentCost)
-  ).toFixed(2);
+  )?.toFixed(2);
 
   const totalRevenueLoss = calculateContentDecay(
     { ...onboardingData, GSCAnalysisData: analysisData },
     contentDecay
-  ).toFixed(2);
+  )?.toFixed(2);
 
   const estimatedLossFromNotFound = calculateNotFoundImpact(
     { ...onboardingData, GSCAnalysisData: analysisData },
     notFoundPages
-  ).toFixed(2); // Calculate additional financial impacts for display
+  )?.toFixed(2); // Calculate additional financial impacts for display
   const cannibalizedImpact = calculateCannibalization(
     { ...onboardingData, GSCAnalysisData: analysisData },
     cannibalization
-  ).toFixed(2);
+  )?.toFixed(2);
 
   const linkDilutionImpact = calculateLinkDilution(
     { ...onboardingData, GSCAnalysisData: analysisData },
     linkDilution
-  ).toFixed(2);
+  );
 
   const totalMissedClicks = Array.isArray(keywordMismatch)
     ? keywordMismatch.reduce((sum, item) => sum + (item.missedClicks || 0), 0)
@@ -823,13 +823,13 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
               <Tooltip
                 formatter={(value, name) => {
                   if (name === "ROI")
-                    return [`$${value.toFixed(2)}`, "ROI (Revenue - Cost)"];
+                    return [`$${value?.toFixed(2)}`, "ROI (Revenue - Cost)"];
                   if (name === "Revenue")
-                    return [`$${value.toFixed(2)}`, "Revenue"];
+                    return [`$${value?.toFixed(2)}`, "Revenue"];
                   if (name === "Cost")
-                    return [`$${value.toFixed(2)}`, "Content Cost"];
+                    return [`$${value?.toFixed(2)}`, "Content Cost"];
                   if (name === "Wasted")
-                    return [`$${value.toFixed(2)}`, "Wasted Spend"];
+                    return [`$${value?.toFixed(2)}`, "Wasted Spend"];
                   return value;
                 }}
               />
@@ -979,7 +979,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                         fontWeight: item.dilutionScore > 0.02 ? 700 : 500,
                       }}
                     >
-                      {item.dilutionScore.toFixed(4)}
+                      {item.dilutionScore?.toFixed(4)}
                     </td>
                     <td
                       style={{
@@ -1151,7 +1151,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                         ) : (
                           <FaArrowDown style={{ marginRight: 3 }} />
                         )}
-                        ${roi.toFixed(2)}
+                        ${roi?.toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -1171,7 +1171,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                       <td>{item.clicks}</td>
                       <td>
                         {typeof item.ctr === "number"
-                          ? (item.ctr * 100).toFixed(2) + "%"
+                          ? (item.ctr * 100)?.toFixed(2) + "%"
                           : "-"}
                       </td>
                       <td>
@@ -1254,7 +1254,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                         ) : (
                           <FaArrowDown style={{ marginRight: 3 }} />
                         )}
-                        ${roi.toFixed(2)}
+                        ${roi?.toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -1274,7 +1274,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                       <td>{item.clicks}</td>
                       <td>
                         {typeof item.ctr === "number"
-                          ? (item.ctr * 100).toFixed(2) + "%"
+                          ? (item.ctr * 100)?.toFixed(2) + "%"
                           : "-"}
                       </td>
                       <td>
@@ -1491,7 +1491,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                           }}
                         >
                           {item.clickChangePercent > 0 ? "+" : ""}
-                          {item.clickChangePercent.toFixed(1)}%
+                          {item.clickChangePercent?.toFixed(1)}%
                         </td>
                         <td
                           style={{
@@ -1585,7 +1585,7 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
                           {item.clickDiff > 0 ? "+" : ""}
                           {item.clickDiff} (
                           {item.clickChangePercent > 0 ? "+" : ""}
-                          {item.clickChangePercent.toFixed(1)}%)
+                          {item.clickChangePercent?.toFixed(1)}%)
                         </span>
                         {typeof item.estimatedRevenueLoss === "number" && (
                           <span style={{ color: "#f87171", fontWeight: 600 }}>
