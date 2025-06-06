@@ -865,7 +865,6 @@ const StepKeywords = () => {
             <div className="step-keywords__actions">
               <motion.button
                 onClick={handleNext}
-                disabled={keywordList.length === 0}
                 className="step-keywords__next-btn"
                 whileHover={keywordList.length === 0 ? {} : { scale: 1.05 }}
                 whileTap={keywordList.length === 0 ? {} : { scale: 0.95 }}
