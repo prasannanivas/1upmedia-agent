@@ -345,7 +345,7 @@ const ConnectGoogleModal = ({
 
     try {
       const response = await fetch(
-        `http://localhost:3000/google/ga-properties?gaToken=${gaToken}`
+        `https://ai.1upmedia.com:443/google/ga-properties?gaToken=${gaToken}`
       );
       if (response.ok) {
         const data = await response.json();
