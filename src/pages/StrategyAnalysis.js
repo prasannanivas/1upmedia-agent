@@ -317,9 +317,9 @@ const StrategyAnalysis = () => {
           tofPercentage: Math.round(tofPercentage),
           mofPercentage: Math.round(mofPercentage),
           bofPercentage: Math.round(bofPercentage),
-          idealToF: 24, // Based on customer journey best practices
-          idealMoF: 4, // Based on real funnel analysis
-          idealBoF: 68, // Based on actual distribution from sample data
+          idealToF: 25, // Based on customer journey best practices
+          idealMoF: 10, // Based on real funnel analysis
+          idealBoF: 65, // Based on actual distribution from sample data
           bofOverweight: bofPercentage > 70,
           recommendations: [
             tofPercentage < 20

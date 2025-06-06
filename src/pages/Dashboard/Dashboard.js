@@ -13,6 +13,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 import "./Dashboard.css";
+import {
+  calculateContentGrade,
+  getGradeColor,
+  getGradeDescription,
+} from "../../utils/ContentRating";
 
 const Dashboard = () => {
   const { onboardingData } = useOnboarding();
@@ -128,36 +133,89 @@ const Dashboard = () => {
       });
     }
   }, [onboardingData]);
-
   // Helper functions for calculations
   const calculateRevenueLeak = (data) => {
-    // Revenue leak could be calculated from multiple sources
-    // This is a simplified example
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 0;
+    // Revenue leak calculated using standardized approach
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
     const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 0;
-    const leakPercent = 0.05; // Example: 5% of potential revenue is leaking
+    const conversionRate = 0.02; // Default 2% conversion rate
+    const potentialRevenue = totalAnalyzed * averageOrderValue * conversionRate;
+    const leakPercent = 0.05; // 5% of potential revenue is leaking
 
-    return Math.round(averageOrderValue * totalAnalyzed * leakPercent);
+    return Math.round(potentialRevenue * leakPercent);
   };
-
   const calculateContentDecay = (data) => {
-    // Simplified calculation based on content age and performance
-    return Math.round(calculateRevenueLeak(data) * 0.6); // 60% of revenue leak
+    // Standardized content decay calculation using actual decay metrics
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
+    const contentDecayPages = data.funnelAnalysis?.decayPages || 0;
+    const totalImpressions =
+      data.searchConsoleData?.reduce(
+        (sum, item) => sum + (item.impressions || 0),
+        0
+      ) || 0;
+
+    // Calculate potential clicks lost due to decay
+    const potentialClicks = totalImpressions * 0.03; // 3% target CTR
+    const decayIntensity = 0.4; // 40% decay intensity
+    const lostClicks =
+      potentialClicks *
+      decayIntensity *
+      (contentDecayPages /
+        Math.max(data.funnelAnalysis?.totalAnalyzed || 1, 1));
+
+    // Calculate revenue loss using standard conversion rate
+    return Math.round(lostClicks * 0.02 * averageOrderValue); // 2% conversion rate
   };
 
   const calculateKwMismatch = (data) => {
-    // Simplified calculation based on keywords and search volume
-    return Math.round(calculateRevenueLeak(data) * 0.8); // 80% of revenue leak
-  };
+    // Standardized keyword mismatch calculation using DA vs KD gap
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
+    const domainAuthority = data.siteAnalysis?.domainAuthority || 30;
+    const avgDifficulty = data.siteAnalysis?.averageDifficulty || 55;
+    const kdGap = Math.max(0, avgDifficulty - domainAuthority);
 
+    // Calculate potential loss based on DA/KD gap
+    const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 1;
+    const impactMultiplier = kdGap * 5; // 5x multiplier for each point of KD gap
+
+    return Math.round(
+      averageOrderValue * totalAnalyzed * 0.02 * (impactMultiplier / 100)
+    ); // 2% conversion rate
+  };
   const calculateLinkDilution = (data) => {
-    // Simplified calculation
-    return Math.round(calculateRevenueLeak(data) * 0.4); // 40% of revenue leak
+    // Standardized link dilution calculation
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
+    const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 1;
+    const dilutionPages =
+      data.funnelAnalysis?.dilutionPages || Math.round(totalAnalyzed * 0.15); // Estimate 15% of pages have dilution
+
+    // Calculate traffic loss due to dilution
+    const totalImpressions =
+      data.searchConsoleData?.reduce(
+        (sum, item) => sum + (item.impressions || 0),
+        0
+      ) || 0;
+    const dilutionScore = 0.1; // 10% dilution intensity
+    const trafficLoss =
+      totalImpressions * dilutionScore * (dilutionPages / totalAnalyzed);
+
+    // Calculate revenue loss using standard conversion rate
+    return Math.round(trafficLoss * 0.03 * 0.02 * averageOrderValue); // 3% CTR, 2% conversion
   };
 
   const calculatePsychoMismatch = (data) => {
-    // Based on psychological composite summary if available
+    // Standardized psychological mismatch calculation
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
+    const totalClicks =
+      data.searchConsoleData?.reduce(
+        (sum, item) => sum + (item.clicks || 0),
+        0
+      ) || 0;
+
+    // Calculate psych score if available
     const psychSummary = data.funnelAnalysis?.psychCompositeSummary?.overall;
+    let mismatchPercent = 0.4; // Default 40% mismatch
+
     if (psychSummary) {
       const avgScore =
         (psychSummary.emotionalResonance +
@@ -167,17 +225,36 @@ const Dashboard = () => {
         4;
 
       // Calculate mismatch as inverse of score percentage
-      const mismatchPercent = (100 - avgScore) / 100;
-      return Math.round(calculateRevenueLeak(data) * mismatchPercent);
+      mismatchPercent = (100 - avgScore) / 100;
     }
-    return Math.round(calculateRevenueLeak(data) * 0.7); // Fallback: 70% of revenue leak
-  };
 
+    // Calculate revenue loss based on clicks and mismatch percentage
+    return Math.round(totalClicks * mismatchPercent * 0.02 * averageOrderValue); // 2% conversion rate
+  };
   const calculateKeywordMismatchValue = (data) => {
-    const da = data.siteAnalysis?.domainAuthority || 0;
-    const avgDifficulty = 55; // Default or from analysis data
-    const mismatchFactor = Math.abs(da - avgDifficulty) * 200;
-    return Math.round(Math.max(5000, mismatchFactor * 30));
+    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
+    const da = data.siteAnalysis?.domainAuthority || 30;
+    const avgDifficulty = data.siteAnalysis?.averageDifficulty || 55;
+
+    // Calculate potential impact using standardized approach
+    const totalImpressions =
+      data.searchConsoleData?.reduce(
+        (sum, item) => sum + (item.impressions || 0),
+        0
+      ) || 10000; // Default 10k impressions
+
+    // Calculate CTR adjustment based on DA vs KD gap
+    const kdGapFactor = Math.max(0, avgDifficulty - da) / 100;
+    const potentialCTRImprovement = 0.02 + kdGapFactor * 0.03; // 2% base + up to 3% more with gap
+
+    // Calculate potential clicks and conversions lost
+    const potentialClicks = totalImpressions * potentialCTRImprovement;
+    const actualCTR = 0.03; // 3% actual CTR
+    const actualClicks = totalImpressions * actualCTR;
+    const lostClicks = Math.max(0, potentialClicks - actualClicks);
+
+    // Calculate dollar value using standard conversion rate
+    return Math.round(lostClicks * 0.02 * averageOrderValue); // 2% conversion
   };
 
   // Helper functions to count URLs

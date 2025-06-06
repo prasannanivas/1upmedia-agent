@@ -22,6 +22,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./SEOAnalysisDashboard.css";
+import {
+  calculateContentWaste,
+  calculateNotFoundImpact,
+  calculateCannibalization,
+  calculateLinkDilution,
+  calculateContentDecay,
+  calculateROI,
+} from "../utils/financialCalculations";
 
 /**
  * SEO Analysis Dashboard Component
@@ -39,9 +47,10 @@ import "./SEOAnalysisDashboard.css";
  * @param {Array} props.analysisData.linkDilution - Array of link dilution data
  * @param {Array} props.analysisData.contentDecay - Array of content decay data
  * @param {Array} props.analysisData.notFoundPages - Array of 404/error page data
+ * @param {Object} props.onboardingData - Onboarding data containing domain cost details
  * @returns {JSX.Element} SEO Analysis Dashboard component
  */
-const SEOAnalysisDashboard = ({ analysisData }) => {
+const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
   const [expandedDilution, setExpandedDilution] = useState(false);
   const [expandedCannibalization, setExpandedCannibalization] = useState(false);
   const [expandedContentDecay, setExpandedContentDecay] = useState(false);
@@ -70,13 +79,11 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
     notFoundPages = [], // (optional, for future use)
   } = analysisData;
   console.log("SEO Analysis Data:", analysisData);
-
-  // Enhanced summary calculations with financial metrics
-  const totalWastedSpend = Array.isArray(contentCostWaste)
-    ? contentCostWaste
-        .reduce((sum, item) => sum + (item.wastedSpend || 0), 0)
-        .toFixed(2)
-    : "0.00";
+  // Enhanced summary calculations with standardized financial metrics
+  const totalWastedSpend = calculateContentWaste(
+    { ...onboardingData, GSCAnalysisData: analysisData },
+    contentCostWaste
+  ).toFixed(2);
 
   const totalContentCost = Array.isArray(contentCostWaste)
     ? contentCostWaste
@@ -90,26 +97,29 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
         .toFixed(2)
     : "0.00";
 
-  const totalROI =
-    totalContentCost > 0
-      ? (
-          ((parseFloat(totalEstimatedRevenue) - parseFloat(totalContentCost)) /
-            parseFloat(totalContentCost)) *
-          100
-        ).toFixed(2)
-      : "0.00";
+  const totalROI = calculateROI(
+    parseFloat(totalEstimatedRevenue),
+    parseFloat(totalContentCost)
+  ).toFixed(2);
 
-  const totalRevenueLoss = Array.isArray(contentDecay)
-    ? contentDecay
-        .reduce((sum, item) => sum + (item.estimatedRevenueLoss || 0), 0)
-        .toFixed(2)
-    : "0.00";
+  const totalRevenueLoss = calculateContentDecay(
+    { ...onboardingData, GSCAnalysisData: analysisData },
+    contentDecay
+  ).toFixed(2);
 
-  const estimatedLossFromNotFound = Array.isArray(notFoundPages)
-    ? notFoundPages
-        .reduce((sum, item) => sum + (item.estimatedLoss?.mid || 0) * 4.5, 0)
-        .toFixed(2)
-    : "0.00";
+  const estimatedLossFromNotFound = calculateNotFoundImpact(
+    { ...onboardingData, GSCAnalysisData: analysisData },
+    notFoundPages
+  ).toFixed(2); // Calculate additional financial impacts for display
+  const cannibalizedImpact = calculateCannibalization(
+    { ...onboardingData, GSCAnalysisData: analysisData },
+    cannibalization
+  ).toFixed(2);
+
+  const linkDilutionImpact = calculateLinkDilution(
+    { ...onboardingData, GSCAnalysisData: analysisData },
+    linkDilution
+  ).toFixed(2);
 
   const totalMissedClicks = Array.isArray(keywordMismatch)
     ? keywordMismatch.reduce((sum, item) => sum + (item.missedClicks || 0), 0)
@@ -284,7 +294,6 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
             </p>
           </div>
         </div>
-
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-missed-clicks">
             <FaSearch />
@@ -307,7 +316,6 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
             </p>
           </div>
         </div>
-
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-cannibalization">
             <FaExchangeAlt />
@@ -331,7 +339,6 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
             </p>
           </div>
         </div>
-
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-dilution">
             <FaLink />
@@ -355,7 +362,6 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
             </p>
           </div>{" "}
         </div>
-
         {/* Additional Financial Summary Cards */}
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-revenue-loss">
@@ -379,7 +385,6 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
             </p>
           </div>
         </div>
-
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-total-cost">
             <FaMoneyBillWave />
@@ -401,8 +406,7 @@ const SEOAnalysisDashboard = ({ analysisData }) => {
               Total content creation and optimization investment.
             </p>
           </div>
-        </div>
-
+        </div>{" "}
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-roi">
             <FaArrowUp />

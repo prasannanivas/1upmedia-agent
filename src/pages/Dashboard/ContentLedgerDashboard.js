@@ -13,6 +13,12 @@ import {
   Minus,
   AlertTriangle,
 } from "lucide-react";
+import {
+  calculateContentGrade,
+  getGradeColor,
+  getGradeDescription,
+  getGradeRecommendation,
+} from "../../utils/ContentRating";
 import "./ContentLedgerDashboard.css";
 
 const ContentLedgerDashboard = () => {
@@ -76,11 +82,10 @@ const ContentLedgerDashboard = () => {
         urlData.positionCount += 1;
       }
     });
-
     const averageOrderValue =
-      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 10;
+      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
     const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 7.3;
+      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
 
     // Get funnel analysis data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
@@ -183,9 +188,7 @@ const ContentLedgerDashboard = () => {
       const competitorCount =
         dilutionData.externalLinks || Math.min(Math.floor(avgPosition / 2), 50);
 
-      const dilutionScore = dilutionData.dilutionScore || 0;
-
-      // Calculate content quality metrics
+      const dilutionScore = dilutionData.dilutionScore || 0; // Calculate content quality metrics
       const readabilityScore = Math.max(90 - avgPosition, 40);
       const expertiseScore =
         matchingFunnelData.persuasionLeverage || Math.max(85 - avgPosition, 30);
@@ -196,11 +199,24 @@ const ContentLedgerDashboard = () => {
           ? 85
           : Math.max(30, 100 - avgPosition * 1.5);
 
+      // Calculate standardized content grade using our utility
+      const contentGrade = calculateContentGrade({
+        roi,
+        trafficTrend:
+          decayTrend === "growing" ? 10 : decayTrend === "declining" ? -10 : 0,
+        conversionRate: conversionRate * 100, // Convert to percentage
+        engagementScore: 100 - (bounceRate || 50),
+      });
+
+      // Get color and recommendations based on grade
+      const gradeColor = getGradeColor(contentGrade);
+      const gradeDescription = getGradeDescription(contentGrade);
+      const recommendation = getGradeRecommendation(contentGrade);
+
       // Create proper URL
       const fullUrl = item.url.startsWith("http")
         ? item.url
         : `https://${onboardingData.domain}${item.url}`;
-
       return {
         id: `row-${index}`,
         url: fullUrl,
@@ -211,6 +227,12 @@ const ContentLedgerDashboard = () => {
             : decayTrend === "growing"
             ? "Winning"
             : "Stable",
+        // Standardized content grading
+        contentGrade: contentGrade,
+        gradeColor: gradeColor,
+        gradeDescription: gradeDescription,
+        recommendation: recommendation,
+        // Financial metrics
         roi: roi,
         cost: realCost,
         revenue: revenue,
@@ -725,10 +747,18 @@ const ContentLedgerDashboard = () => {
                   Keywords{" "}
                   {sortConfig.key === "keywordCount" &&
                     (sortConfig.direction === "desc" ? "↓" : "↑")}
-                </th>
+                </th>{" "}
                 <th onClick={() => handleSort("status")} className="sortable">
                   Status{" "}
                   {sortConfig.key === "status" &&
+                    (sortConfig.direction === "desc" ? "↓" : "↑")}
+                </th>
+                <th
+                  onClick={() => handleSort("contentGrade")}
+                  className="sortable"
+                >
+                  Grade{" "}
+                  {sortConfig.key === "contentGrade" &&
                     (sortConfig.direction === "desc" ? "↓" : "↑")}
                 </th>
                 <th onClick={() => handleSort("roi")} className="sortable">
@@ -904,10 +934,28 @@ const ContentLedgerDashboard = () => {
                       {row.keywordCount}
                     </span>
                     <span className="keyword-count-label">keywords</span>
-                  </td>
+                  </td>{" "}
                   <td className="status-cell">
                     {getStatusIndicator(row.status)}
                     {row.status}
+                  </td>
+                  <td className="grade-cell" style={{ color: row.gradeColor }}>
+                    <span
+                      className="grade-letter"
+                      style={{
+                        backgroundColor: row.gradeColor,
+                        color: "#fff",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        fontWeight: "bold",
+                        marginRight: "4px",
+                      }}
+                    >
+                      {row.contentGrade}
+                    </span>
+                    <span className="grade-tooltip">
+                      {row.gradeDescription}
+                    </span>
                   </td>
                   <td
                     className={`roi-cell ${

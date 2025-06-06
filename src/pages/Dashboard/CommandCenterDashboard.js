@@ -22,6 +22,7 @@ import {
   Search,
   Shield,
 } from "lucide-react";
+import { calculateGradeDistribution } from "../../utils/ContentRating";
 import "./CommandCenterDashboard.css";
 
 const CommandCenterDashboard = () => {
@@ -35,18 +36,14 @@ const CommandCenterDashboard = () => {
   const commandCenterData = useMemo(() => {
     if (!onboardingData || loading) return { isBlind: true };
 
-    // DEBUGGING: Log the actual onboardingData structure
-    console.log(
-      "🔍 ONBOARDING DATA STRUCTURE:",
-      JSON.stringify(onboardingData, null, 2)
-    );
-    console.log("🔍 SEARCH CONSOLE DATA:", onboardingData.searchConsoleData);
-    console.log("🔍 DOMAIN COST DETAILS:", onboardingData.domainCostDetails);
-    console.log("🔍 FUNNEL ANALYSIS:", onboardingData.funnelAnalysis);
+    // CONSISTENT DATA ACCESS: Use GSCAnalysisData structure like other dashboards
+    const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
+    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
+    const linkDilutionData = gscAnalysisData.linkDilution || [];
 
-    // Check for insufficient data (moved inside useMemo to fix dependency issue)
+    // Check for insufficient data (consistent with other dashboards)
     const hasMinimalData = () => {
-      // Check if we have the minimum required data - consistent with ContentLedgerDashboard
       const hasSearchConsole =
         Array.isArray(onboardingData.searchConsoleData) &&
         onboardingData.searchConsoleData.length > 0;
@@ -62,23 +59,21 @@ const CommandCenterDashboard = () => {
     // Check if we have sufficient data using the hasMinimalData function
     if (!hasMinimalData()) {
       return { isBlind: true };
-    } // Ensure we have the actual searchConsoleData array structure from onboarding context
+    }
+
+    // Use searchConsoleData for metrics calculations (raw data)
     const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
       ? onboardingData.searchConsoleData
       : [];
-
     if (searchConsoleData.length === 0) {
       return { isBlind: true };
-    } // Use actual domain cost details from onboardingData.domainCostDetails structure
-    const averageOrderValue =
-      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 10;
-    const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 7.3;
+    }
 
-    // DEBUGGING: Log the calculated values
-    console.log("💰 CALCULATED VALUES:");
-    console.log("  - Average Order Value:", averageOrderValue);
-    console.log("  - Content Cost:", contentCost);
+    // Use actual domain cost details from onboardingData.domainCostDetails structure
+    const averageOrderValue =
+      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
+    const contentCost =
+      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
 
     // Calculate comprehensive metrics using actual search console data
     // Field mapping: item.impressions, item.clicks, item.position, item.ctr
@@ -154,27 +149,54 @@ const CommandCenterDashboard = () => {
     } else {
       creditGrade = "DD";
       creditHealth = "🔥 Critical";
-    } // Calculate KPI metrics with conversion rate sensitivity    // FIXED: Waste should decrease as conversion rate improves
-    const wastedSpend = Math.max(
-      0,
-      searchConsoleData
-        .filter((item) => parseFloat(item.position) > 30)
-        .reduce(
-          (sum) =>
-            sum +
-            contentCost * 2 + // Realistic multiplier for $7.30 content cost
-            ((averageOrderValue * (1.5 / conversionRate)) / 100) * 3, // Fixed: inverse relationship
+    } // Calculate KPI metrics using standardized processed data from GSCAnalysisData
+    const wastedSpend = (() => {
+      // Use processed content cost waste data if available
+      if (contentCostWasteData.length > 0) {
+        return contentCostWasteData.reduce(
+          (sum, item) => sum + (item.wastedSpend || 0),
           0
-        ) // Waste decreases with better conversion rate
-    );
+        );
+      } else {
+        // Fallback calculation for compatibility
+        return Math.max(
+          0,
+          searchConsoleData
+            .filter((item) => parseFloat(item.position) > 30)
+            .reduce(
+              (sum) =>
+                sum +
+                contentCost * 2 + // Realistic multiplier for $7.30 content cost
+                ((averageOrderValue * (1.5 / conversionRate)) / 100) * 3, // Fixed: inverse relationship
+              0
+            ) // Waste decreases with better conversion rate
+        );
+      }
+    })();
 
-    const deepDecayPages = searchConsoleData.filter(
-      (item) => parseFloat(item.position) > 50
-    ).length;
+    // Use processed decay data if available, otherwise derive from search console
+    const deepDecayPages = (() => {
+      if (contentDecayData.length > 0) {
+        return contentDecayData.filter((item) => item.status === "Deep Decay")
+          .length;
+      } else {
+        return searchConsoleData.filter(
+          (item) => parseFloat(item.position) > 50
+        ).length;
+      }
+    })();
 
-    const highDilutionPages = searchConsoleData.filter(
-      (item) => parseFloat(item.position) > 20 && parseInt(item.clicks) < 5
-    ).length;
+    // Use processed dilution data if available, otherwise derive estimates
+    const highDilutionPages = (() => {
+      if (linkDilutionData.length > 0) {
+        return linkDilutionData.filter((item) => item.dilutionScore > 0.05)
+          .length;
+      } else {
+        return searchConsoleData.filter(
+          (item) => parseFloat(item.position) > 20 && parseInt(item.clicks) < 5
+        ).length;
+      }
+    })();
 
     const lowKDHighDAUrls = searchConsoleData.filter(
       (item) => parseFloat(item.position) <= 20
@@ -295,11 +317,11 @@ const CommandCenterDashboard = () => {
       // With only 4% MoF vs ideal 15-25%, this is a massive problem
       const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
       funnelGapDollarValue = Math.round(
-        mofDeficit * contentCost * 8 + // Moderate multiplier for MoF crisis
+        mofDeficit * contentCost * 0.8 + // Moderate multiplier for MoF crisis
           mofDeficit *
-            ((averageOrderValue * (2.5 / conversionRate)) / 100) *
+            ((averageOrderValue * (2.5 / conversionRate)) / 1000) *
             totalClicks *
-            4 // Impact from conversion rate
+            0.4 // Impact from conversion rate
       );
     } else if (funnelGap === "BoF Heavy") {
       // Too bottom-heavy loses awareness traffic
@@ -351,28 +373,10 @@ const CommandCenterDashboard = () => {
     );
     const recoveryTimeframe =
       creditScore > 70 ? 30 : creditScore > 50 ? 60 : 90;
-    const recoveryTrend = totalROI > 0 ? "positive" : "negative"; // Psychographic alignment - use actual analysis data when available
-    const psychMatch = Math.max(40, 100 - psychoMismatch); // DEBUGGING: Log the final calculated metrics
-    console.log("📊 FINAL CALCULATED METRICS:");
-    console.log("  - Total ROI:", totalROI);
-    console.log("  - Credit Score:", creditScore);
-    console.log("  - Wasted Spend:", Math.round(wastedSpend));
-    console.log("  - ROI Recovery Potential:", roiRecoveryPotential);
-    console.log("🔍 FUNNEL ANALYSIS:");
-    console.log("  - ToF Percentage:", tofuPercentage + "%");
-    console.log("  - MoF Percentage:", mofuPercentage + "%");
-    console.log("  - BoF Percentage:", bofuPercentage + "%");
-    console.log("  - Funnel Gap:", funnelGap);
-    console.log("  - Psycho Mismatch:", psychoMismatch + "%");
-    console.log("💰 DOLLAR LOSS VALUES:");
-    console.log("  - Deep Decay Dollar Value:", deepDecayDollarValue);
-    console.log("  - Dilution Dollar Value:", dilutionDollarValue);
-    console.log(
-      "  - Keyword Mismatch Dollar Value:",
-      keywordMismatchDollarValue
-    );
-    console.log("  - Psycho Mismatch Dollar Value:", psychoMismatchDollarValue);
-    console.log("  - Funnel Gap Dollar Value:", funnelGapDollarValue);
+    const recoveryTrend = totalROI > 0 ? "positive" : "negative";
+
+    // Psychographic alignment - use actual analysis data when available
+    const psychMatch = Math.max(40, 100 - psychoMismatch);
 
     return {
       isBlind: false,
@@ -419,14 +423,53 @@ const CommandCenterDashboard = () => {
       },
 
       // Psychographic alignment
-      psychMatch,
-
-      // Overall metrics
+      psychMatch, // Overall metrics
       totalPages: searchConsoleData.length,
       totalImpressions,
       totalClicks,
       avgCTR,
-      totalROI,
+      totalROI, // Content grading distribution - use standardized position-based calculation for consistency
+      contentGrades: (() => {
+        // Use standardized position-based ROI calculation consistent with Risk Dashboard
+        const contentMetrics = searchConsoleData.map((item) => {
+          const avgPosition = parseFloat(item.position) || 0;
+          const avgCTR = parseFloat(item.ctr) || 0;
+
+          // Calculate ROI based on position and performance (same as Risk Dashboard)
+          const roi =
+            avgPosition <= 10
+              ? 160
+              : avgPosition <= 20
+              ? 90
+              : avgPosition <= 30
+              ? 20
+              : -30;
+
+          // Calculate traffic trend based on CTR vs expected CTR for position
+          const expectedCTR =
+            avgPosition <= 10
+              ? 5
+              : avgPosition <= 20
+              ? 2
+              : avgPosition <= 30
+              ? 1
+              : 0.5;
+          const trafficTrend = avgCTR > expectedCTR ? 10 : -5;
+
+          // Engagement score based on position
+          const engagementScore =
+            avgPosition < 10 ? 85 : avgPosition < 20 ? 65 : 40;
+
+          return {
+            roi,
+            trafficTrend,
+            conversionRate: conversionRateDecimal * 100,
+            engagementScore,
+          };
+        });
+        const gradeResult = calculateGradeDistribution(contentMetrics);
+        return gradeResult;
+      })(),
     };
   }, [onboardingData, loading, conversionRate]);
 
@@ -434,10 +477,12 @@ const CommandCenterDashboard = () => {
     return (
       <div className="command-center-loading">
         <RefreshCw className="loading-spinner" />
-        <p>Loading Command Center Dashboard...</p>
+        <p>Loading Command Center Dashboard...</p>{" "}
       </div>
     );
-  } // Show blind system warning if no data - with Finish Onboarding button
+  }
+
+  // Show blind system warning if no data - with Finish Onboarding button
   if (commandCenterData.isBlind) {
     return (
       <div className="command-center-blind">
@@ -537,8 +582,93 @@ const CommandCenterDashboard = () => {
               ></div>
             </div>
           </div>
-        </div>
+        </div>{" "}
+        <div className="content-grades-section">
+          <h3>Content Quality Distribution</h3>
+          <div className="grade-distribution">
+            <div className="grade-bar-container">
+              <div className="grade-info">
+                <span className="grade-label grade-a">A</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-a-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentA || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentA || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.A || 0})
+                </span>
+              </div>
 
+              <div className="grade-info">
+                <span className="grade-label grade-b">B</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-b-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentB || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentB || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.B || 0})
+                </span>
+              </div>
+
+              <div className="grade-info">
+                <span className="grade-label grade-c">C</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-c-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentC || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentC || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.C || 0})
+                </span>
+              </div>
+
+              <div className="grade-info">
+                <span className="grade-label grade-d">D</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-d-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentD || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentD || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.D || 0})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="roi-recovery-section">
           <h3>ROI Recovery Potential</h3>
           <div className="recovery-display">

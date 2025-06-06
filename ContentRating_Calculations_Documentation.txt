@@ -1,0 +1,538 @@
+CONTENT RATING SYSTEM - CALCULATIONS DOCUMENTATION
+==================================================
+
+Last Updated: June 6, 2025
+Version: 1.0.0
+Author: SEO Team
+
+This document provides comprehensive documentation of all calculations, formulas, and metrics 
+used in the standardized content rating system across all dashboards.
+
+==================================================
+TABLE OF CONTENTS
+==================================================
+
+1. CONTENT GRADING SYSTEM
+2. FINANCIAL CALCULATIONS
+3. PERFORMANCE METRICS
+4. DASHBOARD-SPECIFIC CALCULATIONS
+5. DEFAULT VALUES AND CONSTANTS
+6. DERIVED METRICS
+7. VALIDATION RULES
+
+==================================================
+1. CONTENT GRADING SYSTEM
+==================================================
+
+1.1 GRADE DEFINITIONS
+---------------------
+The content rating system uses a four-tier grading scale (A, B, C, D) based primarily on ROI performance:
+
+Grade A: High-performing content with excellent ROI (>150%)
+Grade B: Good content with positive ROI (50-150%)
+Grade C: Average content with breakeven ROI (-50% to 50%)
+Grade D: Underperforming content with negative ROI (<-50%)
+
+1.2 CORE GRADING ALGORITHM
+--------------------------
+Primary Input Metrics:
+- roi: Return on Investment percentage
+- trafficTrend: Traffic trend (positive = growth, negative = decline)
+- conversionRate: Conversion rate percentage (optional)
+- engagementScore: User engagement score (optional)
+
+Calculation Logic:
+```
+function calculateContentGrade(metrics) {
+    const { roi, trafficTrend = 0, conversionRate = 0, engagementScore = 0 } = metrics;
+    
+    if (roi > 150) {
+        // A grade territory - validate with other metrics
+        if (trafficTrend > 0 || conversionRate > 2 || engagementScore > 70) {
+            return "A"; // Confirmed A grade
+        }
+        return "B"; // Downgrade due to negative signals
+    } 
+    else if (roi >= 50) {
+        // B grade territory
+        if (trafficTrend > 10 && (conversionRate > 3 || engagementScore > 80)) {
+            return "A"; // Upgrade to A due to strong performance signals
+        }
+        return "B";
+    } 
+    else if (roi >= -50) {
+        // C grade territory
+        if (trafficTrend > 15 && (conversionRate > 2 || engagementScore > 70)) {
+            return "B"; // Upgrade to B due to improving signals
+        }
+        return "C";
+    } 
+    else {
+        // D grade territory
+        if (trafficTrend > 20 && (conversionRate > 1 || engagementScore > 60)) {
+            return "C"; // Upgrade to C due to recent improvements
+        }
+        return "D";
+    }
+}
+```
+
+1.3 GRADE DISTRIBUTION CALCULATION
+----------------------------------
+Formula for calculating percentage distribution:
+```
+distribution.percentA = (distribution.A / distribution.total) * 100
+distribution.percentB = (distribution.B / distribution.total) * 100
+distribution.percentC = (distribution.C / distribution.total) * 100
+distribution.percentD = (distribution.D / distribution.total) * 100
+```
+
+Where:
+- distribution.A = count of A-grade content items
+- distribution.total = total number of content items analyzed
+
+1.4 GRADE COLOR MAPPING
+-----------------------
+Grade A: #4ade80 (Green)
+Grade B: #60a5fa (Blue)
+Grade C: #facc15 (Yellow)
+Grade D: #f87171 (Red)
+Default: #94a3b8 (Gray)
+
+==================================================
+2. FINANCIAL CALCULATIONS
+==================================================
+
+2.1 STANDARDIZED DEFAULT VALUES
+-------------------------------
+Average Order Value (AOV): $50.00
+Content Cost: $200.00
+Default Conversion Rate: 2.0% (0.02)
+
+These values can be overridden by user-provided domain cost details:
+- domainCostDetails.averageOrderValue
+- domainCostDetails.AverageContentCost
+
+2.2 ROI CALCULATION
+-------------------
+Formula: ROI = ((Revenue - Cost) / Cost) * 100
+
+Where:
+- Revenue = Total Conversions × Average Order Value
+- Cost = Content Cost per page × Number of pages
+- Total Conversions = Total Clicks × Conversion Rate (decimal)
+
+Example:
+```
+totalConversions = 1000 clicks × 0.02 = 20 conversions
+totalRevenue = 20 conversions × $50 AOV = $1,000
+totalCost = 5 pages × $200 = $1,000
+totalROI = (($1,000 - $1,000) / $1,000) × 100 = 0%
+```
+
+2.3 REVENUE LEAK CALCULATION
+----------------------------
+Formula: Revenue Leak = Potential Revenue × Leak Percentage
+
+Where:
+- Potential Revenue = Total Pages × AOV × Conversion Rate
+- Default Leak Percentage = 5% (0.05)
+
+2.4 CONTENT DECAY IMPACT
+------------------------
+If real decay data available:
+```
+decayImpact = Sum of all items.estimatedRevenueLoss
+```
+
+If estimated:
+```
+decayImpact = Total Traffic × AOV × Conversion Rate × Decay Rate
+Default Decay Rate = 7% (0.07)
+```
+
+2.5 KEYWORD MISMATCH IMPACT
+---------------------------
+If real mismatch data available:
+```
+mismatchImpact = Sum of all items.missedClicks × AOV × Conversion Rate
+```
+
+If estimated:
+```
+mismatchImpact = Potential Traffic × 0.3 × (DA-KD Gap / 100) × AOV × Conversion Rate
+```
+
+Where:
+- DA-KD Gap = Domain Authority - Average Keyword Difficulty
+- Factor 0.3 represents 30% traffic potential from mismatch correction
+
+2.6 LINK DILUTION IMPACT
+------------------------
+If real dilution data available:
+```
+dilutionImpact = Sum of all items.estimatedLoss
+```
+
+If estimated:
+```
+dilutionImpact = Total Content Investment × Dilution Rate
+Default Dilution Rate = 12% (0.12)
+```
+
+2.7 PSYCHOGRAPHIC MISMATCH IMPACT
+---------------------------------
+If real psychographic data available:
+```
+mismatchPercent = (100 - emotionalResonance) / 100
+psychoImpact = Total Traffic × AOV × Conversion Rate × mismatchPercent
+```
+
+If estimated:
+```
+psychoImpact = Total Traffic × AOV × Conversion Rate × 0.15
+Default Mismatch Impact = 15%
+```
+
+2.8 CANNIBALIZATION IMPACT
+--------------------------
+If real cannibalization data available:
+```
+cannibalizationImpact = Sum of all items.estimatedLoss
+```
+
+If estimated:
+```
+cannibalizationImpact = Total Content Investment × Efficiency Gap
+Default Efficiency Gap = 45% (0.45)
+```
+
+2.9 CONTENT WASTE CALCULATION
+-----------------------------
+If real waste data available:
+```
+contentWaste = Sum of all items.wastedSpend
+```
+
+If estimated:
+```
+contentWaste = Total Content Investment × Waste Rate
+Default Waste Rate = 53% (0.53)
+```
+
+2.10 404/ERROR PAGE IMPACT
+--------------------------
+If real 404 data available:
+```
+notFoundImpact = Sum of all items.estimatedLoss.mid × 4.5
+```
+
+If estimated:
+```
+notFoundImpact = Total Traffic × Error Rate × AOV × Conversion Rate
+Default Error Rate = 4% (0.04)
+```
+
+==================================================
+3. PERFORMANCE METRICS
+==================================================
+
+3.1 TRAFFIC METRICS
+-------------------
+Total Impressions: Sum of all search console impressions
+Total Clicks: Sum of all search console clicks
+Average CTR: (Total Clicks / Total Impressions) × 100
+Average Position: Sum of all positions / Number of items
+
+3.2 ENGAGEMENT METRICS
+---------------------
+Bounce Rate: From Google Analytics data (gaMetrics.bounceRate × 100)
+Session Duration: From Google Analytics (gaMetrics.avgSessionDuration)
+Page Views: From Google Analytics (gaMetrics.pageViews)
+Sessions: From Google Analytics (gaMetrics.sessions)
+
+Engagement Score Calculation:
+```
+engagementScore = 100 - (bounceRate || 50)
+```
+
+3.3 CONTENT QUALITY METRICS
+---------------------------
+Readability Score: Math.max(90 - avgPosition, 40)
+Expertise Score: matchingFunnelData.persuasionLeverage || Math.max(85 - avgPosition, 30)
+Freshness Score: 
+- If halfLifePassed === false: 85
+- Else: Math.max(30, 100 - avgPosition × 1.5)
+
+3.4 DECAY METRICS
+-----------------
+Decay Score Calculation:
+```
+if (decayData.slopeI !== undefined) {
+    decayScore = Math.max(0, Math.min(100, Math.abs(decayData.slopeI) × 100))
+} else {
+    decayScore = avgPosition > 20 ? 
+        Math.min(avgPosition × 2, 100) : 
+        Math.max(50 - avgPosition × 2, 0)
+}
+```
+
+Decay Trend Determination:
+```
+if (decayData.status) {
+    decayTrend = decayData.status
+} else {
+    decayTrend = avgCTR < 2 ? "declining" : 
+                 avgCTR > 5 ? "growing" : "stable"
+}
+```
+
+==================================================
+4. DASHBOARD-SPECIFIC CALCULATIONS
+==================================================
+
+4.1 COMMAND CENTER DASHBOARD
+----------------------------
+
+Credit Score Calculation:
+```
+Base Score: 50
+
+ROI Adjustments:
+- ROI > 100%: +30 points
+- ROI 50-100%: +20 points
+- ROI 0-50%: +10 points
+- ROI -25% to 0%: -10 points
+- ROI < -25%: -30 points
+
+Position Adjustments:
+- Position ≤ 10: +15 points
+- Position 11-20: +5 points
+- Position > 50: -15 points
+
+CTR Adjustments:
+- CTR > 5%: +10 points
+- CTR 2-5%: +5 points
+- CTR < 1%: -10 points
+
+Decay Adjustments:
+- Decay > 50%: -15 points
+- Decay > 25%: -10 points
+
+Final Score: Math.max(0, Math.min(100, creditScore))
+```
+
+Credit Grade Mapping:
+- 90-100: AAA (🟢 Elite)
+- 80-89: AA (🟢 Strong)
+- 70-79: BBB (🟡 Stable)
+- 60-69: BBB- (⚠️ At Risk)
+- 40-59: CCC (🔴 High Risk)
+- 0-39: DD (🔥 Critical)
+
+Funnel Distribution Calculation:
+```
+If actual funnel data available:
+    total = ToF + MoF + BoF
+    tofuPercentage = (ToF / total) × 100
+    mofuPercentage = (MoF / total) × 100
+    bofuPercentage = (BoF / total) × 100
+
+If derived from search data:
+    tofuPercentage = (positions ≤ 10 / total positions) × 100
+    mofuPercentage = (positions 11-30 / total positions) × 100
+    bofuPercentage = 100 - tofuPercentage - mofuPercentage
+```
+
+Funnel Gap Analysis:
+- "MoF Crisis": mofuPercentage < 10%
+- "ToF Deficit": tofuPercentage < 20%
+- "BoF Heavy": bofuPercentage > 60%
+- "BoF Deficit": bofuPercentage < 15%
+- "Balanced": All other cases
+
+Wasted Spend Calculation:
+```
+wastedSpend = Max(0, Sum of pages with position > 30 where:
+    wastedAmount = contentCost × 2 + 
+                   ((AOV × (1.5 / conversionRate)) / 100) × 3
+)
+```
+
+Dollar Impact Calculations:
+```
+Deep Decay: deepDecayPages × contentCost × 3 + 
+            deepDecayPages × ((AOV × (3.0 / conversionRate)) / 100) × totalClicks × 0.2
+
+High Dilution: highDilutionPages × contentCost × 2 + 
+               highDilutionPages × ((AOV × (2.0 / conversionRate)) / 100) × totalClicks × 0.25
+
+Keyword Mismatch: lowKDHighDAUrls × ((AOV × (3.0 / conversionRate)) / 100) × 25 + 
+                   lowKDHighDAUrls × contentCost × 2
+
+Psycho Mismatch: (psychoMismatch / 100) × totalClicks × 
+                  ((AOV × (2.5 / conversionRate)) / 100) × 6 + 
+                  psychoMismatch × contentCost × 1.5
+```
+
+4.2 CONTENT LEDGER DASHBOARD
+-----------------------------
+
+Content Grade Integration:
+```
+contentGrade = calculateContentGrade({
+    roi: roi,
+    trafficTrend: decayTrend === "growing" ? 10 : 
+                  decayTrend === "declining" ? -10 : 0,
+    conversionRate: conversionRate × 100,
+    engagementScore: 100 - (bounceRate || 50)
+})
+```
+
+Intent Match Calculation:
+```
+if (matchingFunnelData.emotionalResonance) {
+    intentMatch = matchingFunnelData.emotionalResonance
+} else {
+    intentMatch = avgCTR > 3 ? 
+        Math.floor(80 + Math.random() × 20) : 
+        Math.floor(Math.random() × 60 + 20)
+}
+```
+
+Audience Match Calculation:
+```
+if (matchingFunnelData.cognitiveClarity) {
+    audienceMatch = matchingFunnelData.cognitiveClarity
+} else {
+    audienceMatch = item.totalClicks > item.totalImpressions × 0.03 ? 
+        Math.floor(70 + Math.random() × 30) : 
+        Math.floor(Math.random() × 70 + 10)
+}
+```
+
+Load Time Estimation:
+```
+if (gaMetrics.avgSessionDuration) {
+    loadTime = Math.max(0.5, Math.min(5, gaMetrics.avgSessionDuration / 60))
+} else {
+    loadTime = avgPosition > 30 ? 
+        2 + Math.random() × 2 : 
+        0.5 + Math.random() × 1.5
+}
+```
+
+==================================================
+5. DEFAULT VALUES AND CONSTANTS
+==================================================
+
+5.1 FINANCIAL DEFAULTS
+----------------------
+- Average Order Value: $50.00
+- Content Cost: $200.00
+- Default Conversion Rate: 2.0%
+
+5.2 SCORING THRESHOLDS
+---------------------
+Content Grades:
+- A Grade: ROI > 150%
+- B Grade: ROI 50% to 150%
+- C Grade: ROI -50% to 50%
+- D Grade: ROI < -50%
+
+Traffic Trend Thresholds:
+- Strong Growth: trafficTrend > 20
+- Moderate Growth: trafficTrend > 15
+- Slight Growth: trafficTrend > 10
+- Neutral: trafficTrend = 0
+- Decline: trafficTrend < 0
+
+Engagement Thresholds:
+- Excellent: engagementScore > 80
+- Good: engagementScore > 70
+- Average: engagementScore > 60
+- Poor: engagementScore ≤ 60
+
+5.3 POSITION-BASED THRESHOLDS
+-----------------------------
+- Top of Funnel (ToF): Position ≤ 10
+- Middle of Funnel (MoF): Position 11-30
+- Bottom of Funnel (BoF): Position > 30
+- Deep Decay: Position > 50
+- High Dilution: Position > 20 with < 5 clicks
+
+5.4 CTR BENCHMARKS
+------------------
+- Excellent CTR: > 5%
+- Good CTR: 2-5%
+- Average CTR: 1-2%
+- Poor CTR: < 1%
+
+==================================================
+6. DERIVED METRICS
+==================================================
+
+6.1 COMPETITIVE METRICS
+-----------------------
+Competitor Count: dilutionData.externalLinks || Math.min(Math.floor(avgPosition / 2), 50)
+Market Share: Based on sessions and position:
+- Sessions > 100: Math.min(25, sessions / 20)
+- Position ≤ 3: 15 + Math.random() × 10
+- Position ≤ 10: 5 + Math.random() × 10
+- Position > 10: Math.random() × 5
+
+Difficulty Score: Math.min(avgPosition × 2, 100)
+
+6.2 LINK METRICS
+---------------
+Backlinks: dilutionData.externalLinks || Math.floor(Math.max(50 - avgPosition, 5))
+Internal Links: dilutionData.internalLinks || Math.floor(Math.max(25 - avgPosition / 2, 1))
+
+6.3 TECHNICAL METRICS
+---------------------
+Core Web Vitals: bounceRate ? Math.max(20, 100 - bounceRate) : Math.max(100 - avgPosition × 2, 20)
+Mobile Score: Math.max(95 - avgPosition, 50)
+
+==================================================
+7. VALIDATION RULES
+==================================================
+
+7.1 DATA VALIDATION
+-------------------
+Minimum Required Data:
+- Search Console Data: Array with length > 0
+- Domain: Non-empty string
+- Keywords: Array with length > 0
+
+7.2 CALCULATION BOUNDS
+---------------------
+- Credit Score: 0 ≤ score ≤ 100
+- Percentages: 0 ≤ percentage ≤ 100
+- ROI: Can be negative (no lower bound), no upper bound
+- Positions: Typically 1 ≤ position ≤ 100
+- CTR: 0 ≤ ctr ≤ 100
+
+7.3 FALLBACK MECHANISMS
+-----------------------
+When real data is unavailable, the system uses estimation formulas based on:
+- Search Console position data
+- Historical averages
+- Industry benchmarks
+- Default multipliers and rates
+
+7.4 ERROR HANDLING
+------------------
+- Division by zero protection in ROI calculations
+- Null/undefined checks for all optional parameters
+- Default value assignment for missing data
+- Math.max/Math.min bounds enforcement
+
+==================================================
+END OF DOCUMENTATION
+==================================================
+
+For technical support or questions about these calculations,
+please contact the SEO Team.
+
+Document Version: 1.0.0
+Last Updated: June 6, 2025

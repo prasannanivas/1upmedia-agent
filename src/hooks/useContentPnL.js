@@ -1,9 +1,17 @@
 import { useMemo } from "react";
 import { useOnboarding } from "../context/OnboardingContext";
+import {
+  getFinancialDefaults,
+  calculateContentWaste,
+  calculateContentDecay,
+  calculateCannibalization,
+  calculateLinkDilution,
+  calculateROI,
+} from "../utils/financialCalculations";
 
 /**
  * Custom hook to calculate dynamic Content P&L metrics
- * Uses real data from onboarding context and SEO analysis
+ * Uses real data from onboarding context and SEO analysis with standardized calculations
  */
 export const useContentPnL = () => {
   const { onboardingData, loading } = useOnboarding();
@@ -15,11 +23,9 @@ export const useContentPnL = () => {
       funnelAnalysis = {},
     } = onboardingData;
 
-    // Get cost details
-    const averageContentCost =
-      parseFloat(domainCostDetails.AverageContentCost) || 0;
-
-    // Calculate content investment from SEO analysis data
+    // Get standardized financial defaults
+    const { averageOrderValue, contentCost: averageContentCost } =
+      getFinancialDefaults(onboardingData); // Calculate content investment from SEO analysis data
     const contentCostWaste = GSCAnalysisData?.contentCostWaste || [];
     const contentDecay = GSCAnalysisData?.contentDecay || [];
     const cannibalization = GSCAnalysisData?.cannibalization || [];
@@ -29,7 +35,7 @@ export const useContentPnL = () => {
     const hasRealData =
       Array.isArray(contentCostWaste) && contentCostWaste.length > 0;
 
-    // Total Content Investment calculation
+    // Total Content Investment calculation using standardized approach
     const totalContentInvestment = hasRealData
       ? contentCostWaste.reduce((sum, item) => sum + (item.contentCost || 0), 0)
       : Math.max(averageContentCost * 15, 8500); // Fallback with minimum realistic value
@@ -42,34 +48,24 @@ export const useContentPnL = () => {
         )
       : totalContentInvestment * 0.35; // Fallback 35% conversion rate
 
-    // ROI calculation
-    const roi =
-      totalContentInvestment > 0
-        ? ((estimatedRevenueImpact - totalContentInvestment) /
-            totalContentInvestment) *
-          100
-        : 0;
+    // ROI calculation using standardized approach
+    const roi = calculateROI(estimatedRevenueImpact, totalContentInvestment);
 
-    // Revenue leak calculations
-    const contentCostWasteAmount = hasRealData
-      ? contentCostWaste.reduce((sum, item) => sum + (item.wastedSpend || 0), 0)
-      : totalContentInvestment * 0.53; // 53% waste rate
+    // Revenue leak calculations using standardized approaches
+    const contentCostWasteAmount = calculateContentWaste(
+      { ...onboardingData, GSCAnalysisData },
+      contentCostWaste
+    );
 
-    const contentDecayLoss =
-      Array.isArray(contentDecay) && contentDecay.length > 0
-        ? contentDecay.reduce(
-            (sum, item) => sum + (item.estimatedRevenueLoss || 0),
-            0
-          )
-        : totalContentInvestment * 0.07; // 7% decay rate
+    const contentDecayLoss = calculateContentDecay(
+      { ...onboardingData, GSCAnalysisData },
+      contentDecay
+    );
 
-    const keywordEfficiencyGap =
-      Array.isArray(cannibalization) && cannibalization.length > 0
-        ? cannibalization.reduce(
-            (sum, item) => sum + (item.estimatedLoss || 0),
-            0
-          )
-        : totalContentInvestment * 0.45; // 45% efficiency gap
+    const keywordEfficiencyGap = calculateCannibalization(
+      { ...onboardingData, GSCAnalysisData },
+      cannibalization
+    );
 
     // Funnel gaps calculation
     const funnelGaps = funnelAnalysis?.funnelDistribution
@@ -87,11 +83,11 @@ export const useContentPnL = () => {
         )
       : Math.floor(Math.random() * 25) + 10; // Random between 10-35% for demo
 
-    // Link dilution calculation
-    const linkDilutionAmount =
-      Array.isArray(linkDilution) && linkDilution.length > 0
-        ? linkDilution.reduce((sum, item) => sum + (item.estimatedLoss || 0), 0)
-        : totalContentInvestment * 0.12; // 12% dilution rate
+    // Link dilution calculation using standardized approach
+    const linkDilutionAmount = calculateLinkDilution(
+      { ...onboardingData, GSCAnalysisData },
+      linkDilution
+    );
 
     // Status checks for integrations
     const hasCRMConnected = false; // This would come from actual CRM integration

@@ -10,6 +10,124 @@
   line-height: 1.6;
 }
 
+/* Command Metrics Row */
+.command-metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Content Grades Section */
+.content-grades-section,
+.moody-credit-section,
+.roi-recovery-section {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}
+
+.content-grades-section h3,
+.moody-credit-section h3,
+.roi-recovery-section h3 {
+  margin-top: 0;
+  margin-bottom: 1.25rem;
+  font-size: 1.1rem;
+  color: #334155;
+  font-weight: 600;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.75rem;
+}
+
+.grade-distribution {
+  display: flex;
+  flex-direction: column;
+}
+
+.grade-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.grade-info {
+  display: grid;
+  grid-template-columns: 30px 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.grade-label {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.grade-a {
+  background-color: #4ade80;
+}
+
+.grade-b {
+  background-color: #60a5fa;
+}
+
+.grade-c {
+  background-color: #facc15;
+}
+
+.grade-d {
+  background-color: #f87171;
+}
+
+.grade-bar {
+  height: 10px;
+  background-color: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.grade-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.grade-a-fill {
+  background-color: #4ade80;
+}
+
+.grade-b-fill {
+  background-color: #60a5fa;
+}
+
+.grade-c-fill {
+  background-color: #facc15;
+}
+
+.grade-d-fill {
+  background-color: #f87171;
+}
+
+.grade-percent {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #334155;
+}
+
+.grade-count {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
 /* Loading State */
 .command-center-loading {
   display: flex;

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { AlertTriangle, Brain, ChevronRight } from "lucide-react";
+import { calculateGradeDistribution } from "../../utils/ContentRating";
 import "./RiskDashboard.css";
 
 const RiskDashboard = () => {
@@ -88,13 +89,11 @@ const RiskDashboard = () => {
         author.name?.toLowerCase().includes("ai") ||
         author.name?.toLowerCase().includes("bot") ||
         author.name?.toLowerCase().includes("automated")
-    );
-
-    // Calculate domain cost details
+    ); // Calculate domain cost details using standardized values
     const avgOrderValue =
-      onboardingData?.domainCostDetails?.averageOrderValue || 0;
+      onboardingData?.domainCostDetails?.averageOrderValue || 50;
     const avgContentCost =
-      onboardingData?.domainCostDetails?.AverageContentCost || 0;
+      onboardingData?.domainCostDetails?.AverageContentCost || 200;
 
     return {
       siteInfo: {
@@ -108,13 +107,66 @@ const RiskDashboard = () => {
         avgKD: parseFloat(avgKD.toFixed(1)),
       },
       creditScore: {
-        // Use funnel distribution as proxy for content grades
-        aGrade: funnelData.funnelDistribution?.ToF || 0, // Top of funnel = high quality
-        bGrade: funnelData.funnelDistribution?.MoF || 0, // Middle of funnel = good quality
-        cGrade: funnelData.funnelDistribution?.BoF || 0, // Bottom of funnel = average quality
-        dGrade: funnelData.funnelDistribution?.Unknown || 0, // Unknown = poor quality
-        downgraded: contentCostWasteData.length, // Pages with negative ROI
-        dGradeCTRLoss: Math.max(0, parseFloat((avgCTR * 0.7).toFixed(2))),
+        // Calculate standardized content grades using ContentRating utility
+        ...(() => {
+          // Prepare content data for grading
+          const contentMetrics = searchConsoleData.map((item) => {
+            const avgPosition = parseFloat(item.position) || 0;
+            const ctr = parseFloat(item.ctr) || 0;
+
+            // Calculate ROI based on position and performance
+            const roi =
+              avgPosition <= 10
+                ? 160
+                : avgPosition <= 20
+                ? 90
+                : avgPosition <= 30
+                ? 20
+                : -30;
+
+            // Calculate traffic trend based on CTR vs position
+            const expectedCTR =
+              avgPosition <= 10
+                ? 5
+                : avgPosition <= 20
+                ? 2
+                : avgPosition <= 30
+                ? 1
+                : 0.5;
+            const trafficTrend = ctr > expectedCTR ? 10 : -5;
+
+            // Engagement score based on impressions and position
+            const engagementScore =
+              avgPosition < 10 ? 85 : avgPosition < 20 ? 65 : 40;
+
+            return {
+              roi,
+              trafficTrend,
+              conversionRate: 2.0, // Default conversion rate
+              engagementScore,
+            };
+          });
+          // Calculate grade distribution
+          const gradeDistribution = calculateGradeDistribution(contentMetrics);
+
+          // Calculate downgraded pages
+          const downgraded = contentCostWasteData.length;
+
+          // Calculate D-grade CTR loss
+          const dGradeCTRLoss = Math.max(
+            0,
+            parseFloat((avgCTR * 0.7).toFixed(2))
+          );
+
+          return {
+            aGrade: gradeDistribution.A,
+            bGrade: gradeDistribution.B,
+            cGrade: gradeDistribution.C,
+            dGrade: gradeDistribution.D,
+            downgraded,
+            dGradeCTRLoss,
+          };
+        })(),
       },
       contentDecay: {
         stable: stablePages,
