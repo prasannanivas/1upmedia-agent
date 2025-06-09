@@ -18,6 +18,9 @@ import {
   getGradeColor,
   getGradeDescription,
 } from "../../utils/ContentRating";
+import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
+import FinancialTooltip from "../../components/FinancialTooltip";
+import { getTooltipContent } from "../../utils/tooltipContent";
 
 const Dashboard = () => {
   const { onboardingData } = useOnboarding();
@@ -45,51 +48,65 @@ const Dashboard = () => {
     kdAvg: 0,
     mismatchValue: 0,
   });
-
   // Calculate and set dashboard data from onboardingData
   useEffect(() => {
     if (onboardingData) {
-      // Process revenue leak stats
-      const averageOrderValue =
-        onboardingData.domainCostDetails?.averageOrderValue || 0;
-      const contentCost =
-        onboardingData.domainCostDetails?.AverageContentCost || 0;
+      // Use centralized calculations with consistent conversion rate (2.0% as percentage)
+      const calculatedStats = executeCalculationsForDashboard(
+        "dashboard",
+        onboardingData,
+        { conversionRate: 2.0 } // Pass conversion rate as percentage to match other dashboards
+      );
 
-      // Process SEO analysis data if available
-      const analysisData = onboardingData.GSCAnalysisData || {};
-
-      // Calculate stats based on available data
-      const calculatedStats = {
+      // Map the results to the expected format with safety checks
+      const statsFormat = {
         revenueLeak: {
-          value: calculateRevenueLeak(onboardingData),
-          urls: onboardingData.funnelAnalysis?.details?.length || 0,
+          value:
+            typeof calculatedStats.revenueLeak === "number"
+              ? calculatedStats.revenueLeak
+              : 0,
+          urls: calculatedStats.revenueLeakUrls || 0,
         },
         contentDecay: {
-          value: calculateContentDecay(onboardingData),
-          urls: getContentDecayUrls(onboardingData),
+          value:
+            typeof calculatedStats.contentDecay === "number"
+              ? calculatedStats.contentDecay
+              : 0,
+          urls: calculatedStats.contentDecayUrls || 0,
         },
         kwMismatch: {
-          value: calculateKwMismatch(onboardingData),
-          urls: getKwMismatchUrls(onboardingData),
+          value:
+            typeof calculatedStats.kwMismatch === "number"
+              ? calculatedStats.kwMismatch
+              : 0,
+          urls: calculatedStats.kwMismatchUrls || 0,
         },
         linkDilution: {
-          value: calculateLinkDilution(onboardingData),
-          urls: getLinkDilutionUrls(onboardingData),
+          value:
+            typeof calculatedStats.linkDilution === "number"
+              ? calculatedStats.linkDilution
+              : 0,
+          urls: calculatedStats.linkDilutionUrls || 0,
         },
         psychoMismatch: {
-          value: calculatePsychoMismatch(onboardingData),
-          urls: getPsychoMismatchUrls(onboardingData),
+          value:
+            typeof calculatedStats.psychoMismatch === "number"
+              ? calculatedStats.psychoMismatch
+              : 0,
+          urls: calculatedStats.psychoMismatchUrls || 0,
         },
         contentCreationCost: {
           value:
-            contentCost * (onboardingData.funnelAnalysis?.totalAnalyzed || 0),
-          urls: 0,
+            typeof calculatedStats.contentCreationCost === "number"
+              ? calculatedStats.contentCreationCost
+              : 0,
+          urls: calculatedStats.contentCreationCostUrls || 0,
         },
       };
 
-      setStats(calculatedStats);
+      setStats(statsFormat);
 
-      // Process funnel data if available
+      // Process funnel data if available (keep existing logic for now)
       if (onboardingData.funnelAnalysis?.funnelDistribution) {
         const { funnelDistribution } = onboardingData.funnelAnalysis;
         const totalPages = onboardingData.funnelAnalysis.totalAnalyzed || 1;
@@ -105,17 +122,12 @@ const Dashboard = () => {
         // Ideal distribution (based on industry standards or configurable)
         const tofuIdeal = 55;
         const mofuIdeal = 30;
-        const bofuIdeal = 25;
-
-        // Determine the gap
-        let gap = "";
-        if (bofuPercent < bofuIdeal) {
-          gap = `Missing BOFU content (${bofuPercent}%)`;
-        } else if (mofuPercent < mofuIdeal) {
-          gap = `Missing MOFU content (${mofuPercent}%)`;
-        } else if (tofuPercent < tofuIdeal) {
-          gap = `Missing TOFU content (${tofuPercent}%)`;
-        }
+        const bofuIdeal = 25; // Use centralized funnel gap calculation result
+        const funnelGapResult = calculatedStats.funnelGaps || {
+          gapType: "Balanced",
+          impact: 0,
+        };
+        const gap = funnelGapResult.gapType || "No significant gaps detected";
 
         setFunnelData({
           tofu: { current: tofuPercent, ideal: tofuIdeal },
@@ -125,159 +137,15 @@ const Dashboard = () => {
         });
       }
 
-      // Set keyword efficiency data
+      // Set keyword efficiency data (keep existing logic for now)
+      const analysisData = onboardingData.GSCAnalysisData || {};
       setKeywordEfficiency({
         da: onboardingData.siteAnalysis?.domainAuthority || 0,
         kdAvg: analysisData.averageDifficulty || 55,
-        mismatchValue: calculateKeywordMismatchValue(onboardingData),
+        mismatchValue: calculatedStats.kwMismatch || 0,
       });
     }
   }, [onboardingData]);
-  // Helper functions for calculations
-  const calculateRevenueLeak = (data) => {
-    // Revenue leak calculated using standardized approach
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 0;
-    const conversionRate = 0.02; // Default 2% conversion rate
-    const potentialRevenue = totalAnalyzed * averageOrderValue * conversionRate;
-    const leakPercent = 0.05; // 5% of potential revenue is leaking
-
-    return Math.round(potentialRevenue * leakPercent);
-  };
-  const calculateContentDecay = (data) => {
-    // Standardized content decay calculation using actual decay metrics
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const contentDecayPages = data.funnelAnalysis?.decayPages || 0;
-    const totalImpressions =
-      data.searchConsoleData?.reduce(
-        (sum, item) => sum + (item.impressions || 0),
-        0
-      ) || 0;
-
-    // Calculate potential clicks lost due to decay
-    const potentialClicks = totalImpressions * 0.03; // 3% target CTR
-    const decayIntensity = 0.4; // 40% decay intensity
-    const lostClicks =
-      potentialClicks *
-      decayIntensity *
-      (contentDecayPages /
-        Math.max(data.funnelAnalysis?.totalAnalyzed || 1, 1));
-
-    // Calculate revenue loss using standard conversion rate
-    return Math.round(lostClicks * 0.02 * averageOrderValue); // 2% conversion rate
-  };
-
-  const calculateKwMismatch = (data) => {
-    // Standardized keyword mismatch calculation using DA vs KD gap
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const domainAuthority = data.siteAnalysis?.domainAuthority || 30;
-    const avgDifficulty = data.siteAnalysis?.averageDifficulty || 55;
-    const kdGap = Math.max(0, avgDifficulty - domainAuthority);
-
-    // Calculate potential loss based on DA/KD gap
-    const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 1;
-    const impactMultiplier = kdGap * 5; // 5x multiplier for each point of KD gap
-
-    return Math.round(
-      averageOrderValue * totalAnalyzed * 0.02 * (impactMultiplier / 100)
-    ); // 2% conversion rate
-  };
-  const calculateLinkDilution = (data) => {
-    // Standardized link dilution calculation
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const totalAnalyzed = data.funnelAnalysis?.totalAnalyzed || 1;
-    const dilutionPages =
-      data.funnelAnalysis?.dilutionPages || Math.round(totalAnalyzed * 0.15); // Estimate 15% of pages have dilution
-
-    // Calculate traffic loss due to dilution
-    const totalImpressions =
-      data.searchConsoleData?.reduce(
-        (sum, item) => sum + (item.impressions || 0),
-        0
-      ) || 0;
-    const dilutionScore = 0.1; // 10% dilution intensity
-    const trafficLoss =
-      totalImpressions * dilutionScore * (dilutionPages / totalAnalyzed);
-
-    // Calculate revenue loss using standard conversion rate
-    return Math.round(trafficLoss * 0.03 * 0.02 * averageOrderValue); // 3% CTR, 2% conversion
-  };
-
-  const calculatePsychoMismatch = (data) => {
-    // Standardized psychological mismatch calculation
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const totalClicks =
-      data.searchConsoleData?.reduce(
-        (sum, item) => sum + (item.clicks || 0),
-        0
-      ) || 0;
-
-    // Calculate psych score if available
-    const psychSummary = data.funnelAnalysis?.psychCompositeSummary?.overall;
-    let mismatchPercent = 0.4; // Default 40% mismatch
-
-    if (psychSummary) {
-      const avgScore =
-        (psychSummary.emotionalResonance +
-          psychSummary.cognitiveClarity +
-          psychSummary.persuasionLeverage +
-          psychSummary.behavioralMomentum) /
-        4;
-
-      // Calculate mismatch as inverse of score percentage
-      mismatchPercent = (100 - avgScore) / 100;
-    }
-
-    // Calculate revenue loss based on clicks and mismatch percentage
-    return Math.round(totalClicks * mismatchPercent * 0.02 * averageOrderValue); // 2% conversion rate
-  };
-  const calculateKeywordMismatchValue = (data) => {
-    const averageOrderValue = data.domainCostDetails?.averageOrderValue || 50;
-    const da = data.siteAnalysis?.domainAuthority || 30;
-    const avgDifficulty = data.siteAnalysis?.averageDifficulty || 55;
-
-    // Calculate potential impact using standardized approach
-    const totalImpressions =
-      data.searchConsoleData?.reduce(
-        (sum, item) => sum + (item.impressions || 0),
-        0
-      ) || 10000; // Default 10k impressions
-
-    // Calculate CTR adjustment based on DA vs KD gap
-    const kdGapFactor = Math.max(0, avgDifficulty - da) / 100;
-    const potentialCTRImprovement = 0.02 + kdGapFactor * 0.03; // 2% base + up to 3% more with gap
-
-    // Calculate potential clicks and conversions lost
-    const potentialClicks = totalImpressions * potentialCTRImprovement;
-    const actualCTR = 0.03; // 3% actual CTR
-    const actualClicks = totalImpressions * actualCTR;
-    const lostClicks = Math.max(0, potentialClicks - actualClicks);
-
-    // Calculate dollar value using standard conversion rate
-    return Math.round(lostClicks * 0.02 * averageOrderValue); // 2% conversion
-  };
-
-  // Helper functions to count URLs
-  const getContentDecayUrls = (data) => {
-    // Count pages with content decay issues
-    return Math.round((data.funnelAnalysis?.totalAnalyzed || 0) * 0.2); // Example: 20% of pages
-  };
-
-  const getKwMismatchUrls = (data) => {
-    // Count pages with keyword mismatch issues
-    return Math.round((data.funnelAnalysis?.totalAnalyzed || 0) * 0.3); // Example: 30% of pages
-  };
-
-  const getLinkDilutionUrls = (data) => {
-    // Count pages with link dilution issues
-    return Math.round((data.funnelAnalysis?.totalAnalyzed || 0) * 0.2); // Example: 20% of pages
-  };
-
-  const getPsychoMismatchUrls = (data) => {
-    // Count pages with psychological mismatch issues
-    return Math.round((data.funnelAnalysis?.totalAnalyzed || 0) * 0.3); // Example: 30% of pages
-  };
-
   return (
     <div className="dashboard-container">
       {/* <h1>Content Ledger Dashboard</h1> */}
@@ -292,29 +160,38 @@ const Dashboard = () => {
           <h2 className="section-title">
             <span className="title-icon">💸</span>
             Revenue Leak Detection
-          </h2>
-
+          </h2>{" "}
           <div className="dashboard-cards">
-            {Object.entries(stats).map(([key, data], index) => (
-              <div key={key} className="revenue-card">
-                <div className="card-header">
-                  <h3>{formatLeakTitle(key)}</h3>
-                  {data.urls > 0 && (
-                    <span className="affected-urls">{data.urls} URLs</span>
-                  )}
+            {Object.entries(stats).map(([key, data], index) => {
+              const tooltipContent = getTooltipContent(key, onboardingData);
+              return (
+                <div key={key} className="revenue-card">
+                  <div className="card-header">
+                    <h3>
+                      {formatLeakTitle(key)}
+                      <FinancialTooltip
+                        title={tooltipContent.title}
+                        content={tooltipContent.content}
+                        position="top"
+                      />
+                    </h3>
+                    {data.urls > 0 && (
+                      <span className="affected-urls">{data.urls} URLs</span>
+                    )}
+                  </div>
+                  <div className="card-value">
+                    <span className="value-estimate">
+                      ${formatNumber(data.value)}
+                    </span>
+                    <span className="value-label">estimated</span>
+                  </div>
+                  <div className="card-footer">
+                    {getIconForLeakType(key)}
+                    <button className="btn-view-details">View Details</button>
+                  </div>
                 </div>
-                <div className="card-value">
-                  <span className="value-estimate">
-                    ${formatNumber(data.value)}
-                  </span>
-                  <span className="value-label">estimated</span>
-                </div>
-                <div className="card-footer">
-                  {getIconForLeakType(key)}
-                  <button className="btn-view-details">View Details</button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -432,7 +309,15 @@ function formatLeakTitle(key) {
 }
 
 function formatNumber(num) {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // Ensure we have a valid number
+  if (typeof num !== "number" || isNaN(num) || !isFinite(num)) {
+    return "0";
+  }
+
+  // Round to avoid floating point precision issues
+  const rounded = Math.round(num * 100) / 100;
+
+  return rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function getIconForLeakType(type) {

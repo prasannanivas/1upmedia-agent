@@ -28,6 +28,7 @@ const StepMainDomain = () => {
   const [uniqueUrlCount, setUniqueUrlCount] = useState(0);
   const [domainCostDetails, setDomainCostDetails] = useState({
     averageOrderValue: 0,
+    totalInvested: 0,
     AverageContentCost: 0,
   });
   const [businessDetails, setBusinessDetails] = useState(
@@ -125,12 +126,32 @@ const StepMainDomain = () => {
       onboardingData.domainCostDetails || {
         averageOrderValue: "",
         AverageContentCost: "",
+        totalInvested: "",
       }
     );
     if (onboardingData.isSitemapValidated) {
       updateStepStatus(1, "success");
     }
   }, [onboardingData]);
+
+  // Calculate AverageContentCost when totalInvested or uniqueUrlCount changes
+  useEffect(() => {
+    if (domainCostDetails.totalInvested > 0 && uniqueUrlCount > 0) {
+      const calculatedAverageContentCost =
+        domainCostDetails.totalInvested / uniqueUrlCount;
+      setDomainCostDetails((prev) => ({
+        ...prev,
+        AverageContentCost: calculatedAverageContentCost,
+      }));
+    } else if (domainCostDetails.totalInvested === 0) {
+      // Reset AverageContentCost when totalInvested is 0
+      setDomainCostDetails((prev) => ({
+        ...prev,
+        AverageContentCost: 0,
+      }));
+    }
+  }, [domainCostDetails.totalInvested, uniqueUrlCount]);
+
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [isFunnelAnalyzing, setIsFunnelAnalyzing] = useState(false); // Initialize sitemap section to be expanded only if no sitemaps are selected
@@ -639,7 +660,7 @@ const StepMainDomain = () => {
         ...(location && { location }),
         ...(businessDetails && { businessDetails }),
         dynamic_fields: {
-          ...analysisData,
+          ...(analysisData && { analysisData }),
           ...(sitemaps && { sitemaps }),
           ...(selectedSitemaps && { selectedSitemaps }),
           ...(funnelAnalysis && { funnelAnalysis }),
@@ -1345,55 +1366,27 @@ Phone: (555) 123-4567"
                   className="step-main-domain__cost-input"
                   min="0"
                 />
-              </div>
-
+              </div>{" "}
               <div className="step-main-domain__input-group">
                 <label className="step-main-domain__input-label">
-                  <span role="img" aria-label="content">
-                    📝
+                  <span role="img" aria-label="investment">
+                    💵
                   </span>{" "}
-                  Content Cost Per Page ($)
+                  Total Website Investment ($)
                 </label>
                 <input
                   type="number"
-                  value={domainCostDetails.AverageContentCost}
+                  value={domainCostDetails.totalInvested}
                   onChange={(e) =>
                     setDomainCostDetails((prev) => ({
                       ...prev,
-                      AverageContentCost: Number(e.target.value),
+                      totalInvested: Number(e.target.value),
                     }))
                   }
                   placeholder="0"
                   className="step-main-domain__cost-input"
                   min="0"
                 />
-              </div>
-
-              <div className="step-main-domain__input-group">
-                <label className="step-main-domain__input-label">
-                  <span role="img" aria-label="investment">
-                    💵
-                  </span>{" "}
-                  Estimated Total Website Investment ($)
-                </label>{" "}
-                <input
-                  type="text"
-                  value={
-                    uniqueUrlCount > 0
-                      ? (
-                          domainCostDetails.AverageContentCost * uniqueUrlCount
-                        ).toFixed(2)
-                      : "0.00"
-                  }
-                  className="step-main-domain__cost-input"
-                  disabled
-                  readOnly
-                  title="Calculated as: Content Cost Per Page × Number of unique URLs in all sitemaps"
-                />
-                <div className="step-main-domain__input-hint">
-                  {uniqueUrlCount > 0 ? uniqueUrlCount : sitemaps.length} URLs ×
-                  ${domainCostDetails.AverageContentCost} per page
-                </div>
               </div>
             </div>
             <button

@@ -3,6 +3,9 @@
   display: inline-flex;
   align-items: center;
   margin-left: 6px;
+  z-index: 1000000;
+  isolation: isolate;
+  /* Creates a new stacking context */
 }
 
 .financial-tooltip-icon {
@@ -11,6 +14,7 @@
   font-size: 14px;
   opacity: 0.8;
   transition: opacity 0.2s, color 0.2s;
+  z-index: 1000001;
 }
 
 .financial-tooltip-icon:hover {
@@ -20,16 +24,25 @@
 
 .financial-tooltip {
   position: absolute;
-  background-color: #ffffff;
+  background-color: #ffffff !important;
   color: #334155;
   border-radius: 6px;
   padding: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  width: 280px;
-  z-index: 1000;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  z-index: 1000002 !important;
   border: 1px solid #e2e8f0;
   font-size: 0.875rem;
   animation: tooltipFadeIn 0.2s ease-in-out;
+  pointer-events: none;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* Portal-rendered tooltip (renders outside normal DOM flow) */
+.financial-tooltip-portal {
+  pointer-events: auto !important;
+  z-index: 1000002 !important;
 }
 
 @keyframes tooltipFadeIn {

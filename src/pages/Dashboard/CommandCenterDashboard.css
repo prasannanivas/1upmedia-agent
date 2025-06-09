@@ -805,7 +805,7 @@
   transition: all 0.3s ease;
   border: 1px solid rgba(203, 213, 225, 0.5);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .kpi-grid-section:hover {
@@ -890,7 +890,7 @@
   gap: 0.75rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .kpi-tile::after {

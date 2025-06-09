@@ -23,6 +23,9 @@ import {
   Shield,
 } from "lucide-react";
 import { calculateGradeDistribution } from "../../utils/ContentRating";
+import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
+import FinancialTooltip from "../../components/FinancialTooltip";
+import { getTooltipContent } from "../../utils/tooltipContent";
 import "./CommandCenterDashboard.css";
 
 const CommandCenterDashboard = () => {
@@ -34,13 +37,9 @@ const CommandCenterDashboard = () => {
 
   // Calculate command center metrics from onboarding data
   const commandCenterData = useMemo(() => {
-    if (!onboardingData || loading) return { isBlind: true };
-
-    // CONSISTENT DATA ACCESS: Use GSCAnalysisData structure like other dashboards
+    if (!onboardingData || loading) return { isBlind: true }; // CONSISTENT DATA ACCESS: Use GSCAnalysisData structure like other dashboards
     const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
-    const contentDecayData = gscAnalysisData?.contentDecay || [];
     const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
-    const linkDilutionData = gscAnalysisData.linkDilution || [];
 
     // Check for insufficient data (consistent with other dashboards)
     const hasMinimalData = () => {
@@ -170,36 +169,22 @@ const CommandCenterDashboard = () => {
         );
       }
     })();
-
-    // Use processed decay data if available, otherwise derive from search console
-    const deepDecayPages = (() => {
-      if (contentDecayData.length > 0) {
-        return contentDecayData.filter((item) => item.status === "Deep Decay")
-          .length;
-      } else {
-        return searchConsoleData.filter(
-          (item) => parseFloat(item.position) > 50
-        ).length;
-      }
-    })();
-
-    // Use processed dilution data if available, otherwise derive estimates
-    const highDilutionPages = (() => {
-      if (linkDilutionData.length > 0) {
-        return linkDilutionData.filter((item) => item.dilutionScore > 0.05)
-          .length;
-      } else {
-        return searchConsoleData.filter(
-          (item) => parseFloat(item.position) > 20 && parseInt(item.clicks) < 5
-        ).length;
-      }
-    })();
-
     const lowKDHighDAUrls = searchConsoleData.filter(
       (item) => parseFloat(item.position) <= 20
     ).length; // Use actual funnel analysis data if available, otherwise derive from search data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
     const actualFunnelDistribution = funnelAnalysis.funnelDistribution;
+
+    // Get centralized calculations for CommandCenter dashboard
+    const centralizedMetrics = executeCalculationsForDashboard(
+      "commandCenter",
+      onboardingData,
+      { conversionRate }
+    ); // Use centralized deep decay pages count for consistency
+    const deepDecayPages = centralizedMetrics.deepDecayPagesCount || 0;
+
+    // Use centralized high dilution pages count for consistency
+    const highDilutionPages = centralizedMetrics.highDilutionPagesCount || 0;
 
     let tofuPercentage, mofuPercentage, bofuPercentage;
 
@@ -225,7 +210,7 @@ const CommandCenterDashboard = () => {
           ? Math.round((actualFunnelDistribution.BoF / total) * 100)
           : 0;
     } else {
-      // Fallback to derived funnel analysis from search console position data
+      // Fallback to derived funnel analysis using standardized position thresholds
       tofuPercentage = Math.round(
         (searchConsoleData.filter((item) => parseFloat(item.position) <= 10)
           .length /
@@ -235,7 +220,7 @@ const CommandCenterDashboard = () => {
       mofuPercentage = Math.round(
         (searchConsoleData.filter(
           (item) =>
-            parseFloat(item.position) > 10 && parseFloat(item.position) <= 30
+            parseFloat(item.position) > 10 && parseFloat(item.position) <= 20
         ).length /
           searchConsoleData.length) *
           100
@@ -273,85 +258,99 @@ const CommandCenterDashboard = () => {
           searchConsoleData.length) *
           100
       );
-    } // Calculate substantial dollar amounts for each KPI metric - made more significant for visibility
-    // Base conversion value that changes with slider
-    // FIXED LOGIC: Higher conversion rates should show LESS loss, not more    // Deep Decay Dollar Impact: Pages ranking below 50 lose potential revenue
-    // Loss decreases as conversion rate improves (inverse relationship)
-    const deepDecayDollarValue = Math.round(
-      deepDecayPages * contentCost * 3 + // Realistic multiplier: 3x content cost
-        deepDecayPages *
-          ((averageOrderValue * (3.0 / conversionRate)) / 100) *
-          totalClicks *
-          0.2 // Fixed logic: lower conversion = higher loss
-    ); // High Dilution Dollar Impact: Pages with poor performance dilute budget
-    // Loss decreases as conversion rate improves
-    const dilutionDollarValue = Math.round(
-      highDilutionPages * contentCost * 2 + // Realistic multiplier: 2x content cost
-        highDilutionPages *
-          ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-          totalClicks *
-          0.25 // Fixed logic: inverse relationship with conversion rate
-    ); // Keyword Mismatch Dollar Impact: High DA URLs not optimized properly
-    // Loss decreases significantly as conversion rate improves
-    const keywordMismatchDollarValue = Math.round(
-      lowKDHighDAUrls *
-        ((averageOrderValue * (3.0 / conversionRate)) / 100) *
-        25 + // Realistic multiplier for $10 AOV business
-        lowKDHighDAUrls * contentCost * 2
-    ); // Psychographic Mismatch Dollar Impact: Content not resonating with audience
-    // Loss decreases as conversion rate improves
-    const psychoMismatchDollarValue = Math.round(
-      (psychoMismatch / 100) *
-        totalClicks *
-        ((averageOrderValue * (2.5 / conversionRate)) / 100) *
-        6 + // Realistic multiplier for $10 AOV business
-        psychoMismatch * contentCost * 1.5
-    ); // Funnel Gap Dollar Impact: Different types of funnel imbalances cause different losses
-    // Loss decreases as conversion rate improves
-    let funnelGapDollarValue = 0;
-    if (funnelGap === "MoF Crisis") {
-      // Most critical - missing middle funnel loses qualified leads
-      // With only 4% MoF vs ideal 15-25%, this is a massive problem
-      const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
-      funnelGapDollarValue = Math.round(
-        mofDeficit * contentCost * 0.8 + // Moderate multiplier for MoF crisis
-          mofDeficit *
-            ((averageOrderValue * (2.5 / conversionRate)) / 1000) *
-            totalClicks *
-            0.4 // Impact from conversion rate
-      );
-    } else if (funnelGap === "BoF Heavy") {
-      // Too bottom-heavy loses awareness traffic
-      // With 71% BoF vs ideal max 40%, this indicates over-focus on conversion content
-      const bofExcess = Math.max(bofuPercentage - 40, 0);
-      funnelGapDollarValue = Math.round(
-        bofExcess * contentCost * 6 + // Penalty for being too bottom-heavy
-          bofExcess *
-            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-            totalClicks *
-            3
-      );
-    } else if (funnelGap === "ToF Deficit") {
-      // Missing top funnel loses new audience acquisition
-      const tofDeficit = Math.max(20 - tofuPercentage, 0);
-      funnelGapDollarValue = Math.round(
-        tofDeficit * contentCost * 5 +
-          tofDeficit *
-            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-            totalClicks *
-            3
-      );
-    } else if (funnelGap === "BoF Deficit") {
-      // Missing bottom funnel loses conversions
-      const bofDeficit = Math.max(15 - bofuPercentage, 0);
-      funnelGapDollarValue = Math.round(
-        bofDeficit * contentCost * 7 +
-          bofDeficit *
+    } // Calculate substantial dollar amounts for each KPI metric using centralized calculations
+    // Use centralized calculations where available, fallback to existing logic
+    const deepDecayDollarValue =
+      centralizedMetrics.deepDecayDollar ||
+      Math.round(
+        deepDecayPages * contentCost * 3 + // Realistic multiplier: 3x content cost
+          deepDecayPages *
             ((averageOrderValue * (3.0 / conversionRate)) / 100) *
             totalClicks *
-            5 // High impact on conversion
+            0.2 // Fixed logic: lower conversion = higher loss
       );
-    } // Traffic sparks - Generate 90-day trend visualization based on actual data
+
+    const dilutionDollarValue =
+      centralizedMetrics.highDilutionDollar ||
+      Math.round(
+        highDilutionPages * contentCost * 2 + // Realistic multiplier: 2x content cost
+          highDilutionPages *
+            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
+            totalClicks *
+            0.25 // Fixed logic: inverse relationship with conversion rate
+      );
+
+    const keywordMismatchDollarValue =
+      centralizedMetrics.keywordMismatchDollar ||
+      Math.round(
+        lowKDHighDAUrls *
+          ((averageOrderValue * (3.0 / conversionRate)) / 100) *
+          0.25 + // Realistic multiplier for $10 AOV business
+          lowKDHighDAUrls * contentCost
+      );
+    const psychoMismatchDollarValue =
+      centralizedMetrics.psychoMismatchDollar ||
+      (() => {
+        const dollarValue = Math.round(
+          (psychoMismatch / 100) *
+            totalClicks *
+            ((averageOrderValue * (2.5 / conversionRate)) / 100) *
+            6 + // Realistic multiplier for $10 AOV business
+            psychoMismatch * contentCost * 1.5
+        );
+
+        return dollarValue;
+      })(); // Funnel Gap Dollar Impact: Use centralized calculation or fallback to existing logic
+    let funnelGapDollarValue = centralizedMetrics.funnelGaps || 0;
+
+    // If no centralized calculation available, use existing funnel gap logic
+    if (!centralizedMetrics.funnelGaps) {
+      if (funnelGap === "MoF Crisis") {
+        // Most critical - missing middle funnel loses qualified leads
+        // With only 4% MoF vs ideal 15-25%, this is a massive problem
+        const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
+        funnelGapDollarValue = Math.round(
+          mofDeficit * contentCost * 0.8 + // Moderate multiplier for MoF crisis
+            mofDeficit *
+              ((averageOrderValue * (2.5 / conversionRate)) / 1000) *
+              totalClicks *
+              0.4 // Impact from conversion rate
+        );
+      } else if (funnelGap === "BoF Heavy") {
+        // Too bottom-heavy loses awareness traffic
+        // With 71% BoF vs ideal max 40%, this indicates over-focus on conversion content
+        const bofExcess = Math.max(bofuPercentage - 40, 0);
+        funnelGapDollarValue = Math.round(
+          bofExcess * contentCost * 6 + // Penalty for being too bottom-heavy
+            bofExcess *
+              ((averageOrderValue * (2.0 / conversionRate)) / 100) *
+              totalClicks *
+              3
+        );
+      } else if (funnelGap === "ToF Deficit") {
+        // Missing top funnel loses new audience acquisition
+        const tofDeficit = Math.max(20 - tofuPercentage, 0);
+        funnelGapDollarValue = Math.round(
+          tofDeficit * contentCost * 5 +
+            tofDeficit *
+              ((averageOrderValue * (2.0 / conversionRate)) / 100) *
+              totalClicks *
+              3
+        );
+      } else if (funnelGap === "BoF Deficit") {
+        // Missing bottom funnel loses conversions
+        const bofDeficit = Math.max(15 - bofuPercentage, 0);
+        funnelGapDollarValue = Math.round(
+          bofDeficit * contentCost * 7 +
+            bofDeficit *
+              ((averageOrderValue * (3.0 / conversionRate)) / 100) *
+              totalClicks *
+              5 // High impact on conversion
+        );
+      }
+    } // End centralized calculation fallback
+
+    // Traffic sparks - Generate 90-day trend visualization based on actual data
     const generateSparkData = (baseValue, volatility = 0.3) => {
       const data = [];
       for (let i = 0; i < 10; i++) {
@@ -478,6 +477,8 @@ const CommandCenterDashboard = () => {
       </div>
     );
   }
+
+  console.log("Command Center Data:", commandCenterData);
 
   // Show blind system warning if no data - with Finish Onboarding button
   if (commandCenterData.isBlind) {
@@ -684,6 +685,181 @@ const CommandCenterDashboard = () => {
         </div>
       </div>
 
+      {/* KPI Grid */}
+      <div className="kpi-grid-section">
+        <h3>KPI GRID</h3>{" "}
+        <div className="kpi-grid">
+          <div
+            className="kpi-tile waste"
+            onClick={() => navigate("/riskdashboard")}
+          >
+            <div className="kpi-icon">💸</div>{" "}
+            <div className="kpi-label">
+              Waste $
+              <FinancialTooltip
+                title={getTooltipContent("contentWaste", onboardingData).title}
+                content={
+                  getTooltipContent("contentWaste", onboardingData).content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              ${commandCenterData.kpiMetrics.wastedSpend.toLocaleString()}{" "}
+              <div className="kpi-dollar">
+                + $
+                {Math.round(
+                  (commandCenterData.totalClicks || 0) *
+                    ((4.5 - conversionRate) / 100) *
+                    (parseFloat(
+                      onboardingData?.domainCostDetails?.averageOrderValue
+                    ) || 50) *
+                    0.4
+                ).toLocaleString()}{" "}
+                opportunity loss
+              </div>
+            </div>
+          </div>
+          <div
+            className="kpi-tile decay"
+            onClick={() => navigate("/contentledger")}
+          >
+            <div className="kpi-icon">📉</div>{" "}
+            <div className="kpi-label">
+              Deep Decay
+              <FinancialTooltip
+                title={
+                  getTooltipContent("deepDecayDollar", onboardingData).title
+                }
+                content={
+                  getTooltipContent("deepDecayDollar", onboardingData).content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              {commandCenterData.kpiMetrics.deepDecayPages} pages
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.deepDecayDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
+            </div>
+          </div>
+          <div
+            className="kpi-tile dilution"
+            onClick={() => navigate("/riskdashboard")}
+          >
+            <div className="kpi-icon">🔗</div>{" "}
+            <div className="kpi-label">
+              Dilution
+              <FinancialTooltip
+                title={
+                  getTooltipContent("highDilutionDollar", onboardingData).title
+                }
+                content={
+                  getTooltipContent("highDilutionDollar", onboardingData)
+                    .content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              {commandCenterData.kpiMetrics.highDilutionPages} pages
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.dilutionDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
+            </div>
+          </div>
+          <div
+            className="kpi-tile keyword"
+            onClick={() => navigate("/agents/ideation")}
+          >
+            <div className="kpi-icon">🔑</div>{" "}
+            <div className="kpi-label">
+              KD≪DA
+              <FinancialTooltip
+                title={
+                  getTooltipContent("keywordMismatchDollar", onboardingData)
+                    .title
+                }
+                content={
+                  getTooltipContent("keywordMismatchDollar", onboardingData)
+                    .content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              {commandCenterData.kpiMetrics.lowKDHighDAUrls} URLs
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.keywordMismatchDollarValue.toLocaleString()}{" "}
+                potential
+              </div>
+            </div>
+          </div>
+          <div
+            className="kpi-tile psych"
+            onClick={() => navigate("/agents/strategy")}
+          >
+            <div className="kpi-icon">🧠</div>{" "}
+            <div className="kpi-label">
+              Psych%
+              <FinancialTooltip
+                title={
+                  getTooltipContent("psychoMismatchDollar", onboardingData)
+                    .title
+                }
+                content={
+                  getTooltipContent("psychoMismatchDollar", onboardingData)
+                    .content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              {commandCenterData.kpiMetrics.psychoMismatch}% mis
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics.psychoMismatchDollarValue.toLocaleString()}{" "}
+                loss
+              </div>
+            </div>
+          </div>
+          <div
+            className="kpi-tile funnel"
+            onClick={() => navigate("/agents/content-creation")}
+          >
+            <div className="kpi-icon">🎯</div>{" "}
+            <div className="kpi-label">
+              FunnelGap
+              <FinancialTooltip
+                title={getTooltipContent("funnelGaps", onboardingData).title}
+                content={
+                  getTooltipContent("funnelGaps", onboardingData).content
+                }
+                position="top"
+              />
+            </div>
+            <div className="kpi-value">
+              {commandCenterData.kpiMetrics.funnelGap}
+              <div className="kpi-dollar">
+                $
+                {commandCenterData.kpiMetrics?.funnelGapDollarValue?.impact /
+                  100}{" "}
+                loss
+              </div>
+            </div>
+          </div>
+        </div>
+        <p className="kpi-note">
+          • Tiles are click-thru to Risk, Ledger, or Strategy pages
+        </p>
+      </div>
+
       {/* Conversion Rate Slider */}
       <div className="conversion-rate-section">
         <h3>CONVERSION RATE OPTIMIZER</h3>
@@ -745,114 +921,6 @@ const CommandCenterDashboard = () => {
             calculations and total combined financial impact
           </p>
         </div>
-      </div>
-
-      {/* KPI Grid */}
-      <div className="kpi-grid-section">
-        <h3>KPI GRID</h3>
-        <div className="kpi-grid">
-          {" "}
-          <div
-            className="kpi-tile waste"
-            onClick={() => navigate("/riskdashboard")}
-          >
-            <div className="kpi-icon">💸</div>
-            <div className="kpi-label">Waste $</div>
-            <div className="kpi-value">
-              ${commandCenterData.kpiMetrics.wastedSpend.toLocaleString()}{" "}
-              <div className="kpi-dollar">
-                + $
-                {Math.round(
-                  (commandCenterData.totalClicks || 0) *
-                    ((4.5 - conversionRate) / 100) *
-                    (parseFloat(
-                      onboardingData?.domainCostDetails?.averageOrderValue
-                    ) || 50) *
-                    0.4
-                ).toLocaleString()}{" "}
-                opportunity loss
-              </div>
-            </div>
-          </div>{" "}
-          <div
-            className="kpi-tile decay"
-            onClick={() => navigate("/contentledger")}
-          >
-            <div className="kpi-icon">📉</div>
-            <div className="kpi-label">Deep Decay</div>
-            <div className="kpi-value">
-              {commandCenterData.kpiMetrics.deepDecayPages} pages
-              <div className="kpi-dollar">
-                $
-                {commandCenterData.kpiMetrics.deepDecayDollarValue.toLocaleString()}{" "}
-                loss
-              </div>
-            </div>
-          </div>{" "}
-          <div
-            className="kpi-tile dilution"
-            onClick={() => navigate("/riskdashboard")}
-          >
-            <div className="kpi-icon">🔗</div>
-            <div className="kpi-label">Dilution</div>
-            <div className="kpi-value">
-              {commandCenterData.kpiMetrics.highDilutionPages} pages
-              <div className="kpi-dollar">
-                $
-                {commandCenterData.kpiMetrics.dilutionDollarValue.toLocaleString()}{" "}
-                loss
-              </div>
-            </div>
-          </div>{" "}
-          <div
-            className="kpi-tile keyword"
-            onClick={() => navigate("/agents/ideation")}
-          >
-            <div className="kpi-icon">🔑</div>
-            <div className="kpi-label">KD≪DA</div>
-            <div className="kpi-value">
-              {commandCenterData.kpiMetrics.lowKDHighDAUrls} URLs
-              <div className="kpi-dollar">
-                $
-                {commandCenterData.kpiMetrics.keywordMismatchDollarValue.toLocaleString()}{" "}
-                potential
-              </div>
-            </div>
-          </div>{" "}
-          <div
-            className="kpi-tile psych"
-            onClick={() => navigate("/agents/strategy")}
-          >
-            <div className="kpi-icon">🧠</div>
-            <div className="kpi-label">Psych%</div>
-            <div className="kpi-value">
-              {commandCenterData.kpiMetrics.psychoMismatch}% mis
-              <div className="kpi-dollar">
-                $
-                {commandCenterData.kpiMetrics.psychoMismatchDollarValue.toLocaleString()}{" "}
-                loss
-              </div>
-            </div>
-          </div>{" "}
-          <div
-            className="kpi-tile funnel"
-            onClick={() => navigate("/agents/content-creation")}
-          >
-            <div className="kpi-icon">🎯</div>
-            <div className="kpi-label">FunnelGap</div>
-            <div className="kpi-value">
-              {commandCenterData.kpiMetrics.funnelGap}
-              <div className="kpi-dollar">
-                $
-                {commandCenterData.kpiMetrics.funnelGapDollarValue.toLocaleString()}{" "}
-                loss
-              </div>
-            </div>
-          </div>
-        </div>
-        <p className="kpi-note">
-          • Tiles are click-thru to Risk, Ledger, or Strategy pages
-        </p>
       </div>
 
       {/* Traffic & ROI Sparks */}

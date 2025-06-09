@@ -6,7 +6,6 @@ import {
   User,
   Settings,
   CheckCircle,
-  AlertCircle,
   Target,
   Database,
   Link2,
@@ -15,7 +14,6 @@ import {
 } from "lucide-react";
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
-import { useContentPnL } from "../hooks/useContentPnL";
 import LeakDashboard from "../pages/Dashboard/Dashboard";
 
 const quickLinks = [
@@ -78,9 +76,9 @@ const sectionConfig = {
 
 const HomePage = () => {
   const [index, setIndex] = useState(0);
-  const { getPercentageProfileCompletion } = useOnboarding();
+  const { getPercentageProfileCompletion, onboardingData, loading } =
+    useOnboarding();
   const navigate = useNavigate();
-  const pnlMetrics = useContentPnL();
 
   const completionPercentage = getPercentageProfileCompletion();
 
@@ -170,149 +168,120 @@ const HomePage = () => {
 
   return (
     <div className="homepage-container">
-      {/* Content Ledger OS System Activation */}
+      {/* Key Metrics Section */}
       <motion.section
-        className="content-ledger-os"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8 }}
+        className="key-metrics-section"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
       >
         <motion.div
-          className="ledger-header"
+          className="metrics-header"
           initial={{ y: -20 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
         >
-          <div className="activation-badge">
-            <span className="pulse-dot"></span>
-            SYSTEM STATUS
-          </div>
-          <h1 className="ledger-title">
-            CONTENT LEDGER OS
-            <span className="activation-status">NOT ACTIVATED</span>
-          </h1>
-          <div className="ledger-divider gradient-divider"></div>
-        </motion.div>
-
-        <div className="ledger-content-grid">
+          <h2 className="metrics-title">KEY METRICS OVERVIEW</h2>
+          <div className="metrics-divider gradient-divider"></div>
+        </motion.div>{" "}
+        <div className="metrics-grid">
           <motion.div
-            className="ledger-status-card"
+            className="metric-card total-invested"
             initial={{ x: -30, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <div className="card-header">
-              <AlertCircle size={22} />
-              <h3> Right now, we don't know:</h3>
+            <div className="metric-icon">💰</div>
+            <div className="metric-content">
+              <h3 className="metric-label">Total Invested</h3>
+              {loading ? (
+                <div className="metric-value loading">⏳ Loading...</div>
+              ) : (
+                <div className="metric-value">
+                  $
+                  {(
+                    onboardingData.domainCostDetails?.totalInvested || 0
+                  ).toLocaleString()}
+                </div>
+              )}
+              <div className="metric-subtitle">Content investment to date</div>
             </div>
-            <div className="ledger-unknown-items">
-              {[
-                "What you've published",
-                "What your funnel looks like",
-                "What your content costs",
-                "Where your revenue comes from",
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  className="ledger-item"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
-                >
-                  <CheckCircle size={18} className="item-icon" />
-                  <span>{item}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
+          </motion.div>{" "}
           <motion.div
-            className="ledger-preview-card"
+            className="metric-card current-value"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <div className="metric-icon">📈</div>
+            <div className="metric-content">
+              <h3 className="metric-label">Current Content Value</h3>
+              {loading ? (
+                <div className="metric-value loading">⏳ Loading...</div>
+              ) : (
+                <div className="metric-value">
+                  $
+                  {(() => {
+                    const totalInvested =
+                      onboardingData.domainCostDetails?.totalInvested || 0;
+                    const contentDecayRatio =
+                      onboardingData.GSCAnalysisData?.contentDecay?.dropRatio ||
+                      0.3;
+                    const loss = totalInvested * contentDecayRatio;
+                    const currentValue = totalInvested - loss;
+                    return Math.round(currentValue).toLocaleString();
+                  })()}
+                </div>
+              )}
+              <div className="metric-subtitle">
+                Total invested minus content decay loss
+              </div>
+            </div>
+          </motion.div>{" "}
+          <motion.div
+            className="metric-card content-decay"
             initial={{ x: 30, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
           >
-            <div className="card-header">
-              <BarChart3 size={22} />
-              <h3>Unlock Analytics</h3>
-            </div>
-            <div className="ledger-preview-items">
-              {[
-                {
-                  icon: <Link2 size={16} />,
-                  text: "Content Investment vs Verified Revenue",
-                },
-                {
-                  icon: <Target size={16} />,
-                  text: "Decay Map (Content Losing Visibility)",
-                },
-                {
-                  icon: <Database size={16} />,
-                  text: "Funnel Imbalance (TOFU / MOFU / BOFU Gaps)",
-                },
-                {
-                  icon: <Globe size={16} />,
-                  text: "Keyword Efficiency Gap (DA vs KD Mismatch)",
-                },
-                {
-                  icon: <User size={16} />,
-                  text: "Psychographic Fit Score (Persona Relevance)",
-                },
-                {
-                  icon: <Zap size={16} />,
-                  text: "Full Attribution Chain (View → Form → CRM → Closed Deal)",
-                },
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  className="ledger-preview-item"
-                  initial={{ opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
-                >
-                  <span className="item-icon">{item.icon}</span>
-                  <span>{item.text}</span>
-                </motion.div>
-              ))}
+            <div className="metric-icon">📉</div>
+            <div className="metric-content">
+              <h3 className="metric-label">Content Decay</h3>
+              {loading ? (
+                <div className="metric-value loading">⏳ Loading...</div>
+              ) : (
+                <div className="metric-value">
+                  {(() => {
+                    const contentDecayRatio =
+                      onboardingData.GSCAnalysisData?.contentDecay?.dropRatio ||
+                      0.3;
+                    return `${Math.round(contentDecayRatio * 100)}%`;
+                  })()}
+                </div>
+              )}
+              <div className="metric-subtitle">Content losing visibility</div>
             </div>
           </motion.div>
-        </div>
-
-        <div className="ledger-divider gradient-divider"></div>
-
+        </div>{" "}
         <motion.div
-          className="activation-cta-container"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.7 }}
-        >
-          <div className="activation-message">
-            <Zap size={24} className="activation-icon" />
-            <h3>Ready to unlock the full potential of your content?</h3>
-          </div>
-          <motion.button
-            className="activate-button"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => navigate("/onboarding")}
-          >
-            Activate Ledger Now
-          </motion.button>
-        </motion.div>
-
-        <div className="ledger-divider gradient-divider"></div>
-
-        <motion.div
-          className="ledger-quote"
+          className="metrics-footer"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.9 }}
+          transition={{ duration: 0.5, delay: 0.8 }}
         >
-          <div className="quote-icon">💡</div>
-          <p>
-            "The system is blind by default. But when turned on, it doesn't
-            blink."
-          </p>
+          <div className="metrics-status">
+            {onboardingData.domainCostDetails?.totalInvested ? (
+              <span className="real-data-indicator">📊 Onboarding Data</span>
+            ) : (
+              <span className="demo-data-indicator">🔮 Setup Required</span>
+            )}
+          </div>
+          <button
+            className="view-detailed-analytics"
+            onClick={() => navigate("/dashboard")}
+          >
+            View Detailed Analytics →
+          </button>
         </motion.div>
       </motion.section>
       <LeakDashboard />
@@ -546,7 +515,7 @@ const HomePage = () => {
         <div className="pnl-divider">
           ────────────────────────────────────────────────────────────────────────────
         </div>
-      </motion.section> */}
+      </motion.section>
       {/* Hero Section */}
       <motion.section
         className="homepage-hero"
@@ -773,22 +742,6 @@ const HomePage = () => {
         </div>
       </motion.section>{" "}
       {/* Content Ledger OS Description */}
-      <motion.section
-        className="content-ledger-description"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-      >
-        <div className="ledger-description-container">
-          <h2 className="ledger-description-title">
-            CONTENT LEDGER OS — THE CONTENT P&L MRI
-          </h2>
-          <p className="ledger-description-subtitle">
-            "Expose hidden revenue leaks before they bankrupt your content
-            budget."
-          </p>
-        </div>
-      </motion.section>
       {/* Optional Full MRI Checklist */}
       <motion.section
         className="full-mri-checklist"

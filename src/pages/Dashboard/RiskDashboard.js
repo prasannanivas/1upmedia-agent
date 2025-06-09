@@ -3,12 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { AlertTriangle, Brain, ChevronRight } from "lucide-react";
 import { calculateGradeDistribution } from "../../utils/ContentRating";
+import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
+import FinancialTooltip from "../../components/FinancialTooltip";
+import { getTooltipContent } from "../../utils/tooltipContent";
 import "./RiskDashboard.css";
 
 const RiskDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
   const navigate = useNavigate();
-  // Calculate risk metrics from real onboarding data
+
+  // Calculate risk metrics from real onboarding data using centralized calculations
   const calculateRiskMetrics = useCallback(() => {
     // Safely extract data with fallbacks
     const searchConsoleData = Array.isArray(onboardingData?.searchConsoleData)
@@ -61,7 +65,7 @@ const RiskDashboard = () => {
         Unknown: 0,
       },
     };
-    const totalFunnelPages = funnelData.totalAnalyzed || 0; // Get keywords data
+    const totalFunnelPages = funnelData.totalAnalyzed || 0;
     const keywordList = onboardingData?.keywords || [];
 
     // Calculate content decay metrics from real data
@@ -73,7 +77,8 @@ const RiskDashboard = () => {
     ).length;
     const growingPages = contentDecayData.filter(
       (item) => item.status === "Growing"
-    ).length; // Calculate content cost waste from real data
+    ).length;
+
     const negativeROIPages = contentCostWasteData.filter(
       (item) => item.roi === -1
     ).length;
@@ -82,18 +87,22 @@ const RiskDashboard = () => {
     const avgKD =
       searchConsoleData.length > 0
         ? Math.min(80, Math.max(10, avgPosition * 2)) // Estimate KD based on average position
-        : 30; // Calculate author performance
+        : 30;
+
+    // Calculate author performance
     const authors = onboardingData?.authors || [];
     const hasAIAuthors = authors.some(
       (author) =>
         author.name?.toLowerCase().includes("ai") ||
         author.name?.toLowerCase().includes("bot") ||
         author.name?.toLowerCase().includes("automated")
-    ); // Calculate domain cost details using standardized values
-    const avgOrderValue =
-      onboardingData?.domainCostDetails?.averageOrderValue || 50;
-    const avgContentCost =
-      onboardingData?.domainCostDetails?.AverageContentCost || 200;
+    );
+
+    // Use centralized calculations where possible
+    const centralizedMetrics = executeCalculationsForDashboard(
+      "riskDashboard",
+      onboardingData
+    );
 
     return {
       siteInfo: {
@@ -146,6 +155,7 @@ const RiskDashboard = () => {
               engagementScore,
             };
           });
+
           // Calculate grade distribution
           const gradeDistribution = calculateGradeDistribution(contentMetrics);
 
@@ -193,6 +203,7 @@ const RiskDashboard = () => {
             url: item.url || "Unknown page",
             drop: parseFloat((item.dropRatio * 100).toFixed(1)),
           })),
+        impact: centralizedMetrics.contentRisk || 0, // Use centralized calculation
       },
       cannibalization: {
         keywordOverlaps: cannibalizationData.length,
@@ -212,6 +223,7 @@ const RiskDashboard = () => {
         ),
         exampleKeyword:
           cannibalizationData[0]?.keyword || keywordList[0] || "target keyword",
+        impact: centralizedMetrics.cannibalizationRisk || 0, // Use centralized calculation
       },
       keywordEfficiency: {
         avgKD: parseFloat(avgKD.toFixed(1)),
@@ -228,7 +240,13 @@ const RiskDashboard = () => {
             kd: Math.min(80, Math.max(30, item.position)),
             da: domainAuthority,
           })),
+        // Use centralized calculations for efficiency metrics
+        blendedAuthority:
+          centralizedMetrics.keywordEfficiency?.blendedAuthority || 0,
+        efficiencyRatio:
+          centralizedMetrics.keywordEfficiency?.efficiencyRatio || 0,
       },
+      // ...existing code for remaining metrics...
       strategyRatio: {
         tofu: funnelData.funnelDistribution?.ToF || 0,
         mofu: funnelData.funnelDistribution?.MoF || 0,
@@ -239,13 +257,15 @@ const RiskDashboard = () => {
         bofuDecay: Math.floor((funnelData.funnelDistribution?.BoF || 0) * 0.6),
       },
       psychographicMismatch: {
-        driftPages: funnelData.funnelDistribution?.Unknown || 0, // Unknown stage pages indicate mismatch
-        avgCTR: parseFloat((avgCTR * 0.3).toFixed(2)), // Lower CTR for mismatched content
+        driftPages: funnelData.funnelDistribution?.Unknown || 0,
+        avgCTR: parseFloat((avgCTR * 0.3).toFixed(2)),
+        impact: centralizedMetrics.psychoMismatch || 0, // Use centralized calculation
       },
       linkDilution: {
-        lowDALinks: Math.max(0, pageAuthority - domainAuthority), // Difference indicates dilution
-        conflictingAnchors: cannibalizationData.length, // Cannibalization indicates anchor conflicts
-        lostBacklinks: Math.max(0, citationFlow - trustFlow), // Citation vs Trust flow gap
+        lowDALinks: Math.max(0, pageAuthority - domainAuthority),
+        conflictingAnchors: cannibalizationData.length,
+        lostBacklinks: Math.max(0, citationFlow - trustFlow),
+        impact: centralizedMetrics.linkDilution || 0, // Use centralized calculation
       },
       inventoryBloat: {
         lowImpressionPages: searchConsoleData.filter(
@@ -255,11 +275,18 @@ const RiskDashboard = () => {
           (item) => (item.impressions || 0) === 0
         ).length,
         crawlBudgetWaste: contentCostWasteData.length,
+        impact: centralizedMetrics.contentWaste || 0, // Use centralized calculation
       },
       timeToROI: {
         avgBreakeven:
-          avgContentCost > 0 && avgOrderValue > 0
-            ? Math.ceil(avgContentCost / (avgOrderValue * (avgCTR / 100)))
+          (onboardingData?.domainCostDetails?.AverageContentCost || 200) > 0 &&
+          (onboardingData?.domainCostDetails?.averageOrderValue || 50) > 0
+            ? Math.ceil(
+                (onboardingData?.domainCostDetails?.AverageContentCost || 200) /
+                  ((onboardingData?.domainCostDetails?.averageOrderValue ||
+                    50) *
+                    (avgCTR / 100))
+              )
             : 120,
         negativePages: negativeROIPages,
         highestBurn:
@@ -289,7 +316,7 @@ const RiskDashboard = () => {
         volatilityScore: parseFloat((avgPosition / 10).toFixed(1)),
       },
       anchorOverload: {
-        overloadedPages: cannibalizationData.length, // Pages with keyword cannibalization
+        overloadedPages: cannibalizationData.length,
       },
       metaRisk: {
         siloBleed: `${onboardingData?.domain}/blog vs ${onboardingData?.domain}/services/`,
@@ -404,6 +431,7 @@ const RiskDashboard = () => {
 
       {/* Risk Sections Grid */}
       <div className="risk-sections-grid">
+        {" "}
         {/* 1. Credit Score Breakdown */}
         <div className="risk-section">
           <div
@@ -412,7 +440,14 @@ const RiskDashboard = () => {
           >
             <div className="section-title">
               <span className="section-number">📊 1.</span>
-              <span>CREDIT SCORE BREAKDOWN (A+ → D‑)</span>
+              <span>CREDIT SCORE BREAKDOWN (A+ → D‑)</span>{" "}
+              <FinancialTooltip
+                title={getTooltipContent("contentGrade", onboardingData).title}
+                content={
+                  getTooltipContent("contentGrade", onboardingData).content
+                }
+                position="top"
+              />
             </div>
             <ChevronRight
               className={`chevron ${
@@ -449,8 +484,7 @@ const RiskDashboard = () => {
               View Scoring Decay Timeline ▸
             </button>
           </div>
-        </div>
-
+        </div>{" "}
         {/* 2. Content Decay Index */}
         <div className="risk-section">
           <div
@@ -460,6 +494,11 @@ const RiskDashboard = () => {
             <div className="section-title">
               <span className="section-number">📉 2.</span>
               <span>CONTENT DECAY INDEX</span>
+              <FinancialTooltip
+                title={getTooltipContent("contentRisk").title}
+                content={getTooltipContent("contentRisk").content}
+                position="top"
+              />
             </div>
             <ChevronRight
               className={`chevron ${
@@ -492,7 +531,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">View Slope Histogram ▸</button>
           </div>
         </div>
-
         {/* 3. Cannibalization Conflict Map */}
         <div className="risk-section">
           <div
@@ -528,7 +566,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Intent Collision Matrix ▸</button>
           </div>
         </div>
-
         {/* 4. Keyword Efficiency Index */}
         <div className="risk-section">
           <div
@@ -570,7 +607,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Punching-Up Scatterplot ▸</button>
           </div>
         </div>
-
         {/* 5. Strategy Ratio */}
         <div className="risk-section">
           <div
@@ -604,7 +640,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Funnel Ratio Wheel ▸</button>
           </div>
         </div>
-
         {/* 6. Psychographic Mismatch Monitor */}
         <div className="risk-section">
           <div
@@ -636,7 +671,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">CTR vs Tone Graph ▸</button>
           </div>
         </div>
-
         {/* 7. Link Dilution Radar */}
         <div className="risk-section">
           <div
@@ -671,7 +705,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Dilution Heatmap ▸</button>
           </div>
         </div>
-
         {/* 8. Inventory Bloat Index */}
         <div className="risk-section">
           <div
@@ -706,7 +739,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Zombie Pages Log ▸</button>
           </div>
         </div>
-
         {/* 9. Time to ROI Tracker */}
         <div className="risk-section">
           <div
@@ -739,7 +771,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Yield Latency Table ▸</button>
           </div>
         </div>
-
         {/* 10. AI vs Human Performance Audit */}
         <div className="risk-section">
           <div
@@ -778,7 +809,6 @@ const RiskDashboard = () => {
             </button>
           </div>
         </div>
-
         {/* 11. SERP Volatility Monitor */}
         <div className="risk-section">
           <div
@@ -813,7 +843,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">SERP Watchlist ▸</button>
           </div>
         </div>
-
         {/* 12. Anchor Text Overload */}
         <div className="risk-section">
           <div
@@ -841,7 +870,6 @@ const RiskDashboard = () => {
             <button className="view-more-btn">Anchor Audit ▸</button>
           </div>
         </div>
-
         {/* 13. Meta Risk Snapshots */}
         <div className="risk-section">
           <div

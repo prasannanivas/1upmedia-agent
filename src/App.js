@@ -41,8 +41,9 @@ import EditPost from "./pages/Editpost";
 import { ProgressBar } from "./components/ProgressBar";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import Loader from "./components/Loader";
-import { OnboardingProvider } from "./context/OnboardingContext";
+import { OnboardingProvider, useOnboarding } from "./context/OnboardingContext";
 import Home from "./pages/Home";
+import PreSetup from "./pages/PreSetup";
 import Notifications from "./pages/Notifications";
 import { NotificationProvider } from "./context/NotificationContext";
 import NotFound from "./pages/NotFound";
@@ -112,9 +113,12 @@ const AppWrapper = () => {
         <NavBar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       </div>
       <div className="MainContent" style={mainContentStyle}>
+        {" "}
         <Routes>
-          <Route path="/" element={<Home />} />{" "}
-          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<SmartHomeRoute />} />
+          <Route path="/home" element={<SmartHomeRoute />} />
+          <Route path="/setup" element={<Home />} />
+          <Route path="/intro" element={<PreSetup />} />
           {/* <Route path="/login" element={<Home />} /> */}{" "}
           <Route path="/leakdashboard" element={<LeakDashboard />} />
           <Route path="/riskdashboard" element={<RiskDashboard />} />
@@ -168,6 +172,35 @@ const AppWrapper = () => {
       </div>
     </div>
   );
+};
+
+// Helper function to check if onboarding data is empty
+const isOnboardingEmpty = (onboardingData) => {
+  if (!onboardingData) return true;
+
+  // Check for essential data that indicates completed onboarding
+  const hasDomain =
+    onboardingData.domain && onboardingData.domain.trim() !== "";
+  const hasBusinessDetails =
+    onboardingData.businessDetails &&
+    onboardingData.businessDetails.trim() !== "";
+  const hasInvestmentData = onboardingData.domainCostDetails?.totalInvested > 0;
+
+  // Consider onboarding "empty" if none of the essential data is present
+  return !hasDomain || !hasBusinessDetails || !hasInvestmentData;
+};
+
+// Smart routing component that decides between PreSetup (intro) and Home (setup)
+const SmartHomeRoute = () => {
+  const { onboardingData, loading } = useOnboarding();
+
+  if (loading) {
+    return <Loader />;
+  }
+
+  // If onboarding is empty, show intro page (PreSetup)
+  // If onboarding has some data, show setup page (Home)
+  return isOnboardingEmpty(onboardingData) ? <PreSetup /> : <Home />;
 };
 
 // Show Login page if not logged in

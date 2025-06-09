@@ -17,6 +17,9 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { Search, AlertTriangle, RefreshCw, Download } from "lucide-react";
+import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
+import FinancialTooltip from "../../components/FinancialTooltip";
+import { getTooltipContent } from "../../utils/tooltipContent";
 import "./KeywordIntelDashboard.css";
 
 // Real MOZ data from onboardingData - using actual data where available
@@ -187,18 +190,43 @@ const KeywordIntelDashboard = () => {
     const domain = onboardingData.domain;
     const gscAnalysisData = onboardingData.GSCAnalysisData || {};
 
-    // 1. Calculate Blended Authority (BA Score)
+    // Get centralized calculations for Keyword Intel
+    const centralizedMetrics = executeCalculationsForDashboard(
+      "keywordIntel",
+      onboardingData
+    );
+
+    // 1. Calculate Blended Authority (BA Score) using centralized calculation
     const domain_authority = mozData.domain_authority;
     const avg_page_authority = mozData.avg_page_authority;
-    const blended_authority = 0.6 * domain_authority + 0.4 * avg_page_authority;
-
-    // Weight class determination
+    const blended_authority = centralizedMetrics.blendedAuthority
+      ? centralizedMetrics.blendedAuthority.calculate
+        ? centralizedMetrics.blendedAuthority.calculate(
+            domain_authority,
+            avg_page_authority
+          )
+        : 0.6 * domain_authority + 0.4 * avg_page_authority
+      : 0.6 * domain_authority + 0.4 * avg_page_authority; // Weight class determination
     const getWeightClass = (ba) => {
       if (ba >= 70) return "Heavyweight";
       if (ba >= 50) return "Middleweight";
       if (ba >= 30) return "Lightweight";
       return "Featherweight";
-    }; // 2. KD Guard-rail calculations - handle cases with no KD data
+    };
+
+    // Calculate average keyword difficulty from mozData keywords
+    const avgKD =
+      mozData.keywords.length > 0
+        ? mozData.keywords.reduce((sum, kw) => sum + kw.kd, 0) /
+          mozData.keywords.length
+        : 30; // Default fallback
+
+    // 2. Calculate Efficiency Ratio using centralized calculation
+    const efficiency_ratio = centralizedMetrics.efficiencyRatio
+      ? centralizedMetrics.efficiencyRatio.calculate
+        ? centralizedMetrics.efficiencyRatio.calculate(domain_authority, avgKD)
+        : domain_authority / Math.max(avgKD, 1)
+      : domain_authority / Math.max(avgKD, 1); // 2. KD Guard-rail calculations - handle cases with no KD data
     const allowed_kd_ceiling = blended_authority + 10;
     const keywordsWithKD = mozData.keywords.filter((kw) => kw.kd > 0);
     const avg_serp_kd =
@@ -658,6 +686,7 @@ const KeywordIntelDashboard = () => {
       weight_class: getWeightClass(blended_authority),
       domain_authority,
       avg_page_authority,
+      efficiency_ratio: Math.round(efficiency_ratio * 10) / 10, // Add efficiency ratio
       allowed_kd_ceiling: Math.round(allowed_kd_ceiling),
       avg_serp_kd: avg_serp_kd,
       keywords_in_class,
@@ -688,8 +717,9 @@ const KeywordIntelDashboard = () => {
       ).length,
       mismatch_risk,
       crawl_error_percentage,
-      // Real content analysis metrics
-      total_wasted_spend: Math.round(total_wasted_spend),
+      // Real content analysis metrics with centralized calculation
+      total_wasted_spend:
+        centralizedMetrics.wastedSpend || Math.round(total_wasted_spend),
       content_waste_pages,
       link_dilution_risk: Math.round(link_dilution_risk),
       high_dilution_pages,
@@ -849,7 +879,14 @@ const KeywordIntelDashboard = () => {
         <div className="intel-row">
           {" "}
           <div className="authority-tile">
-            <h3>• BLENDED AUTHORITY TILE</h3>
+            <h3>
+              • BLENDED AUTHORITY TILE
+              <FinancialTooltip
+                title={getTooltipContent("blendedAuthority").title}
+                content={getTooltipContent("blendedAuthority").content}
+                position="top"
+              />
+            </h3>
             <div className="ba-score">
               <span className="ba-value">
                 {keywordIntelData.hasRealMozData
@@ -887,7 +924,14 @@ const KeywordIntelDashboard = () => {
             )}
           </div>
           <div className="guardrail-tile">
-            <h3>• KD GUARD-RAIL / WEIGHT CLASS STRIP</h3>
+            <h3>
+              • KD GUARD-RAIL / WEIGHT CLASS STRIP
+              <FinancialTooltip
+                title={getTooltipContent("keywordEfficiency").title}
+                content={getTooltipContent("keywordEfficiency").content}
+                position="top"
+              />
+            </h3>
             <div className="guardrail-metrics">
               <div className="metric-pair">
                 <span>Avg SERP KD {keywordIntelData.avg_serp_kd}</span>

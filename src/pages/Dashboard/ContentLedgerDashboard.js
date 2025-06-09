@@ -19,6 +19,10 @@ import {
   getGradeDescription,
   getGradeRecommendation,
 } from "../../utils/ContentRating";
+import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
+import { calculateFunnelStage } from "../../utils/financialCalculations";
+import FinancialTooltip from "../../components/FinancialTooltip";
+import { getTooltipContent } from "../../utils/tooltipContent";
 import "./ContentLedgerDashboard.css";
 
 const ContentLedgerDashboard = () => {
@@ -85,11 +89,13 @@ const ContentLedgerDashboard = () => {
     const averageOrderValue =
       parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
     const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
-
-    // Get funnel analysis data
+      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200; // Get funnel analysis data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const funnelDetails = funnelAnalysis.details || [];
+    const funnelDetails = funnelAnalysis.details || []; // Get centralized calculations for Content Ledger
+    const centralizedMetrics = executeCalculationsForDashboard(
+      "contentLedger",
+      onboardingData
+    );
 
     // Process aggregated data and calculate metrics
     const rows = Array.from(urlMap.values()).map((item, index) => {
@@ -114,9 +120,7 @@ const ContentLedgerDashboard = () => {
         linkDilutionData.find((dilution) => dilution.url === item.url) || {};
       // Find matching GA data
       const urlPath = item.url.replace(/https?:\/\/[^/]+/, "") || "/";
-      const gaMetrics = gaData[urlPath] || {};
-
-      // Calculate revenue from real data or estimates
+      const gaMetrics = gaData[urlPath] || {}; // Calculate revenue from real data or estimates
       const realRevenue = costWasteData.estimatedMonthlyRevenue;
       const realROI = costWasteData.roi;
       const realCost = costWasteData.contentCost || contentCost;
@@ -128,11 +132,15 @@ const ContentLedgerDashboard = () => {
         realRevenue !== undefined
           ? realRevenue
           : estimatedConversions * averageOrderValue;
+
+      // Use centralized ROI calculation if both revenue and cost are available
       const roi =
         realROI !== undefined
           ? realROI * 100
-          : realCost > 0
-          ? ((revenue - realCost) / realCost) * 100
+          : revenue > 0 && realCost > 0
+          ? centralizedMetrics.roi?.calculate
+            ? centralizedMetrics.roi.calculate(revenue, realCost) * 100
+            : ((revenue - realCost) / realCost) * 100
           : 0;
 
       // Find matching funnel data
@@ -140,17 +148,14 @@ const ContentLedgerDashboard = () => {
         funnelDetails.find(
           (funnelItem) =>
             funnelItem.url === item.url || funnelItem.page === item.url
-        ) || {};
-
-      // Use real funnel stage or map from GA data or derive from position
-      const funnelStage =
-        matchingFunnelData.stage ||
-        (avgPosition <= 10 ? "ToF" : avgPosition <= 20 ? "MoF" : "BoF");
-
-      // Use real decay metrics from analysis data
+        ) || {}; // Use standardized funnel stage calculation for consistency across dashboards
+      const funnelStage = calculateFunnelStage(avgPosition, matchingFunnelData); // Use real decay metrics from analysis data with centralized calculation fallback
+      const centralizedDecayImpact = centralizedMetrics.decayImpact || 0;
       const decayScore =
         decayData.slopeI !== undefined
           ? Math.max(0, Math.min(100, Math.abs(decayData.slopeI) * 100))
+          : centralizedDecayImpact > 0
+          ? Math.min(centralizedDecayImpact * 100, 100)
           : avgPosition > 20
           ? Math.min(avgPosition * 2, 100)
           : Math.max(50 - avgPosition * 2, 0);
@@ -197,16 +202,21 @@ const ContentLedgerDashboard = () => {
       const freshnessScore =
         decayData.halfLifePassed === false
           ? 85
-          : Math.max(30, 100 - avgPosition * 1.5);
-
-      // Calculate standardized content grade using our utility
-      const contentGrade = calculateContentGrade({
+          : Math.max(30, 100 - avgPosition * 1.5); // Calculate standardized content grade using centralized calculation
+      const contentGradeMetrics = {
         roi,
         trafficTrend:
           decayTrend === "growing" ? 10 : decayTrend === "declining" ? -10 : 0,
         conversionRate: conversionRate * 100, // Convert to percentage
         engagementScore: 100 - (bounceRate || 50),
-      });
+      };
+
+      // Use centralized content grade calculation if available, otherwise use utility
+      const contentGrade = centralizedMetrics.contentGrade
+        ? centralizedMetrics.contentGrade.calculate
+          ? centralizedMetrics.contentGrade.calculate(contentGradeMetrics)
+          : calculateContentGrade(contentGradeMetrics)
+        : calculateContentGrade(contentGradeMetrics);
 
       // Get color and recommendations based on grade
       const gradeColor = getGradeColor(contentGrade);
@@ -311,9 +321,11 @@ const ContentLedgerDashboard = () => {
     const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
     const totalWastedSpend = rows
       .filter((r) => r.roi < 0)
-      .reduce((sum, row) => sum + Math.abs(row.revenue - row.cost), 0);
-    const deepDecayCount = rows.filter((r) => r.decayScore > 70).length;
-    const highDilutionCount = rows.filter((r) => r.competitorCount > 15).length;
+      .reduce((sum, row) => sum + Math.abs(row.revenue - row.cost), 0); // Use centralized deep decay pages count for consistency with Command Center
+    const deepDecayCount = centralizedMetrics.deepDecayPagesCount || 0;
+
+    // Use centralized high dilution pages count for consistency with Command Center
+    const highDilutionCount = centralizedMetrics.highDilutionPagesCount || 0;
 
     // Calculate recovery window based on actual performance data
     const avgPosition =
@@ -373,11 +385,13 @@ const ContentLedgerDashboard = () => {
     {
       key: "deep-decay",
       label: "Deep Decay",
+      // Note: Filter uses processed rows for UI consistency, summary uses centralized count
       count: ledgerData.rows.filter((r) => r.decayScore > 70).length,
     },
     {
       key: "high-dilution",
       label: "High Dilution",
+      // Note: Filter uses processed rows for UI consistency, summary uses centralized count
       count: ledgerData.rows.filter((r) => r.competitorCount > 15).length,
     },
     {
@@ -660,7 +674,7 @@ const ContentLedgerDashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+      </div>{" "}
       {/* KPI Summary Cards */}
       <div className="kpi-summary">
         <div className="kpi-card wasted-spend">
@@ -668,15 +682,33 @@ const ContentLedgerDashboard = () => {
           <div className="kpi-content">
             <div className="kpi-value">
               {formatCurrency(ledgerData.summary.totalWastedSpend)}
+            </div>{" "}
+            <div className="kpi-label">
+              Wasted Spend
+              <FinancialTooltip
+                title={getTooltipContent("contentWaste", onboardingData).title}
+                content={
+                  getTooltipContent("contentWaste", onboardingData).content
+                }
+                position="top"
+              />
             </div>
-            <div className="kpi-label">Wasted Spend</div>
           </div>
         </div>
         <div className="kpi-card deep-decay">
           <div className="kpi-icon">📉</div>
           <div className="kpi-content">
-            <div className="kpi-value">{ledgerData.summary.deepDecayCount}</div>
-            <div className="kpi-label">Deep Decay Count</div>
+            <div className="kpi-value">{ledgerData.summary.deepDecayCount}</div>{" "}
+            <div className="kpi-label">
+              Deep Decay Count
+              <FinancialTooltip
+                title={getTooltipContent("decayImpact", onboardingData).title}
+                content={
+                  getTooltipContent("decayImpact", onboardingData).content
+                }
+                position="top"
+              />
+            </div>
           </div>
         </div>
         <div className="kpi-card high-dilution">
@@ -684,8 +716,17 @@ const ContentLedgerDashboard = () => {
           <div className="kpi-content">
             <div className="kpi-value">
               {ledgerData.summary.highDilutionCount}
+            </div>{" "}
+            <div className="kpi-label">
+              High Dilution
+              <FinancialTooltip
+                title={getTooltipContent("linkDilution", onboardingData).title}
+                content={
+                  getTooltipContent("linkDilution", onboardingData).content
+                }
+                position="top"
+              />
             </div>
-            <div className="kpi-label">High Dilution</div>
           </div>
         </div>
         <div className="kpi-card roi-recovery">
@@ -693,8 +734,15 @@ const ContentLedgerDashboard = () => {
           <div className="kpi-content">
             <div className="kpi-value">
               {ledgerData.summary.avgROIRecovery}d
+            </div>{" "}
+            <div className="kpi-label">
+              ROI Recovery Window
+              <FinancialTooltip
+                title={getTooltipContent("roi", onboardingData).title}
+                content={getTooltipContent("roi", onboardingData).content}
+                position="top"
+              />
             </div>
-            <div className="kpi-label">ROI Recovery Window</div>
           </div>
         </div>
       </div>{" "}

@@ -58,6 +58,7 @@ const StepKeywords = () => {
   const [domainCostDetails, setDomainCostDetails] = useState({
     averageOrderValue: "",
     AverageContentCost: "",
+    totalInvested: "",
   });
   const inputRef = useRef(null);
   const navigate = useNavigate();
@@ -176,6 +177,7 @@ const StepKeywords = () => {
         onboardingData.domainCostDetails?.averageOrderValue || 0,
       AverageContentCost:
         onboardingData.domainCostDetails?.AverageContentCost || 0,
+      totalInvested: onboardingData.domainCostDetails?.totalInvested || 0,
     });
 
     if (!analysisData) {
@@ -371,6 +373,7 @@ const StepKeywords = () => {
                 comparisonEnd: comparisonEnd.toISOString().split("T")[0],
                 averageOrderValue: domainCostDetails.averageOrderValue,
                 averageContentCost: domainCostDetails.AverageContentCost,
+                totalInvested: domainCostDetails.totalInvested,
                 conversionRate: 0.03,
               }),
             }
