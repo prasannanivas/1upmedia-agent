@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FaExclamationTriangle,
   FaArrowUp,
@@ -23,40 +23,30 @@ import {
 } from "recharts";
 import "./SEOAnalysisDashboard.css";
 import {
-  calculateContentWaste,
   calculateNotFoundImpact,
-  calculateCannibalization,
-  calculateLinkDilution,
-  calculateContentDecay,
   calculateROI,
 } from "../utils/financialCalculations";
 
-/**
- * SEO Analysis Dashboard Component
- *
- * A comprehensive dashboard that displays SEO analysis results with interactive features
- * including filtering, sorting, expandable sections, and financial calculations.
- *
- * @param {Object} props - Component props
- * @param {Object} props.analysisData - SEO analysis data object
- * @param {boolean} props.analysisData.gscConnected - Google Search Console connection status
- * @param {boolean} props.analysisData.gaConnected - Google Analytics connection status
- * @param {Array} props.analysisData.keywordMismatch - Array of keyword mismatch data
- * @param {Array} props.analysisData.cannibalization - Array of keyword cannibalization data
- * @param {Array} props.analysisData.contentCostWaste - Array of content cost waste data
- * @param {Array} props.analysisData.linkDilution - Array of link dilution data
- * @param {Array} props.analysisData.contentDecay - Array of content decay data
- * @param {Array} props.analysisData.notFoundPages - Array of 404/error page data
- * @param {Object} props.onboardingData - Onboarding data containing domain cost details
- * @returns {JSX.Element} SEO Analysis Dashboard component
- */
 const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
   const [expandedDilution, setExpandedDilution] = useState(false);
   const [expandedCannibalization, setExpandedCannibalization] = useState(false);
   const [expandedContentDecay, setExpandedContentDecay] = useState(false);
   const [expandedNotFoundPages, setExpandedNotFoundPages] = useState(false);
+  // Get total cost spent from onboarding data
+  const [totalCostSpent, setTotalCostSpent] = useState(
+    parseFloat(onboardingData.domainCostDetails?.totalInvested || 500)
+  );
+
   const [expandedContentCostWaste, setExpandedContentCostWaste] =
     useState(false);
+
+  console.log("Onboarding Data:", onboardingData.domainCostDetails);
+
+  useEffect(() => {
+    setTotalCostSpent(
+      parseFloat(onboardingData.domainCostDetails?.totalInvested || 500)
+    );
+  }, [onboardingData]);
 
   // Sorting and filtering states
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -73,23 +63,54 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
     gaConnected = false,
     keywordMismatch = [],
     cannibalization = [],
-    contentCostWaste = [],
     linkDilution = [],
-    contentDecay = [], // <-- NEW
+    contentCostWaste = [], // <-- NEW
     notFoundPages = [], // (optional, for future use)
   } = analysisData;
-  console.log("SEO Analysis Data:", analysisData);
-  // Enhanced summary calculations with standardized financial metrics
-  const totalWastedSpend = calculateContentWaste(
-    { ...onboardingData, GSCAnalysisData: analysisData },
-    contentCostWaste
-  )?.toFixed(2);
 
-  const totalContentCost = Array.isArray(contentCostWaste)
-    ? contentCostWaste
-        .reduce((sum, item) => sum + (item.contentCost || 0), 0)
-        ?.toFixed(2)
-    : "0.00";
+  const contentDecay = analysisData.contentDecay.decay30Days || []; // Ensure contentCostWaste is defined,
+  console.log("SEO Analysis Data:", analysisData);
+  // Helper function to calculate loss percentage from sample data
+  const calculateSampleLossPercentage = (
+    sampleData,
+    metric = "wastedSpend"
+  ) => {
+    if (!Array.isArray(sampleData) || sampleData.length === 0) return 0;
+
+    const totalSampleCost = sampleData.reduce(
+      (sum, item) => sum + (item.contentCost || 0),
+      0
+    );
+    const totalSampleLoss = sampleData.reduce(
+      (sum, item) => sum + (item[metric] || 0),
+      0
+    );
+
+    return totalSampleCost > 0 ? (totalSampleLoss / totalSampleCost) * 100 : 0;
+  };
+
+  // Calculate loss percentages from sample data and apply to total cost
+  // This approach is more accurate than using backend dollar amounts which may be estimated
+  const wastePercentage = calculateSampleLossPercentage(
+    contentCostWaste,
+    "wastedSpend"
+  );
+  const decayPercentage =
+    Array.isArray(contentDecay) && contentDecay.length > 0
+      ? calculateSampleLossPercentage(contentDecay, "estimatedRevenueLoss")
+      : 7; // Default 7% decay rate if no sample data
+
+  // Apply loss percentages to total cost spent (accounts for extrapolating from sample)
+  const totalWastedSpend =
+    totalCostSpent > 0
+      ? ((wastePercentage / 100) * totalCostSpent).toFixed(2)
+      : "0.00";
+  const totalRevenueLoss =
+    totalCostSpent > 0
+      ? ((decayPercentage / 100) * totalCostSpent).toFixed(2)
+      : "0.00";
+
+  const totalContentCost = totalCostSpent.toFixed(2);
 
   const totalEstimatedRevenue = Array.isArray(contentCostWaste)
     ? contentCostWaste
@@ -101,25 +122,13 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
     parseFloat(totalEstimatedRevenue),
     parseFloat(totalContentCost)
   )?.toFixed(2);
-
-  const totalRevenueLoss = calculateContentDecay(
-    { ...onboardingData, GSCAnalysisData: analysisData },
-    contentDecay
-  )?.toFixed(2);
-
-  const estimatedLossFromNotFound = calculateNotFoundImpact(
-    { ...onboardingData, GSCAnalysisData: analysisData },
-    notFoundPages
-  )?.toFixed(2); // Calculate additional financial impacts for display
-  const cannibalizedImpact = calculateCannibalization(
-    { ...onboardingData, GSCAnalysisData: analysisData },
-    cannibalization
-  )?.toFixed(2);
-
-  const linkDilutionImpact = calculateLinkDilution(
-    { ...onboardingData, GSCAnalysisData: analysisData },
-    linkDilution
-  );
+  const estimatedLossFromNotFound =
+    Array.isArray(notFoundPages) && notFoundPages.length > 0
+      ? calculateNotFoundImpact(
+          { ...onboardingData, GSCAnalysisData: analysisData },
+          notFoundPages
+        )?.toFixed(2)
+      : "0.00";
 
   const totalMissedClicks = Array.isArray(keywordMismatch)
     ? keywordMismatch.reduce((sum, item) => sum + (item.missedClicks || 0), 0)
@@ -265,9 +274,33 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
           >
             <span className="seo-dashboard-status-dot"></span>
             Google Analytics: {gaConnected ? "Connected" : "Disconnected"}
-          </div>
+          </div>{" "}
         </div>
       </div>
+      {/* Methodology Information Banner */}
+      {(contentCostWaste.length > 0 || contentDecay.length > 0) &&
+        totalCostSpent > 0 && (
+          <div
+            className="seo-dashboard-methodology-banner"
+            style={{
+              backgroundColor: "#f8f9fa",
+              border: "1px solid #e9ecef",
+              borderRadius: "8px",
+              padding: "12px 16px",
+              margin: "16px 0",
+              fontSize: "14px",
+              color: "#6c757d",
+            }}
+          >
+            <FaExclamationTriangle
+              style={{ color: "#ffc107", marginRight: "8px" }}
+            />
+            <strong>Sample-Based Analysis:</strong> Loss calculations are
+            derived from {contentCostWaste.length + contentDecay.length}{" "}
+            analyzed pages and extrapolated to your total investment of $
+            {formatCurrency(totalCostSpent)} for more accurate estimates.
+          </div>
+        )}
       <div className="seo-dashboard-summary">
         <div className="seo-dashboard-summary-card">
           <div className="seo-dashboard-summary-icon seo-dashboard-money-waste">
@@ -284,13 +317,16 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
               max={maxWastedSpend}
               color="#ff6b6b"
               label={`Max: $${maxWastedSpend}`}
-            />
+            />{" "}
             <p className="seo-dashboard-summary-description">
               <FaExclamationTriangle
                 style={{ color: "#ff6b6b", marginRight: 4 }}
               />
-              Total wasted content spend. Review underperforming pages to
-              optimize ROI.
+              {wastePercentage > 0
+                ? `${wastePercentage.toFixed(1)}% waste rate from ${
+                    contentCostWaste.length
+                  } sample pages. Extrapolated to total investment.`
+                : "Total wasted content spend. Review underperforming pages to optimize ROI."}
             </p>
           </div>
         </div>
@@ -378,10 +414,14 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
               max={1000}
               color="#f87171"
               label="Revenue Impact"
-            />
+            />{" "}
             <p className="seo-dashboard-summary-description">
               <FaArrowDown style={{ color: "#f87171", marginRight: 4 }} />
-              Revenue lost due to content performance decay.
+              {contentDecay.length > 0
+                ? `${decayPercentage.toFixed(1)}% decay rate from ${
+                    contentDecay.length
+                  } sample pages. Extrapolated to total investment.`
+                : "Revenue lost due to content performance decay."}
             </p>
           </div>
         </div>

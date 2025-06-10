@@ -225,8 +225,8 @@ const HomePage = () => {
                     const totalInvested =
                       onboardingData.domainCostDetails?.totalInvested || 0;
                     const contentDecayRatio =
-                      onboardingData.GSCAnalysisData?.contentDecay?.dropRatio ||
-                      0.3;
+                      onboardingData.GSCAnalysisData?.contentDecay?.decay30Days
+                        ?.dropRatio || 0.3;
                     const loss = totalInvested * contentDecayRatio;
                     const currentValue = totalInvested - loss;
                     return Math.round(currentValue).toLocaleString();
@@ -253,8 +253,8 @@ const HomePage = () => {
                 <div className="metric-value">
                   {(() => {
                     const contentDecayRatio =
-                      onboardingData.GSCAnalysisData?.contentDecay?.dropRatio ||
-                      0.3;
+                      onboardingData.GSCAnalysisData?.contentDecay?.decay30Days
+                        ?.dropRatio || 0.3;
                     return `${Math.round(contentDecayRatio * 100)}%`;
                   })()}
                 </div>

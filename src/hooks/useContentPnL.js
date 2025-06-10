@@ -27,7 +27,7 @@ export const useContentPnL = () => {
     const { averageOrderValue, contentCost: averageContentCost } =
       getFinancialDefaults(onboardingData); // Calculate content investment from SEO analysis data
     const contentCostWaste = GSCAnalysisData?.contentCostWaste || [];
-    const contentDecay = GSCAnalysisData?.contentDecay || [];
+    const contentDecay = GSCAnalysisData?.contentDecay?.decay30Days || [];
     const cannibalization = GSCAnalysisData?.cannibalization || [];
     const linkDilution = GSCAnalysisData?.linkDilution || [];
 

@@ -32,99 +32,226 @@ const getUserFinancialParams = (onboardingData) => {
  * @returns {Object} Dynamic tooltip content with real values
  */
 const generateDynamicTooltipContent = (metricKey, onboardingData) => {
-  const userParams = getUserFinancialParams(onboardingData);
   const gscData = onboardingData?.GSCAnalysisData || {};
-  const searchConsoleData = onboardingData?.searchConsoleData || [];
-
-  // Calculate real metrics from user data
-  const totalTraffic = searchConsoleData.reduce(
-    (sum, item) => sum + (item.clicks || 0),
-    0
-  );
-  const totalImpressions = searchConsoleData.reduce(
-    (sum, item) => sum + (item.impressions || 0),
-    0
-  );
-  const avgCTR =
-    totalImpressions > 0
-      ? ((totalTraffic / totalImpressions) * 100).toFixed(2)
-      : 0;
 
   switch (metricKey) {
     case "psychoMismatch":
     case "psychoMismatchDollar":
-      const psychoMismatchUrls = gscData.psychoMismatch?.length || 176; // Default from your example
-      const psychoMismatchPercent = onboardingData.psychoMismatch || 35; // Example percentage
+      const cannibalizationData = gscData.cannibalization || [];
+      const cannibalizationCount = cannibalizationData.filter(
+        (item) => (item.competingUrls || []).length > 1
+      ).length;
+      const cannibalizationPercentage =
+        cannibalizationData.length > 0
+          ? (
+              (cannibalizationCount / cannibalizationData.length) *
+              0.2 *
+              100
+            ).toFixed(1)
+          : 0;
+      const totalInvestmentPsycho =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
       return {
-        title: "Psychographic Mismatch Calculation",
-        content: `Based on analysis of ${psychoMismatchUrls} URLs, your psychographic mismatch percentage is ${psychoMismatchPercent}% with total traffic of ${totalTraffic.toLocaleString()} clicks. 
+        title: "Content Cannibalization Impact",
+        content: `Found ${
+          cannibalizationData.length
+        } keyword cannibalization issues: ${cannibalizationCount} with multiple competing URLs.
 
-Calculation: (${psychoMismatchPercent}% mismatch) × (${totalTraffic.toLocaleString()} traffic) × ($${
-          userParams.aov
-        } AOV) × (${
-          userParams.conversionRate
-        }% conversion rate) = Revenue impact shown.
+Cannibalization Impact: ${cannibalizationPercentage}% of total investment
+Total Website Investment: $${totalInvestmentPsycho.toLocaleString()}
 
-This measures content-audience emotional resonance, cognitive clarity, persuasion leverage, and behavioral momentum alignment.`,
+Calculation: (${cannibalizationCount} competing ÷ ${
+          cannibalizationData.length
+        } total) × 20% impact × $${totalInvestmentPsycho.toLocaleString()} = Cannibalization impact estimate.
+
+This occurs when multiple pages compete for the same keywords, diluting their individual ranking power.`,
       };
-
     case "revenueLeak":
-      const leakUrls =
-        gscData.revenueLeak?.length ||
-        searchConsoleData.filter(
-          (item) => item.clicks > 100 && item.position > 10
-        ).length;
+      const contentCostWasteData = gscData.contentCostWaste || [];
+      const underperformingUrls = contentCostWasteData.filter(
+        (item) => (item.roi || 0) < 0
+      ).length;
+      const totalUrls = contentCostWasteData.length;
+      const underperformingPercentage =
+        totalUrls > 0
+          ? ((underperformingUrls / totalUrls) * 100).toFixed(1)
+          : 0;
+      const totalInvestment =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
       return {
-        title: "Revenue Leak Calculation",
-        content: `Analyzing ${leakUrls} underperforming URLs with your traffic of ${totalTraffic.toLocaleString()} clicks and ${totalImpressions.toLocaleString()} impressions.
+        title: "Revenue Leak Detection",
+        content: `Analyzing ${underperformingUrls} underperforming URLs out of ${totalUrls} total content pieces (${underperformingPercentage}% of content).
 
-Calculation: (${totalTraffic.toLocaleString()} traffic) × (Performance gap of 5-15%) × ($${
-          userParams.aov
-        } AOV) × (${
-          userParams.conversionRate
-        }% conversion rate) = Revenue leak estimate.
+Total Website Investment: $${totalInvestment.toLocaleString()}
+Impact Percentage: 15% loss rate for underperforming content
 
-Based on pages with significant traffic but poor conversion signals in your actual GSC data.`,
+Calculation: (${underperformingUrls} underperforming URLs ÷ ${totalUrls} total URLs) × 15% impact × $${totalInvestment.toLocaleString()} total investment = Revenue leak estimate.
+
+This represents content with negative ROI that's draining your investment without generating meaningful traffic or conversions.`,
       };
-
     case "contentDecay":
-      const decayUrls = gscData.contentDecay?.length || 0;
-      const decayTraffic =
-        gscData.contentDecay?.reduce(
-          (sum, item) => sum + (item.clicks || 0),
-          0
-        ) || 0;
+      const decay30 = gscData.contentDecay?.decay30Days || [];
+      const decay60 = gscData.contentDecay?.decay60Days || [];
+      const decay90 = gscData.contentDecay?.decay90Days || [];
+      const allDecayPages = [...decay30, ...decay60, ...decay90];
+
+      const severeDecayCount = allDecayPages.filter(
+        (item) => item.decayStatus === "Severe-Decay"
+      ).length;
+      const moderateDecayCount = allDecayPages.filter(
+        (item) => item.decayStatus === "Moderate-Decay"
+      ).length;
+      const decayPercentage =
+        allDecayPages.length > 0
+          ? (
+              ((severeDecayCount * 0.25 + moderateDecayCount * 0.1) /
+                allDecayPages.length) *
+              100
+            ).toFixed(1)
+          : 0;
+      const totalInvestmentDecay =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
       return {
         title: "Content Decay Impact",
-        content: `Found ${decayUrls} pages showing traffic decline in your data, representing ${decayTraffic.toLocaleString()} lost clicks.
+        content: `Found ${
+          allDecayPages.length
+        } pages with traffic decline: ${severeDecayCount} severe decay, ${moderateDecayCount} moderate decay.
 
-Calculation: (${decayTraffic.toLocaleString()} lost traffic) × ($${
-          userParams.aov
-        } AOV) × (${
-          userParams.conversionRate
-        }% conversion rate) = Financial impact.
+Decay Impact: ${decayPercentage}% of total investment
+Total Website Investment: $${totalInvestmentDecay.toLocaleString()}
 
-Based on pages in your GSC data showing consistent traffic drops requiring refresh or optimization.`,
+Calculation: ((${severeDecayCount} severe × 25%) + (${moderateDecayCount} moderate × 10%)) ÷ ${
+          allDecayPages.length
+        } total × $${totalInvestmentDecay.toLocaleString()} = Decay impact estimate.
+
+These pages previously performed well but are losing traffic due to content freshness, relevance, or competitive factors.`,
       };
-
     case "kwMismatch":
     case "keywordMismatchDollar":
-      const mismatchUrls = gscData.keywordMismatch?.length || 0;
-      const highDAPages = searchConsoleData.filter(
-        (item) => item.position > 20
+      const keywordMismatchData = gscData.keywordMismatch || [];
+      const underOptimizedCount = keywordMismatchData.filter(
+        (item) => item.mismatchType === "Under-optimized"
       ).length;
+      const overOptimizedCount = keywordMismatchData.filter(
+        (item) => item.mismatchType === "Over-optimized"
+      ).length;
+      const kwMismatchPercentage =
+        keywordMismatchData.length > 0
+          ? (
+              ((underOptimizedCount * 0.08 + overOptimizedCount * 0.05) /
+                keywordMismatchData.length) *
+              100
+            ).toFixed(1)
+          : 0;
+      const totalInvestmentKw =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
       return {
         title: "Keyword Mismatch Opportunity",
-        content: `Identified ${mismatchUrls} keyword targeting misalignments and ${highDAPages} high-authority pages with optimization potential.
+        content: `Identified ${
+          keywordMismatchData.length
+        } keyword targeting misalignments: ${underOptimizedCount} under-optimized, ${overOptimizedCount} over-optimized.
 
-Your current traffic: ${totalTraffic.toLocaleString()} clicks
-Your average CTR: ${avgCTR}%
+Mismatch Impact: ${kwMismatchPercentage}% of total investment
+Total Website Investment: $${totalInvestmentKw.toLocaleString()}
 
-Calculation: (High DA pages targeting low competition keywords) × (Traffic potential) × ($${
-          userParams.aov
-        } AOV) × (${
-          userParams.conversionRate
-        }% conversion rate) = Opportunity value.`,
+Calculation: ((${underOptimizedCount} under-opt × 8%) + (${overOptimizedCount} over-opt × 5%)) ÷ ${
+          keywordMismatchData.length
+        } total × $${totalInvestmentKw.toLocaleString()} = Mismatch opportunity.
+
+These are pages where your domain authority vs keyword difficulty creates quick-win optimization opportunities.`,
+      };
+    case "linkDilution":
+      const linkDilutionData = gscData.linkDilution || [];
+      const highDilutionCount = linkDilutionData.filter(
+        (item) => (item.dilutionScore || 0) > 0.01
+      ).length;
+      const linkDilutionPercentage =
+        linkDilutionData.length > 0
+          ? (
+              (highDilutionCount / linkDilutionData.length) *
+              0.12 *
+              100
+            ).toFixed(1)
+          : 0;
+      const totalInvestmentLink =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
+      return {
+        title: "Link Authority Dilution",
+        content: `Found ${
+          linkDilutionData.length
+        } pages analyzed for link dilution: ${highDilutionCount} with high dilution scores (>0.01).
+
+Dilution Impact: ${linkDilutionPercentage}% of total investment
+Total Website Investment: $${totalInvestmentLink.toLocaleString()}
+
+Calculation: (${highDilutionCount} high dilution ÷ ${
+          linkDilutionData.length
+        } total) × 12% impact × $${totalInvestmentLink.toLocaleString()} = Dilution impact estimate.
+
+This occurs when pages have excessive external links, diluting page authority and reducing ranking potential.`,
+      };
+    case "contentCreationCost":
+      const contentCostData = gscData.contentCostWaste || [];
+      const underperformingUrlsCount = contentCostData.filter(
+        (item) => (item.roi || 0) < 0
+      ).length;
+      const wastedPercentage =
+        contentCostData.length > 0
+          ? ((underperformingUrlsCount / contentCostData.length) * 100).toFixed(
+              1
+            )
+          : 0;
+      const totalInvestmentCC =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+      const wastedContentInvestment =
+        totalInvestmentCC *
+        (underperformingUrlsCount / contentCostData.length) *
+        0.25;
+
+      return {
+        title: "Wasted Content Investment",
+        content: `Investment waste from ${underperformingUrlsCount} underperforming content pieces out of ${
+          contentCostData.length
+        } total (${wastedPercentage}% underperforming).
+
+Total Website Investment: $${totalInvestmentCC.toLocaleString()}
+Estimated Waste: $${wastedContentInvestment.toLocaleString()}
+Waste Impact: 25% of investment for underperforming content
+
+Calculation: (${underperformingUrlsCount} underperforming ÷ ${
+          contentCostData.length
+        } total) × 25% impact × $${totalInvestmentCC.toLocaleString()} = $${wastedContentInvestment.toLocaleString()} wasted investment.
+
+This represents the portion of your content investment that's not generating returns and may need optimization or replacement.`,
+      };
+
+    case "funnelGaps":
+      const totalInvestmentFunnel =
+        onboardingData?.domainCostDetails?.totalInvested || 10000;
+
+      return {
+        title: "Funnel Gap Analysis",
+        content: `Analysis of your content distribution across the marketing funnel to identify imbalanced targeting that affects conversion performance.
+
+Total Website Investment: $${totalInvestmentFunnel.toLocaleString()}
+
+Funnel Gap Types:
+• MoF Crisis: <10% middle-funnel content (nurturing gap)
+• ToF Deficit: <20% top-funnel content (awareness gap)  
+• BoF Heavy: >60% bottom-funnel content (over-focused)
+• BoF Deficit: <15% bottom-funnel content (conversion gap)
+
+Impact Calculation: Gap percentage × impact multiplier × total investment
+- MoF gaps: 10% impact per percentage point deficit
+- ToF gaps: 12% impact per percentage point deficit
+- BoF gaps: 8-15% impact depending on type
+
+Balanced funnels convert better and reduce overall marketing costs by properly nurturing prospects through each stage.`,
       };
 
     default:
@@ -351,6 +478,8 @@ export const getTooltipContent = (metricKey, onboardingData = null) => {
       "contentDecay",
       "kwMismatch",
       "keywordMismatchDollar",
+      "linkDilution",
+      "contentCreationCost",
     ].includes(metricKey)
   ) {
     return generateDynamicTooltipContent(metricKey, onboardingData);

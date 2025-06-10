@@ -44,7 +44,7 @@ const ContentLedgerDashboard = () => {
       ? onboardingData.searchConsoleData
       : [];
     const gscAnalysisData = onboardingData.GSCAnalysisData || {};
-    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const contentDecayData = gscAnalysisData.contentDecay?.decay30Days || [];
     const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
     const linkDilutionData = gscAnalysisData.linkDilution || [];
     const gaData = gscAnalysisData.gaData?.urlMetrics || {};

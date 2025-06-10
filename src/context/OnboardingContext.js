@@ -18,6 +18,8 @@ export const OnboardingProvider = ({ children }) => {
     keywords: [],
     businessDetails: "",
     domain_authority: "",
+    uniqueUrlCount: 0,
+    GSCAnalysisData: {},
     page_authority: "",
     initialAnalysisState: {
       domainAuthority: "",
@@ -57,7 +59,8 @@ export const OnboardingProvider = ({ children }) => {
             location: firstSite.location || "",
             keywords: firstSite.keywords || [],
             businessDetails: firstSite.business_details || "",
-            GSCAnalysisData: firstSite.dynamic_fields?.analysisData,
+            uniqueUrlCount: firstSite.dynamic_fields?.uniqueUrlCount,
+            GSCAnalysisData: firstSite.dynamic_fields?.GSCAnalysisData || {},
             initialAnalysisState: {
               domainAuthority: firstSite?.dynamic_fields?.domainAuthority || "",
               pageAuthority: firstSite.dynamic_fields?.pageAuthority || "",

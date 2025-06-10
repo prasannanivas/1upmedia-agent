@@ -126,7 +126,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
         <AnimatePresence>
           {menuItems.map((item, index) => (
             <motion.li
-              key={item.path}
+              key={item.path + item.label}
               custom={index}
               variants={itemVariants}
               initial="closed"

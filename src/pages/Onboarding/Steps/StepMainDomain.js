@@ -93,6 +93,7 @@ const StepMainDomain = () => {
   useEffect(() => {
     setDomain(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
+
     setAnalysisData(onboardingData.initialAnalysisState);
     setBusinessDetails(onboardingData.businessDetails || "");
     setFunnelAnalysis(
@@ -128,6 +129,12 @@ const StepMainDomain = () => {
         AverageContentCost: "",
         totalInvested: "",
       }
+    );
+
+    setUniqueUrlCount(
+      onboardingData.uniqueUrlCount ||
+        domainCostDetails.totalInvested / 1000 ||
+        0
     );
     if (onboardingData.isSitemapValidated) {
       updateStepStatus(1, "success");

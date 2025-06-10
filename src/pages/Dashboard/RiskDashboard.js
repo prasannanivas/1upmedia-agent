@@ -20,7 +20,7 @@ const RiskDashboard = () => {
       : [];
 
     const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
-    const contentDecayData = gscAnalysisData.contentDecay || [];
+    const contentDecayData = gscAnalysisData.contentDecay?.decay30Days || [];
     const cannibalizationData = gscAnalysisData.cannibalization || [];
     const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
 

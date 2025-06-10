@@ -60,6 +60,61 @@ const StepKeywords = () => {
     AverageContentCost: "",
     totalInvested: "",
   });
+
+  const [decay30Days, setDecay30Days] = useState(
+    analysisData?.contentDecay?.decay30Days || []
+  );
+  const [decay60Days, setDecay60Days] = useState(
+    analysisData?.contentDecay?.decay60Days || []
+  );
+  const [decay90Days, setDecay90Days] = useState(
+    analysisData?.contentDecay?.decay90Days || []
+  );
+
+  const [decaySummary, setDecaySummary] = useState(
+    analysisData?.contentDecay?.summary || []
+  );
+
+  const [keywordMismatch, setKeywordMismatch] = useState(
+    analysisData?.keywordMismatch || []
+  );
+  const [cannibalization, setCannibalization] = useState(
+    analysisData?.cannibalization || []
+  );
+
+  const [contentCostWaste, setContentCostWaste] = useState(
+    analysisData?.contentCostWaste || []
+  );
+
+  const [linkDilution, setLinkDilution] = useState(
+    analysisData?.linkDilution || []
+  );
+
+  const [notFoundPages, setNotFoundPages] = useState(
+    analysisData?.notFoundPages || []
+  );
+
+  const [gaDataInsightsSummary, setGaDataInsightsSummary] = useState(
+    {
+      summary: analysisData?.gaData?.insights?.summary || "",
+      insights: analysisData?.gaData?.insights?.insights || [],
+      recommendations: analysisData?.gaData?.insights?.recommendations || [],
+    } || { summary: {}, insights: [], recommendations: [] }
+  );
+
+  const [gaDataTopPerformers, setGaDataTopPerformers] = useState({
+    byTraffic: analysisData?.gaData?.insights?.topPerformers?.byTraffic || [],
+    byEngagement:
+      analysisData?.gaData?.insights?.topPerformers?.byEngagement || [],
+  });
+
+  const [gaDataProblemAreas, setGaDataProblemAreas] = useState({
+    highBounceRate:
+      analysisData?.gaData?.insights?.problemAreas?.highBounceRate || [],
+    lowEngagement:
+      analysisData?.gaData?.insights?.problemAreas?.lowEngagement || [],
+  });
+
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -77,6 +132,34 @@ const StepKeywords = () => {
 
     setProgress(Math.min(100, progressValue));
   }, [siteURL, keywordList, GSCdata, connectedSites]);
+
+  useEffect(() => {
+    setDecay30Days(analysisData?.contentDecay?.decay30Days || []);
+    setDecay60Days(analysisData?.contentDecay?.decay60Days || []);
+    setDecay90Days(analysisData?.contentDecay?.decay90Days || []);
+    setDecaySummary(analysisData?.contentDecay?.summary || {});
+    setKeywordMismatch(analysisData?.keywordMismatch || []);
+    setCannibalization(analysisData?.cannibalization || []);
+    setContentCostWaste(analysisData?.contentCostWaste || []);
+    setLinkDilution(analysisData?.linkDilution || []);
+    setNotFoundPages(analysisData?.notFoundPages || []);
+    setGaDataInsightsSummary({
+      summary: analysisData?.gaData?.insights?.summary || "",
+      insights: analysisData?.gaData?.insights?.insights || [],
+      recommendations: analysisData?.gaData?.insights?.recommendations || [],
+    });
+    setGaDataTopPerformers({
+      byTraffic: analysisData?.gaData?.insights?.topPerformers?.byTraffic || [],
+      byEngagement:
+        analysisData?.gaData?.insights?.topPerformers?.byEngagement || [],
+    });
+    setGaDataProblemAreas({
+      highBounceRate:
+        analysisData?.gaData?.insights?.problemAreas?.highBounceRate || [],
+      lowEngagement:
+        analysisData?.gaData?.insights?.problemAreas?.lowEngagement || [],
+    });
+  }, [analysisData]);
 
   const handleAddKeyword = () => {
     const trimmed = keyword.trim();
@@ -219,7 +302,7 @@ const StepKeywords = () => {
         ...(keywordList && { keywordList }),
         ...(GSCdata && { search_analytics: GSCdata }),
         dynamic_fields: {
-          analysisData: analysisData,
+          GSCAnalysisData: analysisData,
           ...(onboardingData.suggestionsFromAi && {
             suggestions: {
               ...onboardingData.suggestionsFromAi,
@@ -322,36 +405,58 @@ const StepKeywords = () => {
     difficulty:
       "Shows how competitive a keyword is to rank for. Lower numbers are easier to rank for.",
   };
-
   const handleAnalyzeSite = async () => {
+    // Mandatory: Check if GSC is connected
     if (connectedSites.length === 0) {
-      alert("Please connect Google Search Console first");
+      alert(
+        "Please connect Google Search Console first. This is mandatory for SEO analysis."
+      );
       return;
+    }
+
+    const site = connectedSites[0];
+    console.log("Connected site:", site);
+    // Check if GSC access token is available
+    if (!site.google_console?.accessToken) {
+      alert(
+        "No Google Search Console access token found. Please reconnect your Google Search Console."
+      );
+      return;
+    }
+
+    // Optional: Check if GA is connected and warn if not
+    const hasGoogleAnalytics =
+      site.google_analytics && site.google_analytics.propertyName;
+
+    if (!hasGoogleAnalytics) {
+      const proceed = window.confirm(
+        "⚠️ Google Analytics Not Connected\n\n" +
+          "You have not added a Google Analytics property ID. " +
+          "Without Google Analytics, we won't be able to fetch your website traffic data, " +
+          "which may limit the depth of your SEO analysis.\n\n" +
+          "Do you want to proceed with Search Console data only?"
+      );
+
+      if (!proceed) {
+        return;
+      }
     }
 
     setAnalysisLoading(true);
     setAnalysisComplete(false);
     try {
-      // Get site details from connected site
-      const site = connectedSites[0];
       console.log("Starting site analysis...", site, site.google_console);
       let accessToken = site.google_console?.accessToken;
-      let refreshToken = site.google_console?.refreshToken;
-      // Prepare dates for analysis
+      let refreshToken = site.google_console?.refreshToken; // Prepare dates for analysis
       const today = new Date();
       const startDate = new Date(today);
-      startDate.setFullYear(startDate.getFullYear() - 2); // 1 year ago
+      startDate.setFullYear(startDate.getFullYear() - 2); // 2 years ago
 
       const comparisonEnd = new Date(today);
       comparisonEnd.setMonth(comparisonEnd.getMonth() - 1); // 1 month ago
 
       const comparisonStart = new Date(comparisonEnd);
-      comparisonStart.setMonth(comparisonStart.getMonth() - 12); // 6 months ago
-
-      if (!accessToken) {
-        alert("No access token found for Google Search Console");
-        return;
-      }
+      comparisonStart.setMonth(comparisonStart.getMonth() - 12); // 12 months before comparison end
 
       // API call with retry logic for token refresh
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -372,9 +477,16 @@ const StepKeywords = () => {
                 comparisonStart: comparisonStart.toISOString().split("T")[0],
                 comparisonEnd: comparisonEnd.toISOString().split("T")[0],
                 averageOrderValue: domainCostDetails.averageOrderValue,
-                averageContentCost: domainCostDetails.AverageContentCost,
+                averageContentCost: domainCostDetails.AverageContentCost || 50,
                 totalInvested: domainCostDetails.totalInvested,
                 conversionRate: 0.03,
+                // Include Google Analytics property if available
+                ...(hasGoogleAnalytics && {
+                  gaPropertyId: site.google_analytics?.propertyId,
+                  gaToken: accessToken,
+                  gaPropertyName: site.google_analytics?.propertyName,
+                  gaAccountName: site.google_analytics?.accountName,
+                }),
               }),
             }
           );
@@ -874,7 +986,10 @@ const StepKeywords = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className="analysis-results-container"
               >
-                <SEOAnalysisDashboard analysisData={analysisData} />
+                <SEOAnalysisDashboard
+                  analysisData={analysisData}
+                  onboardingData={onboardingData}
+                />
               </motion.div>
             )}
 

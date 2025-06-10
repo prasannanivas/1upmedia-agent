@@ -6,7 +6,7 @@
   "keywords": [
     "media 1up",
     "1. up",
-    "1up",
+    "1up"
   ],
   "businessDetails": "*Business Profile*\n\nBusiness Name: 1UP Media  \nLocation: Toronto, Ontario, Canada  \nIndustry: Digital Marketing and Content Management  \nLast Updated: Wed Apr 30 2025 19:42:57 GMT+0000 (Coordinated Universal Time)\n\n*Target Audience Analysis*\n\n*Demographics*:  \nAverage Age: 30-45 years  \nGender Breakdown: 50% male / 50% female  \nIncome Level: $50,000 - $100,000 annually  \nEducation Level: College-educated  \nOccupation/Profession: Marketing professionals, content creators, business owners, digital strategists  \n\n*Interests*:  \n- Content Marketing and Management  \n- Digital Transformation and Automation  \n- Business Growth Strategies  \n- AI and Machine Learning in Marketing  \n- Professional Networking and Industry Trends  \n\n*Customer Location*: Primarily North America, with a focus on urban and business-centric areas like Toronto\n\n*Biggest Customer Pain Points*  \n1. Limited understanding of how AI-driven content solutions can enhance marketing efforts (Awareness stage)  \n2. Confusion about choosing the right content management platform for their specific needs (Awareness stage)  \n3. Lack of accessible and trustworthy resources to inform about emerging digital marketing trends (Awareness stage)  \n4. Concerns about reliability or credibility of AI-powered tools in content creation (Consideration stage)  \n5. Difficulty in comparing feature sets and benefits of digital content platforms (Consideration stage)  \n6. Uncertainty regarding pricing models, budget allocations, or potential hidden costs (Consideration stage)  \n7. Desire for expert guidance or consultative support in selecting a suitable solution (Consideration stage)  \n8. Concerns about the usability and integration of new tools within existing workflows (Decision stage)  \n9. Worry about achieving a meaningful return on investment with AI content tools (Decision stage)  \n10. Lack of confidence in receiving ongoing support, updates, and training post-purchase (Decision stage)",
   "initialAnalysisState": {
@@ -371,257 +371,259 @@
   "GSCAnalysisData": {
     "gscConnected": true,
     "gaConnected": true,
-    "contentDecay": [        {
-            "url": "https://1upmedia.com/",
-            "slopeI": -0.21428571428571427,
-            "slopeS": 0,
-            "slopeP": null,
-            "halfLifePassed": true,
-            "dropRatio": 0.6052631578947368,
-            "status": "Stable",
-            "dataSource": "GSC",
-            "gscData": {
-                "monthly": [
-                    {
-                        "month": "2024-01",
-                        "impressions": 50,
-                        "clicks": 2
-                    },
-                    {
-                        "month": "2024-02",
-                        "impressions": 163,
-                        "clicks": 5
-                    },
-                    {
-                        "month": "2024-03",
-                        "impressions": 298,
-                        "clicks": 4
-                    },
-                    {
-                        "month": "2024-04",
-                        "impressions": 117,
-                        "clicks": 1
-                    },
-                    {
-                        "month": "2024-05",
-                        "impressions": 188,
-                        "clicks": 5
-                    },
-                    {
-                        "month": "2024-06",
-                        "impressions": 102,
-                        "clicks": 4
-                    },
-                    {
-                        "month": "2024-07",
-                        "impressions": 107,
-                        "clicks": 4
-                    },
-                    {
-                        "month": "2024-08",
-                        "impressions": 68,
-                        "clicks": 4
-                    },
-                    {
-                        "month": "2024-09",
-                        "impressions": 101,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-10",
-                        "impressions": 161,
-                        "clicks": 12
-                    },
-                    {
-                        "month": "2024-11",
-                        "impressions": 80,
-                        "clicks": 2
-                    },
-                    {
-                        "month": "2024-12",
-                        "impressions": 85,
-                        "clicks": 5
-                    },
-                    {
-                        "month": "2025-01",
-                        "impressions": 242,
-                        "clicks": 12
-                    },
-                    {
-                        "month": "2025-02",
-                        "impressions": 296,
-                        "clicks": 14
-                    },
-                    {
-                        "month": "2025-03",
-                        "impressions": 270,
-                        "clicks": 11
-                    },
-                    {
-                        "month": "2025-04",
-                        "impressions": 227,
-                        "clicks": 5
-                    },
-                    {
-                        "month": "2025-05",
-                        "impressions": 505,
-                        "clicks": 38
-                    },
-                    {
-                        "month": "2025-06",
-                        "impressions": 40,
-                        "clicks": 0
-                    }
-                ]
+    "contentDecay": [
+      {
+        "url": "https://1upmedia.com/",
+        "slopeI": -0.21428571428571427,
+        "slopeS": 0,
+        "slopeP": null,
+        "halfLifePassed": true,
+        "dropRatio": 0.6052631578947368,
+        "status": "Stable",
+        "dataSource": "GSC",
+        "gscData": {
+          "monthly": [
+            {
+              "month": "2024-01",
+              "impressions": 50,
+              "clicks": 2
             },
-            "gaData": {
-                "monthly": []
+            {
+              "month": "2024-02",
+              "impressions": 163,
+              "clicks": 5
+            },
+            {
+              "month": "2024-03",
+              "impressions": 298,
+              "clicks": 4
+            },
+            {
+              "month": "2024-04",
+              "impressions": 117,
+              "clicks": 1
+            },
+            {
+              "month": "2024-05",
+              "impressions": 188,
+              "clicks": 5
+            },
+            {
+              "month": "2024-06",
+              "impressions": 102,
+              "clicks": 4
+            },
+            {
+              "month": "2024-07",
+              "impressions": 107,
+              "clicks": 4
+            },
+            {
+              "month": "2024-08",
+              "impressions": 68,
+              "clicks": 4
+            },
+            {
+              "month": "2024-09",
+              "impressions": 101,
+              "clicks": 0
+            },
+            {
+              "month": "2024-10",
+              "impressions": 161,
+              "clicks": 12
+            },
+            {
+              "month": "2024-11",
+              "impressions": 80,
+              "clicks": 2
+            },
+            {
+              "month": "2024-12",
+              "impressions": 85,
+              "clicks": 5
+            },
+            {
+              "month": "2025-01",
+              "impressions": 242,
+              "clicks": 12
+            },
+            {
+              "month": "2025-02",
+              "impressions": 296,
+              "clicks": 14
+            },
+            {
+              "month": "2025-03",
+              "impressions": 270,
+              "clicks": 11
+            },
+            {
+              "month": "2025-04",
+              "impressions": 227,
+              "clicks": 5
+            },
+            {
+              "month": "2025-05",
+              "impressions": 505,
+              "clicks": 38
+            },
+            {
+              "month": "2025-06",
+              "impressions": 40,
+              "clicks": 0
             }
+          ]
         },
-        {
-            "url": "https://1upmedia.com/contact/",
-            "slopeI": 0.17857142857142858,
-            "slopeS": 0,
-            "slopeP": null,
-            "halfLifePassed": true,
-            "dropRatio": 0.4,
-            "status": "Stable",
-            "dataSource": "GSC",
-            "gscData": {
-                "monthly": [
-                    {
-                        "month": "2024-01",
-                        "impressions": 2,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-02",
-                        "impressions": 1,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-03",
-                        "impressions": 7,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-04",
-                        "impressions": 6,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-05",
-                        "impressions": 10,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-06",
-                        "impressions": 23,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-07",
-                        "impressions": 12,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-08",
-                        "impressions": 7,
-                        "clicks": 1
-                    },
-                    {
-                        "month": "2024-09",
-                        "impressions": 7,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-10",
-                        "impressions": 13,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-11",
-                        "impressions": 6,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-12",
-                        "impressions": 5,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2025-01",
-                        "impressions": 11,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2025-02",
-                        "impressions": 10,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2025-03",
-                        "impressions": 4,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2025-04",
-                        "impressions": 7,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2025-05",
-                        "impressions": 35,
-                        "clicks": 0
-                    }
-                ]
+        "gaData": {
+          "monthly": []
+        }
+      },
+      {
+        "url": "https://1upmedia.com/contact/",
+        "slopeI": 0.17857142857142858,
+        "slopeS": 0,
+        "slopeP": null,
+        "halfLifePassed": true,
+        "dropRatio": 0.4,
+        "status": "Stable",
+        "dataSource": "GSC",
+        "gscData": {
+          "monthly": [
+            {
+              "month": "2024-01",
+              "impressions": 2,
+              "clicks": 0
             },
-            "gaData": {
-                "monthly": []
+            {
+              "month": "2024-02",
+              "impressions": 1,
+              "clicks": 0
+            },
+            {
+              "month": "2024-03",
+              "impressions": 7,
+              "clicks": 0
+            },
+            {
+              "month": "2024-04",
+              "impressions": 6,
+              "clicks": 0
+            },
+            {
+              "month": "2024-05",
+              "impressions": 10,
+              "clicks": 0
+            },
+            {
+              "month": "2024-06",
+              "impressions": 23,
+              "clicks": 0
+            },
+            {
+              "month": "2024-07",
+              "impressions": 12,
+              "clicks": 0
+            },
+            {
+              "month": "2024-08",
+              "impressions": 7,
+              "clicks": 1
+            },
+            {
+              "month": "2024-09",
+              "impressions": 7,
+              "clicks": 0
+            },
+            {
+              "month": "2024-10",
+              "impressions": 13,
+              "clicks": 0
+            },
+            {
+              "month": "2024-11",
+              "impressions": 6,
+              "clicks": 0
+            },
+            {
+              "month": "2024-12",
+              "impressions": 5,
+              "clicks": 0
+            },
+            {
+              "month": "2025-01",
+              "impressions": 11,
+              "clicks": 0
+            },
+            {
+              "month": "2025-02",
+              "impressions": 10,
+              "clicks": 0
+            },
+            {
+              "month": "2025-03",
+              "impressions": 4,
+              "clicks": 0
+            },
+            {
+              "month": "2025-04",
+              "impressions": 7,
+              "clicks": 0
+            },
+            {
+              "month": "2025-05",
+              "impressions": 35,
+              "clicks": 0
             }
+          ]
         },
-        {
-            "url": "https://1upmedia.com/exploring-content-pipelines-insights-from-adam-willhoeft/",
-            "slopeI": 0,
-            "slopeS": 0,
-            "slopeP": null,
-            "halfLifePassed": true,
-            "dropRatio": 0.5,
-            "status": "Stable",
-            "dataSource": "GSC",
-            "gscData": {
-                "monthly": [
-                    {
-                        "month": "2024-07",
-                        "impressions": 6,
-                        "clicks": 1
-                    },
-                    {
-                        "month": "2024-08",
-                        "impressions": 1,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-09",
-                        "impressions": 1,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-10",
-                        "impressions": 7,
-                        "clicks": 0
-                    },
-                    {
-                        "month": "2024-11",
-                        "impressions": 1,
-                        "clicks": 0
-                    }
-                ]
+        "gaData": {
+          "monthly": []
+        }
+      },
+      {
+        "url": "https://1upmedia.com/exploring-content-pipelines-insights-from-adam-willhoeft/",
+        "slopeI": 0,
+        "slopeS": 0,
+        "slopeP": null,
+        "halfLifePassed": true,
+        "dropRatio": 0.5,
+        "status": "Stable",
+        "dataSource": "GSC",
+        "gscData": {
+          "monthly": [
+            {
+              "month": "2024-07",
+              "impressions": 6,
+              "clicks": 1
             },
-            "gaData": {
-                "monthly": []
+            {
+              "month": "2024-08",
+              "impressions": 1,
+              "clicks": 0
+            },
+            {
+              "month": "2024-09",
+              "impressions": 1,
+              "clicks": 0
+            },
+            {
+              "month": "2024-10",
+              "impressions": 7,
+              "clicks": 0
+            },
+            {
+              "month": "2024-11",
+              "impressions": 1,
+              "clicks": 0
             }
-        }, ],
+          ]
+        },
+        "gaData": {
+          "monthly": []
+        }
+      }
+    ],
     "keywordMismatch": [],
     "cannibalization": [
       {
@@ -1215,7 +1217,6 @@
           "bounceRate": 0,
           "avgSessionDuration": 23.77946
         },
-       
         "/product/dam-access/": {
           "sessions": 329,
           "engagedSessions": 187,
@@ -2916,7 +2917,8 @@
         }
       }
     },
-    "details": [      {
+    "details": [
+      {
         "url": "https://www.citecycles.com/",
         "stage": "ToF",
         "frameworks": [
@@ -2926,7 +2928,8 @@
         "cognitiveClarity": 70,
         "persuasionLeverage": 75,
         "behavioralMomentum": 65
-      },..... ]
+      }
+    ]
   },
   "sitemaps": [
     "https://1upmedia.com/wp-sitemap-posts-post-1.xml",

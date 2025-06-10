@@ -23,7 +23,6 @@ import {
   Shield,
 } from "lucide-react";
 import { calculateGradeDistribution } from "../../utils/ContentRating";
-import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
 import FinancialTooltip from "../../components/FinancialTooltip";
 import { getTooltipContent } from "../../utils/tooltipContent";
 import "./CommandCenterDashboard.css";
@@ -154,37 +153,57 @@ const CommandCenterDashboard = () => {
           0
         );
       } else {
-        // Fallback calculation for compatibility
-        return Math.max(
-          0,
-          searchConsoleData
-            .filter((item) => parseFloat(item.position) > 30)
-            .reduce(
-              (sum) =>
-                sum +
-                contentCost * 2 + // Realistic multiplier for $7.30 content cost
-                ((averageOrderValue * (1.5 / conversionRate)) / 100) * 3, // Fixed: inverse relationship
-              0
-            ) // Waste decreases with better conversion rate
-        );
+        // Percentage-based calculation: 25% waste for underperforming content
+        const underperformingCount = searchConsoleData.filter((item) => {
+          const position = parseFloat(item.position) || 0;
+          const ctr = parseFloat(item.ctr) || 0;
+          const expectedCTR =
+            position <= 10 ? 5 : position <= 20 ? 2 : position <= 30 ? 1 : 0.5;
+          return position > 30 || ctr < expectedCTR * 0.5; // Significantly underperforming
+        }).length;
+        const wastePercentage =
+          searchConsoleData.length > 0
+            ? (underperformingCount / searchConsoleData.length) * 0.25
+            : 0; // 25% impact
+        return totalInvestment * wastePercentage * conversionMultiplier;
       }
     })();
     const lowKDHighDAUrls = searchConsoleData.filter(
       (item) => parseFloat(item.position) <= 20
-    ).length; // Use actual funnel analysis data if available, otherwise derive from search data
+    ).length;
+
+    // Use actual funnel analysis data if available, otherwise derive from search data
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const actualFunnelDistribution = funnelAnalysis.funnelDistribution;
+    const actualFunnelDistribution = funnelAnalysis.funnelDistribution; // Get total website investment for percentage calculations
+    const totalInvestment =
+      onboardingData?.domainCostDetails?.totalInvested || 10000;
 
-    // Get centralized calculations for CommandCenter dashboard
-    const centralizedMetrics = executeCalculationsForDashboard(
-      "commandCenter",
-      onboardingData,
-      { conversionRate }
-    ); // Use centralized deep decay pages count for consistency
-    const deepDecayPages = centralizedMetrics.deepDecayPagesCount || 0;
+    // Apply conversion rate multiplier to dollar calculations (lower conversion = higher losses)
+    const conversionMultiplier = 4.5 / conversionRate; // Inverse: 2% = 2.25x, 4.5% = 1x, 1% = 4.5x
 
-    // Use centralized high dilution pages count for consistency
-    const highDilutionPages = centralizedMetrics.highDilutionPagesCount || 0;
+    // Extract additional GSC Analysis data for percentage calculations
+    const contentDecayData30 = gscAnalysisData.contentDecay?.decay30Days || [];
+    const contentDecayData60 = gscAnalysisData.contentDecay?.decay60Days || [];
+    const contentDecayData90 = gscAnalysisData.contentDecay?.decay90Days || [];
+    const keywordMismatchData = gscAnalysisData.keywordMismatch || [];
+    const linkDilutionData = gscAnalysisData.linkDilution || [];
+    const cannibalizationData = gscAnalysisData.cannibalization || [];
+
+    // Calculate percentage-based metrics like main Dashboard
+    const allDecayData = [
+      ...contentDecayData30,
+      ...contentDecayData60,
+      ...contentDecayData90,
+    ];
+    const severeDecayCount = allDecayData.filter(
+      (item) => item.decayStatus === "Severe-Decay"
+    ).length;
+    const deepDecayPages = severeDecayCount; // Use severe decay as "deep decay"
+
+    const highDilutionCount = linkDilutionData.filter(
+      (item) => (item.dilutionScore || 0) > 0.01
+    ).length;
+    const highDilutionPages = highDilutionCount;
 
     let tofuPercentage, mofuPercentage, bofuPercentage;
 
@@ -258,97 +277,66 @@ const CommandCenterDashboard = () => {
           searchConsoleData.length) *
           100
       );
-    } // Calculate substantial dollar amounts for each KPI metric using centralized calculations
-    // Use centralized calculations where available, fallback to existing logic
+    }
+
+    // Calculate percentage-based dollar amounts using same approach as main Dashboard
+    // Deep Decay Loss - percentage based on severe decay
+    const deepDecayPercentage =
+      allDecayData.length > 0
+        ? (severeDecayCount / allDecayData.length) * 0.25
+        : 0; // 25% impact for severe decay
     const deepDecayDollarValue =
-      centralizedMetrics.deepDecayDollar ||
-      Math.round(
-        deepDecayPages * contentCost * 3 + // Realistic multiplier: 3x content cost
-          deepDecayPages *
-            ((averageOrderValue * (3.0 / conversionRate)) / 100) *
-            totalClicks *
-            0.2 // Fixed logic: lower conversion = higher loss
-      );
+      totalInvestment * deepDecayPercentage * conversionMultiplier;
 
+    // Link Dilution Loss - percentage based on high dilution scores
+    const linkDilutionPercentage =
+      linkDilutionData.length > 0
+        ? (highDilutionCount / linkDilutionData.length) * 0.12
+        : 0; // 12% impact for high dilution
     const dilutionDollarValue =
-      centralizedMetrics.highDilutionDollar ||
-      Math.round(
-        highDilutionPages * contentCost * 2 + // Realistic multiplier: 2x content cost
-          highDilutionPages *
-            ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-            totalClicks *
-            0.25 // Fixed logic: inverse relationship with conversion rate
-      );
+      totalInvestment * linkDilutionPercentage * conversionMultiplier;
 
+    // Keyword Mismatch Loss - percentage based on mismatch severity
+    const underOptimizedCount = keywordMismatchData.filter(
+      (item) => item.mismatchType === "Under-optimized"
+    ).length;
+    const overOptimizedCount = keywordMismatchData.filter(
+      (item) => item.mismatchType === "Over-optimized"
+    ).length;
+    const kwMismatchPercentage =
+      keywordMismatchData.length > 0
+        ? (underOptimizedCount * 0.08 + overOptimizedCount * 0.05) /
+          keywordMismatchData.length
+        : 0;
     const keywordMismatchDollarValue =
-      centralizedMetrics.keywordMismatchDollar ||
-      Math.round(
-        lowKDHighDAUrls *
-          ((averageOrderValue * (3.0 / conversionRate)) / 100) *
-          0.25 + // Realistic multiplier for $10 AOV business
-          lowKDHighDAUrls * contentCost
-      );
+      totalInvestment * kwMismatchPercentage * conversionMultiplier; // Psychographic Mismatch Loss - percentage based on cannibalization
+    const cannibalizationCount = cannibalizationData.filter(
+      (item) => (item.competingUrls || []).length > 1
+    ).length;
+    const psychoMismatchDollarPercentage =
+      cannibalizationData.length > 0
+        ? (cannibalizationCount / cannibalizationData.length) * 0.2
+        : 0; // 20% impact
     const psychoMismatchDollarValue =
-      centralizedMetrics.psychoMismatchDollar ||
-      (() => {
-        const dollarValue = Math.round(
-          (psychoMismatch / 100) *
-            totalClicks *
-            ((averageOrderValue * (2.5 / conversionRate)) / 100) *
-            6 + // Realistic multiplier for $10 AOV business
-            psychoMismatch * contentCost * 1.5
-        );
-
-        return dollarValue;
-      })(); // Funnel Gap Dollar Impact: Use centralized calculation or fallback to existing logic
-    let funnelGapDollarValue = centralizedMetrics.funnelGaps || 0;
-
-    // If no centralized calculation available, use existing funnel gap logic
-    if (!centralizedMetrics.funnelGaps) {
-      if (funnelGap === "MoF Crisis") {
-        // Most critical - missing middle funnel loses qualified leads
-        // With only 4% MoF vs ideal 15-25%, this is a massive problem
-        const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
-        funnelGapDollarValue = Math.round(
-          mofDeficit * contentCost * 0.8 + // Moderate multiplier for MoF crisis
-            mofDeficit *
-              ((averageOrderValue * (2.5 / conversionRate)) / 1000) *
-              totalClicks *
-              0.4 // Impact from conversion rate
-        );
-      } else if (funnelGap === "BoF Heavy") {
-        // Too bottom-heavy loses awareness traffic
-        // With 71% BoF vs ideal max 40%, this indicates over-focus on conversion content
-        const bofExcess = Math.max(bofuPercentage - 40, 0);
-        funnelGapDollarValue = Math.round(
-          bofExcess * contentCost * 6 + // Penalty for being too bottom-heavy
-            bofExcess *
-              ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-              totalClicks *
-              3
-        );
-      } else if (funnelGap === "ToF Deficit") {
-        // Missing top funnel loses new audience acquisition
-        const tofDeficit = Math.max(20 - tofuPercentage, 0);
-        funnelGapDollarValue = Math.round(
-          tofDeficit * contentCost * 5 +
-            tofDeficit *
-              ((averageOrderValue * (2.0 / conversionRate)) / 100) *
-              totalClicks *
-              3
-        );
-      } else if (funnelGap === "BoF Deficit") {
-        // Missing bottom funnel loses conversions
-        const bofDeficit = Math.max(15 - bofuPercentage, 0);
-        funnelGapDollarValue = Math.round(
-          bofDeficit * contentCost * 7 +
-            bofDeficit *
-              ((averageOrderValue * (3.0 / conversionRate)) / 100) *
-              totalClicks *
-              5 // High impact on conversion
-        );
-      }
-    } // End centralized calculation fallback
+      totalInvestment * psychoMismatchDollarPercentage * conversionMultiplier; // Funnel Gap Dollar Impact - simplified percentage-based calculation with conversion rate impact
+    let funnelGapDollarValue = 0;
+    if (funnelGap === "MoF Crisis") {
+      const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
+      funnelGapDollarValue =
+        totalInvestment * (mofDeficit / 100) * 0.1 * conversionMultiplier; // 10% impact per percentage point deficit
+    } else if (funnelGap === "BoF Heavy") {
+      const bofExcess = Math.max(bofuPercentage - 40, 0); // Ideal max 40% BoF
+      funnelGapDollarValue =
+        totalInvestment * (bofExcess / 100) * 0.08 * conversionMultiplier; // 8% impact per percentage point excess
+    } else if (funnelGap === "ToF Deficit") {
+      const tofDeficit = Math.max(20 - tofuPercentage, 0); // Target at least 20% ToF
+      funnelGapDollarValue =
+        totalInvestment * (tofDeficit / 100) * 0.12 * conversionMultiplier; // 12% impact per percentage point deficit
+    } else if (funnelGap === "BoF Deficit") {
+      const bofDeficit = Math.max(15 - bofuPercentage, 0); // Target at least 15% BoF
+      funnelGapDollarValue =
+        totalInvestment * (bofDeficit / 100) * 0.15 * conversionMultiplier; // 15% impact per percentage point deficit
+    }
 
     // Traffic sparks - Generate 90-day trend visualization based on actual data
     const generateSparkData = (baseValue, volatility = 0.3) => {
@@ -697,9 +685,12 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">
               Waste $
               <FinancialTooltip
-                title={getTooltipContent("contentWaste", onboardingData).title}
+                title={
+                  getTooltipContent("contentCreationCost", onboardingData).title
+                }
                 content={
-                  getTooltipContent("contentWaste", onboardingData).content
+                  getTooltipContent("contentCreationCost", onboardingData)
+                    .content
                 }
                 position="top"
               />
@@ -709,12 +700,8 @@ const CommandCenterDashboard = () => {
               <div className="kpi-dollar">
                 + $
                 {Math.round(
-                  (commandCenterData.totalClicks || 0) *
-                    ((4.5 - conversionRate) / 100) *
-                    (parseFloat(
-                      onboardingData?.domainCostDetails?.averageOrderValue
-                    ) || 50) *
-                    0.4
+                  (onboardingData?.domainCostDetails?.totalInvested || 10000) *
+                    0.05 // 5% opportunity loss for conversion optimization potential
                 ).toLocaleString()}{" "}
                 opportunity loss
               </div>
@@ -728,11 +715,9 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">
               Deep Decay
               <FinancialTooltip
-                title={
-                  getTooltipContent("deepDecayDollar", onboardingData).title
-                }
+                title={getTooltipContent("contentDecay", onboardingData).title}
                 content={
-                  getTooltipContent("deepDecayDollar", onboardingData).content
+                  getTooltipContent("contentDecay", onboardingData).content
                 }
                 position="top"
               />
@@ -754,12 +739,9 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">
               Dilution
               <FinancialTooltip
-                title={
-                  getTooltipContent("highDilutionDollar", onboardingData).title
-                }
+                title={getTooltipContent("linkDilution", onboardingData).title}
                 content={
-                  getTooltipContent("highDilutionDollar", onboardingData)
-                    .content
+                  getTooltipContent("linkDilution", onboardingData).content
                 }
                 position="top"
               />
@@ -781,13 +763,9 @@ const CommandCenterDashboard = () => {
             <div className="kpi-label">
               KD≪DA
               <FinancialTooltip
-                title={
-                  getTooltipContent("keywordMismatchDollar", onboardingData)
-                    .title
-                }
+                title={getTooltipContent("kwMismatch", onboardingData).title}
                 content={
-                  getTooltipContent("keywordMismatchDollar", onboardingData)
-                    .content
+                  getTooltipContent("kwMismatch", onboardingData).content
                 }
                 position="top"
               />
@@ -810,12 +788,10 @@ const CommandCenterDashboard = () => {
               Psych%
               <FinancialTooltip
                 title={
-                  getTooltipContent("psychoMismatchDollar", onboardingData)
-                    .title
+                  getTooltipContent("psychoMismatch", onboardingData).title
                 }
                 content={
-                  getTooltipContent("psychoMismatchDollar", onboardingData)
-                    .content
+                  getTooltipContent("psychoMismatch", onboardingData).content
                 }
                 position="top"
               />
@@ -845,11 +821,12 @@ const CommandCenterDashboard = () => {
               />
             </div>
             <div className="kpi-value">
-              {commandCenterData.kpiMetrics.funnelGap}
+              {commandCenterData.kpiMetrics.funnelGap}{" "}
               <div className="kpi-dollar">
                 $
-                {commandCenterData.kpiMetrics?.funnelGapDollarValue?.impact /
-                  100}{" "}
+                {Math.round(
+                  commandCenterData.kpiMetrics.funnelGapDollarValue
+                ).toLocaleString()}{" "}
                 loss
               </div>
             </div>

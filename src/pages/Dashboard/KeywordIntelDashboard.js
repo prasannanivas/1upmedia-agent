@@ -590,9 +590,9 @@ const KeywordIntelDashboard = () => {
     // Use actual GSC performance comparison data
     if (
       gscAnalysisData.contentDecay &&
-      Array.isArray(gscAnalysisData.contentDecay)
+      Array.isArray(gscAnalysisData.contentDecay?.decay30Days)
     ) {
-      gscAnalysisData.contentDecay
+      gscAnalysisData.contentDecay?.decay30Days
         .filter((item) => item.gscData && item.gscData.monthly)
         .slice(0, 3)
         .forEach((content, index) => {
