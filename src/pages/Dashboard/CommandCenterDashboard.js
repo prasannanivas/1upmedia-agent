@@ -118,11 +118,8 @@ const CommandCenterDashboard = () => {
     ).length;
     const decayPercentage = (decayingPages / searchConsoleData.length) * 100;
     if (decayPercentage > 50) creditScore -= 15;
-    else if (decayPercentage > 25) creditScore -= 10;
-
-    // Ensure score is within bounds
+    else if (decayPercentage > 25) creditScore -= 10; // Ensure score is within bounds
     creditScore = Math.max(0, Math.min(100, creditScore));
-    const baseConversionValue = averageOrderValue * conversionRateDecimal;
 
     // Determine credit grade
     let creditGrade, creditHealth;
@@ -336,19 +333,19 @@ const CommandCenterDashboard = () => {
       const bofDeficit = Math.max(15 - bofuPercentage, 0); // Target at least 15% BoF
       funnelGapDollarValue =
         totalInvestment * (bofDeficit / 100) * 0.15 * conversionMultiplier; // 15% impact per percentage point deficit    }
-    }
-    // ROI Recovery Potential - Total revenue opportunity from fixing all identified issues    // ROI Recovery Potential - Total revenue opportunity from fixing all identified issues
+    } // ROI Recovery Potential - Simplified calculation: average of all KPI grid costs * conversion rate
+    const allKpiCosts = [
+      wastedSpend,
+      deepDecayDollarValue,
+      dilutionDollarValue,
+      keywordMismatchDollarValue,
+      psychoMismatchDollarValue,
+      funnelGapDollarValue,
+    ];
+    const averageKpiCost =
+      allKpiCosts.reduce((sum, cost) => sum + cost, 0) / allKpiCosts.length;
     const roiRecoveryPotential = Math.round(
-      // 1. Revenue from optimizing current traffic (conversion rate improvement)
-      totalClicks * baseConversionValue * 2 + // 2x current conversion potential
-        // 2. Revenue from fixing wasted spend and reinvesting effectively
-        wastedSpend * 0.8 * (baseConversionValue / contentCost) + // 80% waste recovery reinvested
-        // 3. Revenue from KPI improvements (decay, dilution, mismatch fixes)
-        (deepDecayDollarValue +
-          dilutionDollarValue +
-          keywordMismatchDollarValue) *
-          0.7
-      // 70% of identified losses can be recovered
+      averageKpiCost * conversionRateDecimal * 10
     );
 
     // Traffic sparks - Generate 90-day trend visualization based on actual data

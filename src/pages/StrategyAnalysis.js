@@ -146,18 +146,31 @@ const StrategyAnalysis = () => {
     const dilutionPercentage =
       searchConsoleData.length > 0
         ? (orphanPages.length / searchConsoleData.length) * 100
+        : 0; // Calculate lost equity value using percentage-based approach consistent with other dashboards
+    const totalInvestment =
+      onboardingData.domainCostDetails?.totalInvested || 10000;
+
+    // Calculate cannibalization impact using percentage-based approach
+    const cannibalizationImpactPercentage =
+      searchConsoleData.length > 0
+        ? (cannibalizationPages.length / searchConsoleData.length) * 0.12 // 12% impact for cannibalization
         : 0;
+    const cannibalizationValue =
+      totalInvestment * cannibalizationImpactPercentage;
 
-    // Calculate lost equity value based on real metrics
-    const avgClickValue =
-      onboardingData.domainCostDetails?.averageOrderValue || 10;
-    const avgContentCost =
-      onboardingData.domainCostDetails?.AverageContentCost || 7.3;
+    // Calculate link dilution impact using percentage-based approach
+    const dilutionImpactPercentage =
+      searchConsoleData.length > 0
+        ? (orphanPages.length / searchConsoleData.length) * 0.08 // 8% impact for dilution
+        : 0;
+    const dilutionValue = totalInvestment * dilutionImpactPercentage;
 
-    const lostEquityValue = Math.floor(
-      cannibalizationPages.length * avgClickValue * 0.5 + // Lost click value
-        orphanPages.length * avgContentCost * 0.5 // Wasted content cost
-    );
+    // Total lost equity value with realistic business caps
+    let lostEquityValue = cannibalizationValue + dilutionValue;
+
+    // Cap total lost equity at maximum 25% of total investment (realistic business limit)
+    lostEquityValue = Math.min(lostEquityValue, totalInvestment * 0.25);
+    lostEquityValue = Math.floor(lostEquityValue);
 
     // Get real framework coverage from funnel analysis
     const frameworkCoverage = funnelAnalysis.frameworkCoverage || []; // Get real HUTA scores from psychCompositeSummary

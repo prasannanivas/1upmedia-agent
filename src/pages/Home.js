@@ -15,6 +15,7 @@ import {
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
 import LeakDashboard from "../pages/Dashboard/Dashboard";
+import { calculateComprehensiveLoss } from "../utils/decayCalculations";
 
 const quickLinks = [
   { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
@@ -220,19 +221,31 @@ const HomePage = () => {
                 <div className="metric-value loading">⏳ Loading...</div>
               ) : (
                 <div className="metric-value">
-                  $
+                  {" "}
+                  ${" "}
                   {(() => {
+                    console.log(
+                      "test dashboard",
+                      onboardingData.GSCAnalysisData
+                    );
                     const totalInvested =
                       onboardingData.domainCostDetails?.totalInvested || 0;
-                    const contentDecayRatio =
-                      onboardingData.GSCAnalysisData?.contentDecay?.decay30Days
-                        ?.dropRatio || 0.3;
-                    const loss = totalInvested * contentDecayRatio;
-                    const currentValue = totalInvested - loss;
-                    return Math.round(currentValue).toLocaleString();
+
+                    // Calculate comprehensive loss (average of ALL loss types)
+                    const comprehensiveLoss = calculateComprehensiveLoss(
+                      onboardingData.GSCAnalysisData,
+                      totalInvested
+                    );
+
+                    console.log(
+                      "🔥 Comprehensive Loss Analysis:",
+                      comprehensiveLoss
+                    );
+
+                    return comprehensiveLoss.currentContentValue.toLocaleString();
                   })()}
                 </div>
-              )}
+              )}{" "}
               <div className="metric-subtitle">
                 Total invested minus content decay loss
               </div>
@@ -251,15 +264,44 @@ const HomePage = () => {
                 <div className="metric-value loading">⏳ Loading...</div>
               ) : (
                 <div className="metric-value">
+                  {" "}
                   {(() => {
-                    const contentDecayRatio =
-                      onboardingData.GSCAnalysisData?.contentDecay?.decay30Days
-                        ?.dropRatio || 0.3;
-                    return `${Math.round(contentDecayRatio * 100)}%`;
+                    // Calculate comprehensive loss percentage (average of ALL loss types)
+                    const totalInvested =
+                      onboardingData.domainCostDetails?.totalInvested || 0;
+
+                    const comprehensiveLoss = calculateComprehensiveLoss(
+                      onboardingData.GSCAnalysisData,
+                      totalInvested
+                    );
+
+                    // Debug: Show comprehensive loss breakdown
+                    if (onboardingData.GSCAnalysisData) {
+                      console.log(
+                        "💰 All Loss Types Analysis:",
+                        comprehensiveLoss
+                      );
+                      console.log("📊 Individual Loss Breakdown:");
+                      Object.entries(
+                        comprehensiveLoss.individualLosses
+                      ).forEach(([type, data]) => {
+                        if (data.percentage > 0) {
+                          console.log(
+                            `  ${type}: ${Math.round(
+                              data.percentage * 100
+                            )}% ($${Math.round(data.value).toLocaleString()})`
+                          );
+                        }
+                      });
+                    }
+
+                    return `${comprehensiveLoss.averageLossPercentage}%`;
                   })()}
                 </div>
               )}
-              <div className="metric-subtitle">Content losing visibility</div>
+              <div className="metric-subtitle">
+                Average across all loss types
+              </div>
             </div>
           </motion.div>
         </div>{" "}

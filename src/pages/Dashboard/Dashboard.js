@@ -97,7 +97,8 @@ const Dashboard = () => {
     // Calculate Link Dilution Loss - percentage based on dilution scores
     const highDilutionCount = linkDilutionData.filter(
       (item) => (item.dilutionScore || 0) > 0.01
-    ).length;    const linkDilutionPercentage =
+    ).length;
+    const linkDilutionPercentage =
       linkDilutionData.length > 0
         ? (highDilutionCount / linkDilutionData.length) * 0.12
         : 0; // 12% impact for high dilution
@@ -127,7 +128,7 @@ const Dashboard = () => {
       },
       contentDecay: {
         value: contentDecayValue,
-        urls: allDecayData.length,
+        urls: Math.round(allDecayData.length / 3),
         percentage: (contentDecayPercentage * 100).toFixed(1),
       },
       kwMismatch: {

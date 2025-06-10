@@ -1,18 +1,3 @@
-/**
- * Keyword Intelligence Dashboard - Advanced SEO Analysis Console
- *
- * Data Sources Integration:
- * - Google Search Console (GSC): impressions, clicks, ctr, position data
- * - Google Analytics 4 (GA4): revenue, sessions, conversions
- * - MOZ API: domain_authority, page_authority, keyword_difficulty, backlinks
- *
- * Key Metrics & Calculations:
- * - Blended Authority (BA) = 0.6 * DA + 0.4 * avg(PA)
- * - KD Guard-rail = BA_score + 10 (allowed KD ceiling)
- * - Portfolio KW Cap = DCF on keyword-attributed cash flows
- * - Risk assessments for content leaks, cannibalization, DA/KD mismatches
- */
-
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
@@ -248,6 +233,13 @@ const KeywordIntelDashboard = () => {
     const contentCost =
       parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
 
+    // Get total website investment for percentage calculations (same as other dashboards)
+    const totalInvestment =
+      onboardingData?.domainCostDetails?.totalInvested || 10000;
+
+    // Apply conversion rate multiplier to dollar calculations (lower conversion = higher losses)
+    const conversionMultiplier = 4.5 / conversionRate; // Inverse: 2% = 2.25x, 4.5% = 1x, 1% = 4.5x
+
     // Convert conversion rate percentage to decimal
     const conversionRateDecimal = conversionRate / 100;
 
@@ -332,14 +324,19 @@ const KeywordIntelDashboard = () => {
       if (avg_ctr > 3 && avg_position < 5) return "A-";
       if (avg_ctr > 2 && avg_position < 10) return "BBB";
       return "BB";
-    }; // 5. Risk calculations - enhanced with real data analysis
+    }; // 5. Risk calculations - use percentage-based approach like other dashboards
     const high_ctr_leak_pages = searchConsoleData.filter(
       (page) => parseInt(page.impressions) >= 500 && parseFloat(page.ctr) < 1.5 // Lowered threshold for more realistic detection
-    ).length;
+    ).length; // Calculate percentage-based High CTR Leak Risk
+    const highCtrLeakPercentage =
+      searchConsoleData.length > 0
+        ? (high_ctr_leak_pages / searchConsoleData.length) * 0.15
+        : 0; // 15% impact for high CTR leak pages
+    let high_ctr_leak_risk =
+      totalInvestment * highCtrLeakPercentage * conversionMultiplier;
 
-    // Calculate more realistic high CTR leak risk
-    const baseRiskPerPage = Math.max(averageOrderValue * 50, 2000); // Minimum $2k risk per leaking page
-    const high_ctr_leak_risk = high_ctr_leak_pages * baseRiskPerPage; // Enhanced cannibal clashes using real cannibalization data from GSC analysis
+    // Cap High CTR Leak risk at maximum 20% of total investment
+    high_ctr_leak_risk = Math.min(high_ctr_leak_risk, totalInvestment * 0.2); // Enhanced cannibal clashes using real cannibalization data from GSC analysis
     const cannibalizationData = gscAnalysisData.cannibalization || [];
     let cannibal_risk = 0;
     let cannibal_conflicts_count = 0;
@@ -382,28 +379,17 @@ const KeywordIntelDashboard = () => {
         })
         .sort((a, b) => b.total_impressions - a.total_impressions);
       cannibal_risk = cannibalizationData.reduce((total, conflict) => {
-        // Calculate competing URLs impact with more realistic revenue calculations
-        const competingImpact =
-          conflict.competingUrls?.reduce((sum, competing) => {
-            const competingImpressions = competing.impressions || 0;
-            const competingClicks = competing.clicks || 0;
-            const primaryClicks = conflict.primaryUrl?.clicks || 0;
-
-            // Calculate lost opportunity from traffic split
-            const totalClicks = competingClicks + primaryClicks;
-            const potentialClicks = competingImpressions * 0.03; // 3% target CTR
-            const actualClicks = totalClicks;
-            const lostClicks = Math.max(0, potentialClicks - actualClicks);
-
-            // Use higher multiplier for keyword cannibalization impact
-            const revenueMultiplier = Math.max(averageOrderValue * 5, 200); // Minimum $200 impact per lost conversion
-            return (
-              sum + lostClicks * conversionRateDecimal * revenueMultiplier * 12
-            ); // Annual impact
-          }, 0) || 0;
-
-        return total + competingImpact;
+        // FIXED: Use much smaller per-conflict percentage to prevent inflated values
+        const competingCount = conflict.competingUrls?.length || 0;
+        const cannibalizationPercentage =
+          competingCount > 1 ? 0.00005 : 0.00002; // 0.005% for multiple conflicts, 0.002% for single
+        return (
+          total + totalInvestment * cannibalizationPercentage // Removed conversionMultiplier - business risk shouldn't be scaled by conversion
+        );
       }, 0);
+
+      // Cap cannibalization risk at maximum 15% of total investment (realistic business limit)
+      cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.15);
     } else {
       // Fallback to search console pattern analysis
       const keyword_groups = {};
@@ -422,18 +408,23 @@ const KeywordIntelDashboard = () => {
         (group) => group.length > 1
       );
       cannibal_conflicts_count = cannibal_groups.length;
-      cannibal_risk = cannibal_groups.length * 12000; // $12k per group fallback
+      cannibal_risk = cannibal_groups.length * (totalInvestment * 0.00005); // FIXED: 0.005% impact per group fallback - removed conversion multiplier
+
+      // Cap fallback cannibalization risk at maximum 10% of total investment
+      cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.1);
     } // DA/KD mismatch exposure with enhanced calculation
     const mismatch_keywords = mozData.keywords.filter(
       (kw) => kw.kd > blended_authority + 15
-    );
-    // Calculate more realistic mismatch risk based on actual search volume and competition
-    const mismatch_risk = mismatch_keywords.reduce((total, kw) => {
-      const searchVolume = kw.search_volume || 100;
-      const kdGap = kw.kd - blended_authority;
-      const riskMultiplier = Math.max(averageOrderValue * 20, 1000); // Minimum $1k per mismatch
-      return total + (kdGap * searchVolume * 0.1 * riskMultiplier) / 1000; // Scale by volume and gap
+    ); // Calculate percentage-based mismatch risk
+    let mismatch_risk = mismatch_keywords.reduce((total, kw) => {
+      const mismatchPercentage = 0.02; // 2% impact per mismatch keyword
+      return (
+        total + totalInvestment * mismatchPercentage * conversionMultiplier
+      );
     }, 0);
+
+    // Cap mismatch risk at maximum 25% of total investment
+    mismatch_risk = Math.min(mismatch_risk, totalInvestment * 0.25);
 
     // Calculate crawl errors and other technical issues
     const crawl_error_pages = searchConsoleData.filter(
@@ -443,59 +434,70 @@ const KeywordIntelDashboard = () => {
     const crawl_error_percentage =
       searchConsoleData.length > 0
         ? Math.round((crawl_error_pages / searchConsoleData.length) * 100)
-        : 0;
-
-    // Enhanced content cost waste analysis using real GSC data
+        : 0; // Enhanced content cost waste analysis using percentage-based approach
     const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
     let total_wasted_spend = 0;
     let content_waste_pages = 0;
     if (contentCostWasteData.length > 0) {
-      // Use real content cost waste analysis with enhanced calculation
-      total_wasted_spend = contentCostWasteData.reduce((sum, waste) => {
-        // Calculate more realistic waste impact
-        const pageImpressions = waste.impressions || 0;
-        const pagePosition = waste.position || 100;
-        const wastedPotential =
-          pageImpressions > 100 && pagePosition > 20
-            ? Math.max(contentCost * 2, 500) // Minimum $500 waste for high-impression, poor-position pages
-            : contentCost;
-        return sum + wastedPotential;
-      }, 0);
+      // Use percentage-based calculation like other dashboards
+      const wastePercentage =
+        contentCostWasteData.length > 0
+          ? (contentCostWasteData.filter(
+              (waste) =>
+                (waste.impressions || 0) > 50 && (waste.position || 100) > 25
+            ).length /
+              contentCostWasteData.length) *
+            0.25
+          : 0; // 25% impact for wasted content
+      total_wasted_spend =
+        totalInvestment * wastePercentage * conversionMultiplier;
       content_waste_pages = contentCostWasteData.filter(
         (waste) => (waste.impressions || 0) > 50 && (waste.position || 100) > 25 // Pages with traffic but poor position
       ).length;
     } else {
-      // Fallback calculation based on poor performing pages
+      // Fallback calculation using percentage-based approach
       const poorPerformingPages = searchConsoleData.filter(
         (page) =>
           parseFloat(page.position) > 30 && parseInt(page.impressions) < 50
       );
       content_waste_pages = poorPerformingPages.length;
-      total_wasted_spend = content_waste_pages * contentCost;
+      const wastePercentage =
+        searchConsoleData.length > 0
+          ? (poorPerformingPages.length / searchConsoleData.length) * 0.25
+          : 0; // 25% impact
+      total_wasted_spend =
+        totalInvestment * wastePercentage * conversionMultiplier;
     }
 
-    // Enhanced link dilution analysis using real GSC data
+    // Cap content waste at maximum 30% of total investment
+    total_wasted_spend = Math.min(total_wasted_spend, totalInvestment * 0.3); // Enhanced link dilution analysis using percentage-based approach
     const linkDilutionData = gscAnalysisData.linkDilution || [];
     let link_dilution_risk = 0;
     let high_dilution_pages = 0;
     if (linkDilutionData.length > 0) {
-      // Calculate dilution risk based on real analysis with enhanced impact
-      link_dilution_risk = linkDilutionData.reduce((sum, dilution) => {
-        const estimatedLoss = dilution.estimatedLoss || {};
-        const midLoss = estimatedLoss.mid || 0;
-        const highLoss = estimatedLoss.high || 0;
-        // Use higher multiplier for link dilution impact
-        const revenueMultiplier = Math.max(averageOrderValue * 10, 800); // Minimum $800 impact per dilution
-        return sum + (midLoss + highLoss) * revenueMultiplier;
-      }, 0);
+      // Calculate dilution risk using percentage-based approach like other dashboards
       high_dilution_pages = linkDilutionData.filter(
         (dilution) => (dilution.dilutionScore || 0) > 0.02 // High dilution threshold
       ).length;
+      const linkDilutionPercentage =
+        linkDilutionData.length > 0
+          ? (high_dilution_pages / linkDilutionData.length) * 0.12
+          : 0; // 12% impact for high dilution
+      link_dilution_risk =
+        totalInvestment * linkDilutionPercentage * conversionMultiplier;
     } else {
       // Fallback - estimate based on pages with many external links
       high_dilution_pages = Math.floor(searchConsoleData.length * 0.1); // 10% estimate
-      link_dilution_risk = high_dilution_pages * 3000; // $3k per page estimate
-    } // 6. Intent distribution - Use actual funnel analysis data from onboardingData
+      const linkDilutionPercentage =
+        searchConsoleData.length > 0
+          ? (high_dilution_pages / searchConsoleData.length) * 0.12
+          : 0; // 12% impact
+      link_dilution_risk =
+        totalInvestment * linkDilutionPercentage * conversionMultiplier;
+    }
+
+    // Cap link dilution risk at maximum 18% of total investment
+    link_dilution_risk = Math.min(link_dilution_risk, totalInvestment * 0.18); // 6. Intent distribution - Use actual funnel analysis data from onboardingData
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
     const actualFunnelDistribution = funnelAnalysis.funnelDistribution || {
       ToF: 0,
