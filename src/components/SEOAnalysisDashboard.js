@@ -296,8 +296,8 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
               style={{ color: "#ffc107", marginRight: "8px" }}
             />
             <strong>Sample-Based Analysis:</strong> Loss calculations are
-            derived from {contentCostWaste.length + contentDecay.length}{" "}
-            analyzed pages and extrapolated to your total investment of $
+            derived from {contentCostWaste.length} analyzed pages and
+            extrapolated to your total investment of $
             {formatCurrency(totalCostSpent)} for more accurate estimates.
           </div>
         )}

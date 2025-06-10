@@ -105,11 +105,11 @@ const StepCreateAuthors = () => {
       }));
 
       // Navigate to dashboard instead of keywords
-      navigate("/leakdashboard");
+      navigate("/");
     } catch (error) {
       console.error("Error saving authors:", error);
       // Still navigate to dashboard even if save fails
-      navigate("/leakdashboard");
+      navigate("/");
     }
   };
 
