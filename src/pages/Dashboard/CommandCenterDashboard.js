@@ -335,8 +335,21 @@ const CommandCenterDashboard = () => {
     } else if (funnelGap === "BoF Deficit") {
       const bofDeficit = Math.max(15 - bofuPercentage, 0); // Target at least 15% BoF
       funnelGapDollarValue =
-        totalInvestment * (bofDeficit / 100) * 0.15 * conversionMultiplier; // 15% impact per percentage point deficit
+        totalInvestment * (bofDeficit / 100) * 0.15 * conversionMultiplier; // 15% impact per percentage point deficit    }
     }
+    // ROI Recovery Potential - Total revenue opportunity from fixing all identified issues    // ROI Recovery Potential - Total revenue opportunity from fixing all identified issues
+    const roiRecoveryPotential = Math.round(
+      // 1. Revenue from optimizing current traffic (conversion rate improvement)
+      totalClicks * baseConversionValue * 2 + // 2x current conversion potential
+        // 2. Revenue from fixing wasted spend and reinvesting effectively
+        wastedSpend * 0.8 * (baseConversionValue / contentCost) + // 80% waste recovery reinvested
+        // 3. Revenue from KPI improvements (decay, dilution, mismatch fixes)
+        (deepDecayDollarValue +
+          dilutionDollarValue +
+          keywordMismatchDollarValue) *
+          0.7
+      // 70% of identified losses can be recovered
+    );
 
     // Traffic sparks - Generate 90-day trend visualization based on actual data
     const generateSparkData = (baseValue, volatility = 0.3) => {
@@ -351,10 +364,8 @@ const CommandCenterDashboard = () => {
     const impressionsSparkData = generateSparkData(totalImpressions / 10);
     const clicksSparkData = generateSparkData(totalClicks / 10);
     const roiSparkData = generateSparkData(Math.abs(totalROI) / 10);
-    const wasteSparkData = generateSparkData(wastedSpend / 10); // ROI Recovery Potential (increases with better conversion rates - this is correct)
-    const roiRecoveryPotential = Math.round(
-      wastedSpend * 0.6 + baseConversionValue * totalClicks * 3 // Realistic recovery multiplier
-    );
+    const wasteSparkData = generateSparkData(wastedSpend / 10);
+
     const recoveryTimeframe =
       creditScore > 70 ? 30 : creditScore > 50 ? 60 : 90;
     const recoveryTrend = totalROI > 0 ? "positive" : "negative";

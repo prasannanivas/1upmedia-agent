@@ -22,10 +22,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "./SEOAnalysisDashboard.css";
-import {
-  calculateNotFoundImpact,
-  calculateROI,
-} from "../utils/financialCalculations";
+import { calculateNotFoundImpact } from "../utils/financialCalculations";
 
 const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
   const [expandedDilution, setExpandedDilution] = useState(false);
@@ -109,19 +106,33 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
     totalCostSpent > 0
       ? ((decayPercentage / 100) * totalCostSpent).toFixed(2)
       : "0.00";
-
   const totalContentCost = totalCostSpent.toFixed(2);
+  // Calculate Overall ROI more intelligently
+  // FIXED: Previous calculation compared monthly revenue vs total investment (apples to oranges)
+  // NOW: Uses average ROI of individual pages (more accurate representation)
+  const totalROI = (() => {
+    if (!Array.isArray(contentCostWaste) || contentCostWaste.length === 0) {
+      return "0.00";
+    }
 
-  const totalEstimatedRevenue = Array.isArray(contentCostWaste)
-    ? contentCostWaste
-        .reduce((sum, item) => sum + (item.estimatedMonthlyRevenue || 0), 0)
-        ?.toFixed(2)
-    : "0.00";
+    // Calculate average ROI from individual page ROIs
+    const validROIs = contentCostWaste
+      .map((item) => item.roi || 0)
+      .filter((roi) => roi !== null && roi !== undefined && !isNaN(roi));
 
-  const totalROI = calculateROI(
-    parseFloat(totalEstimatedRevenue),
-    parseFloat(totalContentCost)
-  )?.toFixed(2);
+    if (validROIs.length === 0) {
+      return "0.00";
+    }
+
+    const averageROI =
+      validROIs.reduce((sum, roi) => sum + roi, 0) / validROIs.length;
+
+    // Convert from decimal to percentage if needed (sample data shows -1 for -100%)
+    const roiPercentage =
+      averageROI < 0 && averageROI > -1 ? averageROI * 100 : averageROI;
+
+    return roiPercentage.toFixed(2);
+  })();
   const estimatedLossFromNotFound =
     Array.isArray(notFoundPages) && notFoundPages.length > 0
       ? calculateNotFoundImpact(
