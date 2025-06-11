@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-  Globe,
   User,
-  Settings,
   CheckCircle,
   Target,
   Database,
@@ -15,157 +12,22 @@ import {
 import "./HomePage.css";
 import { useOnboarding } from "../context/OnboardingContext";
 import LeakDashboard from "../pages/Dashboard/Dashboard";
-import { calculateComprehensiveLoss } from "../utils/decayCalculations";
-
-const quickLinks = [
-  { name: "All Posts", path: "/dashboard", icon: <Globe size={24} /> },
-  {
-    name: "Create Content",
-    path: "/agents/content-creation",
-    icon: <User size={24} />,
-  },
-  {
-    name: "Settings",
-    path: "/settings/user-management",
-    icon: <Settings size={24} />,
-  },
-];
-
-// Rotating Features
-const featureTexts = [
-  "Content Creation",
-  "Social Media Auto-Posting",
-  "Site Analytics",
-  "AI-Powered Research",
-  "Smart SEO Insights",
-];
-
-// Section Configuration
-const sectionConfig = {
-  basicInfo: {
-    name: "Basic Information",
-    path: "/onboarding/step-main-domain",
-    fields: ["Domain URL", "Location", "businessDetails"],
-  },
-  domainAnalysis: {
-    name: "Domain Analysis",
-    path: "/onboarding/step-main-domain",
-    fields: [
-      "Domain Authority",
-      "Page Authority",
-      "Trust Flow",
-      "Citation Flow",
-    ],
-  },
-  analytics: {
-    name: "Keywords",
-    path: "/onboarding/step-keywords",
-    fields: ["Search Console Data", "Keywords"],
-  },
-
-  contentStrategy: {
-    name: "Content Strategy",
-    path: "/onboarding/step-suggestions",
-    fields: ["Content Strategies", "Content Types", "Topic Clusters"],
-  },
-  team: {
-    name: "Team Setup",
-    path: "/onboarding/step-create-authors",
-    fields: ["Authors"],
-  },
-};
+import { useFinancialCalculations } from "../context/FinancialCalculations";
 
 const HomePage = () => {
-  const [index, setIndex] = useState(0);
   const { getPercentageProfileCompletion, onboardingData, loading } =
     useOnboarding();
   const navigate = useNavigate();
+  const {
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+  } = useFinancialCalculations();
 
   const completionPercentage = getPercentageProfileCompletion();
-
-  // Change text every 1.5 seconds
-  const intervalRef = useRef(null);
-
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % featureTexts.length);
-    }, 1500);
-
-    return () => clearInterval(intervalRef.current);
-  }, []);
-
-  // Enhanced setup tasks with icons and better descriptions
-  const setupTasks = [
-    {
-      id: 1,
-      title: "Complete Business Profile",
-      description: "Set up your business domain, location, and core details",
-      icon: <Database size={20} />,
-      completed: completionPercentage.total >= 100,
-      path: "/onboarding/step-main-domain",
-      category: "foundation",
-    },
-    {
-      id: 2,
-      title: "Set Funnel Ratio (60/20/20)",
-      description: "Define your content strategy distribution",
-      icon: <Target size={20} />,
-      completed: false,
-      path: "/onboarding/step-suggestions",
-      category: "strategy",
-    },
-    {
-      id: 3,
-      title: "Connect Google Analytics & Search Console",
-      description: "Link your analytics for data-driven insights",
-      icon: <BarChart3 size={20} />,
-      completed: false,
-      path: "/onboarding/step-keywords",
-      category: "data",
-    },
-    {
-      id: 4,
-      title: "Add Your Domain or Import URLs",
-      description: "Import existing content for analysis",
-      icon: <Link2 size={20} />,
-      completed:
-        completionPercentage.details.find((d) => d.name === "basicInfo")
-          ?.percentage >= 100,
-      path: "/onboarding/step-main-domain",
-      category: "foundation",
-    },
-    {
-      id: 5,
-      title: "Connect Your CRM",
-      description: "Enable full attribution tracking",
-      icon: <User size={20} />,
-      completed: false,
-      path: "/integrations",
-      category: "integration",
-    },
-    {
-      id: 6,
-      title: "Install Attribution Pixel",
-      description: "Track visitor journey from content to conversion",
-      icon: <Zap size={20} />,
-      completed: false,
-      path: "/analytics",
-      category: "tracking",
-    },
-  ];
-
-  const completedTasksCount = setupTasks.filter(
-    (task) => task.completed
-  ).length;
-  // Interactive task click handler with haptic feedback
-  const handleTaskClick = (task) => {
-    // Vibration feedback for mobile devices
-    if (navigator.vibrate) {
-      navigator.vibrate(50);
-    }
-
-    navigate(task.path);
-  };
 
   return (
     <div className="homepage-container">
@@ -231,23 +93,74 @@ const HomePage = () => {
                     const totalInvested =
                       onboardingData.domainCostDetails?.totalInvested || 0;
 
-                    // Calculate comprehensive loss (average of ALL loss types)
-                    const comprehensiveLoss = calculateComprehensiveLoss(
-                      onboardingData.GSCAnalysisData,
-                      totalInvested
-                    );
+                    // Wait for onboarding data to be loaded before calculating
+                    if (
+                      !onboardingData.GSCAnalysisData ||
+                      !onboardingData.domainCostDetails
+                    ) {
+                      return (totalInvested || 0).toLocaleString();
+                    }
+                    try {
+                      // Get comprehensive loss using FinancialCalculations context
+                      const revenueLeakResult = getRevenueLeak();
+                      const contentDecayResult = getContentDecay();
+                      const keywordMismatchResult = getKeywordMismatch();
+                      const linkDilutionResult = getLinkDilution();
+                      const psychMismatchResult = getPsychMismatch();
+                      const cannibalizationResult = getCannibalizationLoss(); // Calculate total revenue loss from all sources
+                      const totalRevenueLoss =
+                        Math.abs(revenueLeakResult?.estimatedRevenueLoss || 0) +
+                        (contentDecayResult?.summary?.totalRevenueLoss || 0) +
+                        (keywordMismatchResult?.summary?.totalRevenueLoss ||
+                          0) +
+                        (linkDilutionResult?.summary?.totalRevenueLoss || 0) +
+                        (psychMismatchResult?.summary?.totalRevenueLoss || 0) +
+                        (cannibalizationResult?.summary?.totalRevenueLoss || 0);
 
-                    console.log(
-                      "🔥 Comprehensive Loss Analysis:",
-                      comprehensiveLoss
-                    );
+                      // Calculate current content value (total invested minus average loss)
+                      const averageLoss = totalRevenueLoss / 6;
+                      const currentContentValue = Math.max(
+                        0,
+                        totalInvested -
+                          contentDecayResult?.summary?.totalRevenueLoss
+                      );
+                      console.log("🔥 Comprehensive Loss Analysis:", {
+                        totalInvested,
+                        totalRevenueLoss,
+                        averageLoss,
+                        currentContentValue,
+                        breakdown: {
+                          revenueLeak: Math.abs(
+                            revenueLeakResult?.estimatedRevenueLoss || 0
+                          ),
+                          contentDecay:
+                            contentDecayResult?.summary?.totalRevenueLoss || 0,
+                          keywordMismatch:
+                            keywordMismatchResult?.summary?.totalRevenueLoss ||
+                            0,
+                          linkDilution:
+                            linkDilutionResult?.summary?.totalRevenueLoss || 0,
+                          psychMismatch:
+                            psychMismatchResult?.summary?.totalRevenueLoss || 0,
+                          cannibalization:
+                            cannibalizationResult?.summary?.totalRevenueLoss ||
+                            0,
+                        },
+                      });
 
-                    return comprehensiveLoss.currentContentValue.toLocaleString();
+                      return currentContentValue.toLocaleString();
+                    } catch (error) {
+                      console.error(
+                        "Error calculating comprehensive loss:",
+                        error
+                      );
+                      return (totalInvested || 0).toLocaleString();
+                    }
                   })()}
                 </div>
               )}{" "}
               <div className="metric-subtitle">
-                Total invested minus content decay loss
+                Total invested minus average loss across 6 categories
               </div>
             </div>
           </motion.div>{" "}
@@ -270,37 +183,115 @@ const HomePage = () => {
                     const totalInvested =
                       onboardingData.domainCostDetails?.totalInvested || 0;
 
-                    const comprehensiveLoss = calculateComprehensiveLoss(
-                      onboardingData.GSCAnalysisData,
-                      totalInvested
-                    );
-
-                    // Debug: Show comprehensive loss breakdown
-                    if (onboardingData.GSCAnalysisData) {
-                      console.log(
-                        "💰 All Loss Types Analysis:",
-                        comprehensiveLoss
-                      );
-                      console.log("📊 Individual Loss Breakdown:");
-                      Object.entries(
-                        comprehensiveLoss.individualLosses
-                      ).forEach(([type, data]) => {
-                        if (data.percentage > 0) {
-                          console.log(
-                            `  ${type}: ${Math.round(
-                              data.percentage * 100
-                            )}% ($${Math.round(data.value).toLocaleString()})`
-                          );
-                        }
-                      });
+                    // Wait for onboarding data to be loaded before calculating
+                    if (
+                      !onboardingData.GSCAnalysisData ||
+                      !onboardingData.domainCostDetails
+                    ) {
+                      return "0%";
                     }
+                    try {
+                      // Get comprehensive loss using FinancialCalculations context
+                      const revenueLeakResult = getRevenueLeak();
+                      const contentDecayResult = getContentDecay();
+                      const keywordMismatchResult = getKeywordMismatch();
+                      const linkDilutionResult = getLinkDilution();
+                      const psychMismatchResult = getPsychMismatch();
+                      const cannibalizationResult = getCannibalizationLoss();
 
-                    return `${comprehensiveLoss.averageLossPercentage}%`;
+                      // Calculate total revenue loss from all sources
+                      const totalRevenueLoss =
+                        Math.abs(revenueLeakResult?.estimatedRevenueLoss || 0) +
+                        (contentDecayResult?.summary?.totalRevenueLoss || 0) +
+                        (keywordMismatchResult?.summary?.totalRevenueLoss ||
+                          0) +
+                        (linkDilutionResult?.summary?.totalRevenueLoss || 0) +
+                        (psychMismatchResult?.summary?.totalRevenueLoss || 0) +
+                        (cannibalizationResult?.summary?.totalRevenueLoss || 0); // Calculate average loss percentage based on total invested (divide by 6 loss types)
+                      const averageLossAmount =
+                        contentDecayResult?.summary?.totalRevenueLoss;
+                      const averageLossPercentage =
+                        totalInvested > 0
+                          ? Math.round(
+                              (averageLossAmount / totalInvested) * 100
+                            )
+                          : 0;
+
+                      // Debug: Show comprehensive loss breakdown
+                      if (onboardingData.GSCAnalysisData) {
+                        console.log("💰 All Loss Types Analysis:", {
+                          totalInvested,
+                          totalRevenueLoss,
+                          averageLossAmount,
+                          averageLossPercentage,
+                          breakdown: {
+                            revenueLeak: Math.abs(
+                              revenueLeakResult?.estimatedRevenueLoss || 0
+                            ),
+                            contentDecay:
+                              contentDecayResult?.summary?.totalRevenueLoss ||
+                              0,
+                            keywordMismatch:
+                              keywordMismatchResult?.summary
+                                ?.totalRevenueLoss || 0,
+                            linkDilution:
+                              linkDilutionResult?.summary?.totalRevenueLoss ||
+                              0,
+                            psychMismatch:
+                              psychMismatchResult?.summary?.totalRevenueLoss ||
+                              0,
+                            cannibalization:
+                              cannibalizationResult?.summary
+                                ?.totalRevenueLoss || 0,
+                          },
+                        });
+                        console.log("📊 Individual Loss Breakdown:");
+                        const breakdown = {
+                          revenueLeak: Math.abs(
+                            revenueLeakResult?.estimatedRevenueLoss || 0
+                          ),
+                          contentDecay:
+                            contentDecayResult?.summary?.totalRevenueLoss || 0,
+                          keywordMismatch:
+                            keywordMismatchResult?.summary?.totalRevenueLoss ||
+                            0,
+                          linkDilution:
+                            linkDilutionResult?.summary?.totalRevenueLoss || 0,
+                          psychMismatch:
+                            psychMismatchResult?.summary?.totalRevenueLoss || 0,
+                          cannibalization:
+                            cannibalizationResult?.summary?.totalRevenueLoss ||
+                            0,
+                        };
+
+                        Object.entries(breakdown).forEach(([type, value]) => {
+                          if (value > 0) {
+                            const percentage =
+                              totalInvested > 0
+                                ? (value / totalInvested) * 100
+                                : 0;
+                            console.log(
+                              `  ${type}: ${Math.round(
+                                percentage
+                              )}% ($${Math.round(value).toLocaleString()})`
+                            );
+                          }
+                        });
+                      }
+
+                      return `${averageLossPercentage}%`;
+                    } catch (error) {
+                      console.error(
+                        "Error calculating comprehensive loss:",
+                        error
+                      );
+                      return "0%";
+                    }
                   })()}
                 </div>
-              )}
+              )}{" "}
               <div className="metric-subtitle">
-                Average across all loss types
+                Average across all 6 loss types
               </div>
             </div>
           </motion.div>
@@ -327,417 +318,12 @@ const HomePage = () => {
         </motion.div>
       </motion.section>
       <LeakDashboard />
-      {/* Content P&L Snapshot Section */}
-      {/* <motion.section
-        className="content-pnl-snapshot"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.2 }}
-      >
-        {" "}
-        <div className="pnl-header">
-          <h2 className="pnl-title">🚨 CONTENT P&L SNAPSHOT</h2>
-          {pnlMetrics.isLoading ? (
-            <div className="pnl-loading">⏳ Loading financial data...</div>
-          ) : (
-            <div className="pnl-data-indicator">
-              {pnlMetrics.hasRealData ? (
-                <span className="pnl-real-data">📊 Live Data</span>
-              ) : (
-                <span className="pnl-demo-data">🔮 Projected Data</span>
-              )}
-            </div>
-          )}
-        </div>{" "}
-        <div className="pnl-metrics-grid">
-          {pnlMetrics.isLoading ? (
-            // Loading skeleton
-            <>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Total Content Investment:</span>
-                <span className="pnl-value investment pnl-loading">⏳</span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Estimated Revenue Impact:</span>
-                <span className="pnl-value revenue pnl-loading">⏳</span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ ROI:</span>
-                <span className="pnl-value roi pnl-loading">⏳</span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Verified Attribution:</span>
-                <span className="pnl-value status inactive pnl-loading">
-                  ⏳
-                </span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Active Attribution Pixel:</span>
-                <span className="pnl-value status inactive pnl-loading">
-                  ⏳
-                </span>
-              </div>
-            </>
-          ) : (
-            // Actual data
-            <>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Total Content Investment:</span>
-                <span className="pnl-value investment">
-                  ${pnlMetrics.totalContentInvestment.toLocaleString()}
-                </span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Estimated Revenue Impact:</span>
-                <span className="pnl-value revenue">
-                  ${pnlMetrics.estimatedRevenueImpact.toLocaleString()}
-                </span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ ROI:</span>
-                <span
-                  className={`pnl-value roi ${
-                    pnlMetrics.roi >= 0 ? "positive" : "negative"
-                  }`}
-                >
-                  {pnlMetrics.roi >= 0 ? "+" : ""}
-                  {pnlMetrics.roi}%
-                </span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Verified Attribution:</span>
-                <span className="pnl-value status inactive">
-                  {pnlMetrics.verifiedAttribution}
-                </span>
-              </div>
-              <div className="pnl-metric">
-                <span className="pnl-label">▸ Active Attribution Pixel:</span>
-                <span className="pnl-value status inactive">
-                  {pnlMetrics.attributionPixel}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-        <div className="pnl-divider">
-          ────────────────────────────────────────────────────────────────────────────
-        </div>
-        <div className="revenue-leak-section">
-          <h3 className="leak-title">💸 REVENUE LEAK MAP (SUMMARY)</h3>{" "}
-          <div className="leak-items">
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/analytics/content-waste")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Content Cost Waste</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                ${pnlMetrics.revenueLeak.contentCostWaste.toLocaleString()}
-              </span>
-              <span className="leak-action">[View Affected Assets]</span>
-            </motion.div>
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/analytics/decay-analysis")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Content Decay Loss</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                ${pnlMetrics.revenueLeak.contentDecayLoss.toLocaleString()}
-              </span>
-              <span className="leak-action">[View Decay Curve]</span>
-            </motion.div>
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/analytics/keyword-efficiency")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Keyword Efficiency Gap</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                ${pnlMetrics.revenueLeak.keywordEfficiencyGap.toLocaleString()}
-              </span>
-              <span className="leak-action">[Audit Keywords]</span>
-            </motion.div>
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/onboarding/step-suggestions")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Funnel Gap</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                {pnlMetrics.revenueLeak.funnelGaps} Keywords
-              </span>
-              <span className="leak-action">[Fill Funnel]</span>
-            </motion.div>
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/analytics/persona-match")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Psychographic Mismatch</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                {pnlMetrics.revenueLeak.psychographicMismatch}% Misfit
-              </span>
-              <span className="leak-action">[Match Personas]</span>
-            </motion.div>
-            <motion.div
-              className="leak-item"
-              whileHover={{ scale: 1.02 }}
-              onClick={() => navigate("/analytics/link-structure")}
-            >
-              <span className="leak-indicator">[!]</span>
-              <span className="leak-type">Link Dilution</span>
-              <span className="leak-separator">▸</span>
-              <span className="leak-amount">
-                ${pnlMetrics.revenueLeak.linkDilution.toLocaleString()}
-              </span>
-              <span className="leak-action">[Fix Structure]</span>
-            </motion.div>
-          </div>
-        </div>
-        <div className="pnl-divider">
-          ────────────────────────────────────────────────────────────────────────────
-        </div>
-        <div className="quick-actions-section">
-          <h3 className="section-title">Quick Actions</h3>
-
-          <div className="quick-actions-container">
-            <button className="quick-action-button primary">
-              <span className="quick-action-icon">
-                <Zap size={18} />
-              </span>
-              <span className="quick-action-label">Create Content</span>
-            </button>
-
-            <button className="quick-action-button success">
-              <span className="quick-action-icon">
-                <Globe size={18} />
-              </span>
-              <span className="quick-action-label">Publish Post</span>
-            </button>
-
-            <button className="quick-action-button info">
-              <span className="quick-action-icon">
-                <BarChart3 size={18} />
-              </span>
-              <span className="quick-action-label">View Analytics</span>
-            </button>
-
-            <button className="quick-action-button warning">
-              <span className="quick-action-icon">
-                <Settings size={18} />
-              </span>
-              <span className="quick-action-label">Configure Settings</span>
-            </button>
-          </div>
-        </div>
-        <div className="pnl-divider">
-          ────────────────────────────────────────────────────────────────────────────
-        </div>
-        <div className="pnl-tip">
-          <p>
-            💡 <strong>TIP:</strong>
-            <br />
-            This system is estimating your losses. Connect your real data to
-            reveal which content is underperforming, what's actually profitable,
-            and how to stop wasting budget without firing your entire marketing
-            team.
-          </p>
-        </div>
-        <div className="pnl-divider">
-          ────────────────────────────────────────────────────────────────────────────
-        </div>
-      </motion.section>
-      {/* Hero Section */}
       <motion.section
         className="homepage-hero"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-      >
-        {/* Rotating Features */}
-        {/* <AnimatePresence mode="wait">
-          <motion.p
-            key={index}
-            className="homepage-rotating-text"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.6 }}
-          >
-            {featureTexts[index]}
-          </motion.p>
-        </AnimatePresence> */}
-
-        {/* <h1 className="homepage-hero-title">Welcome to 1UP AI</h1>
-        <p className="homepage-hero-subtitle">
-          Your AI-powered assistant to streamline content, research, and
-          strategy in one place.
-        </p> */}
-
-        {/* Quick Links */}
-        {/* <motion.section
-          className="homepage-quick-links"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 1 }}
-        >
-          {quickLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.path}
-              className="homepage-quick-link"
-            >
-              {link.icon}
-              <h3>{link.name}</h3>
-            </Link>
-          ))}
-        </motion.section> */}
-
-        {/* Progress Section */}
-        {/* <div className="homepage-progress-container">
-          <div className="progress-header">
-            <p className="homepage-progress-text">
-              <strong>{completionPercentage.total}%</strong> Profile Completed
-              {completionPercentage.total === 100 && (
-                <>
-                  {" "}
-                  |{" "}
-                  <Link
-                    className="homepage-create-content-link"
-                    to="/agents/content-creation"
-                  >
-                    Create Content
-                  </Link>
-                </>
-              )}
-            </p>
-            {completionPercentage.total < 100 && (
-              <motion.button
-                onClick={() => navigate("/onboarding")}
-                whileHover={{ scale: 1.05 }}
-                className="homepage-complete-onboarding-button"
-              >
-                Complete Setup
-              </motion.button>
-            )}
-          </div>
-
-          <div className="onboarding-steps-grid">
-            {completionPercentage.details.map((section) => {
-              const sectionName = section.name;
-              const config = sectionConfig[sectionName] || {
-                name: "Unknown Section",
-                path: "/onboarding",
-              };
-              const completedFields = section.completedFields || 0;
-              const totalFields = section.totalFields || 0;
-
-              return (
-                <motion.div
-                  key={sectionName}
-                  className="onboarding-step-card"
-                  whileHover={{ scale: 1.02 }}
-                  onClick={() => navigate(config.path)}
-                >
-                  <div className="step-header">
-                    <h3>{config.name || "Unknown Section"}</h3>
-                    {section.percentage === 100 ? (
-                      <CheckCircle
-                        className="check-icon"
-                        size={20}
-                        color="#28a745"
-                      />
-                    ) : (
-                      <AlertCircle
-                        className="alert-icon"
-                        size={20}
-                        color="#ffc107"
-                      />
-                    )}
-                  </div>
-                  <div className="step-progress">
-                    <div
-                      className="progress-bar"
-                      style={{ width: `${section.percentage}%` }}
-                    />
-                  </div>
-                  <div className="step-content">
-                    <p className="step-details">
-                      {completedFields}/{totalFields} fields completed
-                    </p>
-                    <div className="step-fields">
-                      {config.fields.map((field, idx) => {
-                        const isCompleted = idx < completedFields;
-                        const stepPath = config.path;
-                        return (
-                          <div
-                            key={idx}
-                            className={`field-item ${
-                              isCompleted ? "completed" : ""
-                            }`}
-                          >
-                            <span>{field}</span>
-                            {isCompleted ? (
-                              <CheckCircle size={14} color="#28a745" />
-                            ) : (
-                              <Link to={stepPath}>
-                                <AlertCircle size={14} color="#ffc107" />
-                              </Link>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div> */}
-      </motion.section>
-      {/* About Video Section */}
-      {/* <motion.section
-        className="homepage-video-section"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-      >
-        <h2>Learn More About 1UP AI</h2>
-        <div className="video-wrapper">
-          <iframe
-            src="https://www.youtube.com/embed/SvbIsQ00laM"
-            title="About 1UP AI"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </div>
-      </motion.section> */}
-      {/* Software Overview */}
-      {/* <motion.section
-        className="homepage-overview"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 1 }}
-      >
-        <h2>Revolutionizing Productivity</h2>
-        <p>
-          1UP AI enhances your workflow with seamless automation, smart
-          recommendations, and powerful integrations.
-        </p>
-      </motion.section> */}
-      {/* Security & Privacy Section */}
+      ></motion.section>
       <motion.section
         className="security-privacy-section"
         initial={{ opacity: 0, y: 20 }}

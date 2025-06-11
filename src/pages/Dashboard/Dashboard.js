@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import {
   TrendingDown,
   AlertCircle,
@@ -10,149 +11,130 @@ import {
 } from "lucide-react";
 import "./Dashboard.css";
 import FinancialTooltip from "../../components/FinancialTooltip";
-import { getTooltipContent } from "../../utils/tooltipContent";
 
 const Dashboard = () => {
   const { onboardingData } = useOnboarding();
-
+  const {
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+  } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
-    revenueLeak: { value: 0, urls: 0 },
-    contentDecay: { value: 0, urls: 0 },
-    kwMismatch: { value: 0, urls: 0 },
-    linkDilution: { value: 0, urls: 0 },
-    psychoMismatch: { value: 0, urls: 0 },
-    contentCreationCost: { value: 0, urls: 0 },
+    revenueLeak: { value: 0, urls: 0, tooltip: null },
+    contentDecay: { value: 0, urls: 0, tooltip: null },
+    kwMismatch: { value: 0, urls: 0, tooltip: null },
+    linkDilution: { value: 0, urls: 0, tooltip: null },
+    psychoMismatch: { value: 0, urls: 0, tooltip: null },
+    contentCreationCost: { value: 0, urls: 0, tooltip: null },
   });
 
-  // Calculate all dashboard metrics using percentage-based approach
+  // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
     if (!onboardingData?.GSCAnalysisData) return;
 
-    // Get total website investment for percentage calculations
-    const totalInvestment =
-      onboardingData?.domainCostDetails?.totalInvested || 10000; // Default to $10,000 if not available
+    try {
+      // Use FinancialCalculations functions instead of manual calculations
+      const revenueLeakData = getRevenueLeak();
+      const contentDecayData = getContentDecay();
+      const keywordMismatchData = getKeywordMismatch();
+      const linkDilutionData = getLinkDilution();
+      const psychoMismatchData = getPsychMismatch();
+      const cannibalizationData = getCannibalizationLoss();
 
-    console.log("Total Investment:", onboardingData.domainCostDetails);
-
-    // Extract data from correct sources
-    const contentCostWasteData =
-      onboardingData.GSCAnalysisData.contentCostWaste || [];
-    const contentDecayData30 =
-      onboardingData.GSCAnalysisData.contentDecay?.decay30Days || [];
-    const contentDecayData60 =
-      onboardingData.GSCAnalysisData.contentDecay?.decay60Days || [];
-    const contentDecayData90 =
-      onboardingData.GSCAnalysisData.contentDecay?.decay90Days || [];
-    const keywordMismatchData =
-      onboardingData.GSCAnalysisData.keywordMismatch || [];
-    const linkDilutionData = onboardingData.GSCAnalysisData.linkDilution || [];
-    const cannibalizationData =
-      onboardingData.GSCAnalysisData.cannibalization || [];
-
-    // Calculate total baseline metrics for percentage calculations
-    const totalUrls = contentCostWasteData.length;
-
-    // Calculate Revenue Leak (Content Cost Waste) - percentage of underperforming content
-    const underperformingUrls = contentCostWasteData.filter(
-      (item) => (item.roi || 0) < 0
-    ).length;
-    const revenueLeakPercentage =
-      totalUrls > 0 ? (underperformingUrls / totalUrls) * 0.15 : 0; // 15% impact for underperforming content
-    const revenueLeakValue = totalInvestment * revenueLeakPercentage;
-
-    // Calculate Content Decay Loss - percentage based on decay severity
-    const allDecayData = [
-      ...contentDecayData30,
-      ...contentDecayData60,
-      ...contentDecayData90,
-    ];
-    const severeDecayCount = allDecayData.filter(
-      (item) => item.decayStatus === "Severe-Decay"
-    ).length;
-    const moderateDecayCount = allDecayData.filter(
-      (item) => item.decayStatus === "Moderate-Decay"
-    ).length;
-    const contentDecayPercentage =
-      allDecayData.length > 0
-        ? (severeDecayCount * 0.25 + moderateDecayCount * 0.1) /
-          allDecayData.length
-        : 0;
-    const contentDecayValue = totalInvestment * contentDecayPercentage;
-
-    // Calculate Keyword Mismatch Loss - percentage based on mismatch severity
-    const underOptimizedCount = keywordMismatchData.filter(
-      (item) => item.mismatchType === "Under-optimized"
-    ).length;
-    const overOptimizedCount = keywordMismatchData.filter(
-      (item) => item.mismatchType === "Over-optimized"
-    ).length;
-    const kwMismatchPercentage =
-      keywordMismatchData.length > 0
-        ? (underOptimizedCount * 0.08 + overOptimizedCount * 0.05) /
-          keywordMismatchData.length
-        : 0;
-    const kwMismatchValue = totalInvestment * kwMismatchPercentage;
-
-    // Calculate Link Dilution Loss - percentage based on dilution scores
-    const highDilutionCount = linkDilutionData.filter(
-      (item) => (item.dilutionScore || 0) > 0.01
-    ).length;
-    const linkDilutionPercentage =
-      linkDilutionData.length > 0
-        ? (highDilutionCount / linkDilutionData.length) * 0.12
-        : 0; // 12% impact for high dilution
-    const linkDilutionValue = totalInvestment * linkDilutionPercentage;
-
-    // Calculate Cannibalization Loss - percentage based on competing URLs
-    const cannibalizationCount = cannibalizationData.filter(
-      (item) => (item.competingUrls || []).length > 1
-    ).length;
-    const cannibalizationPercentage =
-      cannibalizationData.length > 0
-        ? (cannibalizationCount / cannibalizationData.length) * 0.2
-        : 0; // 20% impact for cannibalization
-    const cannibalizationValue = totalInvestment * cannibalizationPercentage;
-
-    // Content Creation Cost - wasted investment based on percentage
-    const wastedContentPercentage =
-      totalUrls > 0 ? (underperformingUrls / totalUrls) * 0.25 : 0; // 25% of investment considered waste for underperforming content
-    const wastedContentCost = totalInvestment * wastedContentPercentage;
-
-    // Update stats with calculated values and URL counts
-    setStats({
-      revenueLeak: {
-        value: revenueLeakValue,
-        urls: underperformingUrls,
-        percentage: (revenueLeakPercentage * 100).toFixed(1),
-      },
-      contentDecay: {
-        value: contentDecayValue,
-        urls: Math.round(allDecayData.length / 3),
-        percentage: (contentDecayPercentage * 100).toFixed(1),
-      },
-      kwMismatch: {
-        value: kwMismatchValue,
-        urls: keywordMismatchData.length,
-        percentage: (kwMismatchPercentage * 100).toFixed(1),
-      },
-      linkDilution: {
-        value: linkDilutionValue,
-        urls: linkDilutionData.length,
-        percentage: (linkDilutionPercentage * 100).toFixed(1),
-      },
-      psychoMismatch: {
-        value: cannibalizationValue,
-        urls: cannibalizationData.length,
-        percentage: (cannibalizationPercentage * 100).toFixed(1),
-      },
-      contentCreationCost: {
-        value: wastedContentCost,
-        urls: underperformingUrls,
-        percentage: "N/A",
-      },
-    });
-  }, [onboardingData]);
+      console.log(
+        "Revenue Leak Data:",
+        revenueLeakData,
+        "Content Decay Data:",
+        contentDecayData,
+        "Keyword Mismatch Data:",
+        keywordMismatchData,
+        "Link Dilution Data:",
+        linkDilutionData,
+        "Psycho Mismatch Data:",
+        psychoMismatchData,
+        "Cannibalization Data:",
+        cannibalizationData
+      ); // Update stats with calculated values from FinancialCalculations
+      setStats({
+        revenueLeak: {
+          value: Math.abs(
+            Math.min(0, revenueLeakData?.estimatedRevenueLoss || 0)
+          ),
+          urls: revenueLeakData?.urlsBelowThreshold || 0,
+          percentage: (
+            ((revenueLeakData?.urlsBelowThreshold || 0) /
+              (revenueLeakData?.totalUrls || 1)) *
+            100
+          ).toFixed(1),
+          tooltip: revenueLeakData?.tooltip || null,
+        },
+        contentDecay: {
+          value: contentDecayData?.summary?.totalRevenueLoss || 0,
+          urls: contentDecayData?.summary?.urlsWithDecay || 0,
+          percentage:
+            contentDecayData?.summary?.decayPercentage?.toFixed(1) || "0.0",
+          tooltip: contentDecayData?.summary?.tooltip || null,
+        },
+        kwMismatch: {
+          value: keywordMismatchData?.summary?.totalRevenueLoss || 0,
+          urls: keywordMismatchData?.summary?.totalMismatchedContent || 0,
+          percentage:
+            keywordMismatchData?.summary?.mismatchPercentage?.toFixed(1) ||
+            "0.0",
+          tooltip: keywordMismatchData?.summary?.tooltip || null,
+        },
+        linkDilution: {
+          value: linkDilutionData?.summary?.totalRevenueLoss || 0,
+          urls: linkDilutionData?.summary?.urlsWithDilution || 0,
+          percentage:
+            linkDilutionData?.summary?.dilutionPercentage?.toFixed(1) || "0.0",
+          tooltip: linkDilutionData?.summary?.tooltip || null,
+        },
+        psychoMismatch: {
+          value: cannibalizationData?.summary?.totalRevenueLoss || 0,
+          urls: cannibalizationData?.summary?.urlsWithCannibalization || 0,
+          percentage:
+            cannibalizationData?.summary?.cannibalizationPercentage?.toFixed(
+              1
+            ) || "0.0",
+          tooltip: cannibalizationData?.summary?.tooltip || null,
+        },
+        contentCreationCost: {
+          value: psychoMismatchData?.summary?.totalRevenueLoss || 0,
+          urls: psychoMismatchData?.summary?.totalMismatchedContent || 0,
+          percentage: "N/A",
+          tooltip: psychoMismatchData?.summary?.tooltip || null,
+        },
+      });
+    } catch (error) {
+      console.error("Error calculating financial metrics:", error); // Set default values on error
+      setStats({
+        revenueLeak: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
+        contentDecay: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
+        kwMismatch: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
+        linkDilution: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
+        psychoMismatch: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
+        contentCreationCost: {
+          value: 0,
+          urls: 0,
+          percentage: "N/A",
+          tooltip: null,
+        },
+      });
+    }
+  }, [
+    onboardingData,
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+  ]);
 
   return (
     <div className="dashboard-container">
@@ -171,17 +153,18 @@ const Dashboard = () => {
           </h2>{" "}
           <div className="dashboard-cards">
             {Object.entries(stats).map(([key, data], index) => {
-              const tooltipContent = getTooltipContent(key, onboardingData);
               return (
                 <div key={key} className="revenue-card">
                   <div className="card-header">
                     <h3>
                       {formatLeakTitle(key)}
-                      <FinancialTooltip
-                        title={tooltipContent.title}
-                        content={tooltipContent.content}
-                        position="top"
-                      />
+                      {data.tooltip && (
+                        <FinancialTooltip
+                          title={data.tooltip.title}
+                          content={data.tooltip.content}
+                          position="top"
+                        />
+                      )}
                     </h3>
                     {data.urls > 0 && (
                       <span className="affected-urls">{data.urls} URLs</span>

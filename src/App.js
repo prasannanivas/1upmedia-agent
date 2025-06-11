@@ -42,6 +42,7 @@ import { ProgressBar } from "./components/ProgressBar";
 import Onboarding from "./pages/Onboarding/Onboarding";
 import Loader from "./components/Loader";
 import { OnboardingProvider, useOnboarding } from "./context/OnboardingContext";
+import { FinancialCalculationsProvider } from "./context/FinancialCalculations";
 import Home from "./pages/Home";
 import PreSetup from "./pages/PreSetup";
 import Notifications from "./pages/Notifications";
@@ -214,7 +215,9 @@ function App() {
             <PollProvider>
               <ProgressBar />
               <OnboardingProvider>
-                <AppWrapper />
+                <FinancialCalculationsProvider>
+                  <AppWrapper />
+                </FinancialCalculationsProvider>
               </OnboardingProvider>
             </PollProvider>
           </NotificationProvider>

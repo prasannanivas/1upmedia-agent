@@ -2916,20 +2916,7 @@
           "behavioralMomentum": 67
         }
       }
-    },
-    "details": [
-      {
-        "url": "https://www.citecycles.com/",
-        "stage": "ToF",
-        "frameworks": [
-          "AIDA"
-        ],
-        "emotionalResonance": 60,
-        "cognitiveClarity": 70,
-        "persuasionLeverage": 75,
-        "behavioralMomentum": 65
-      }
-    ]
+    }
   },
   "sitemaps": [
     "https://1upmedia.com/wp-sitemap-posts-post-1.xml",

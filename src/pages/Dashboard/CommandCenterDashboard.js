@@ -12,6 +12,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import {
   Home,
   RefreshCw,
@@ -21,24 +22,53 @@ import {
   Play,
   Search,
   Shield,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { calculateGradeDistribution } from "../../utils/ContentRating";
+
 import FinancialTooltip from "../../components/FinancialTooltip";
 import { getTooltipContent } from "../../utils/tooltipContent";
 import "./CommandCenterDashboard.css";
 
 const CommandCenterDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
+  const {
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+    funnelGapIdentifier,
+    getContentQualityDistribution,
+    getMoodyCreditScore,
+    getROIRecoveryPotential,
+  } = useFinancialCalculations();
   const navigate = useNavigate();
-
   // Conversion rate state (1% to 4.5% range)
   const [conversionRate, setConversionRate] = useState(2.0); // Default 2%
 
-  // Calculate command center metrics from onboarding data
+  // Recovery breakdown collapse state
+  const [isRecoveryBreakdownExpanded, setIsRecoveryBreakdownExpanded] =
+    useState(true);
+
+  // Individual plan expansion state for 30/60/90 day plans
+  const [expandedPlans, setExpandedPlans] = useState({
+    "30-day": false,
+    "60-day": false,
+    "90-day": false,
+  });
+
+  // Toggle function for individual plans
+  const togglePlan = (planId) => {
+    setExpandedPlans((prev) => ({
+      ...prev,
+      [planId]: !prev[planId],
+    }));
+  };
+  // Calculate command center metrics from onboarding data using FinancialCalculations context
   const commandCenterData = useMemo(() => {
-    if (!onboardingData || loading) return { isBlind: true }; // CONSISTENT DATA ACCESS: Use GSCAnalysisData structure like other dashboards
-    const gscAnalysisData = onboardingData?.GSCAnalysisData || {};
-    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
+    if (!onboardingData || loading) return { isBlind: true };
 
     // Check for insufficient data (consistent with other dashboards)
     const hasMinimalData = () => {
@@ -56,414 +86,248 @@ const CommandCenterDashboard = () => {
       return { isBlind: true };
     }
 
-    // Use searchConsoleData for metrics calculations (raw data)
-    const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
-      ? onboardingData.searchConsoleData
-      : [];
-    if (searchConsoleData.length === 0) {
+    try {
+      // Use FinancialCalculations context functions for all metrics
+      const revenueLeakData = getRevenueLeak();
+      const contentDecayData = getContentDecay();
+      const keywordMismatchData = getKeywordMismatch();
+      const linkDilutionData = getLinkDilution();
+      const psychMismatchData = getPsychMismatch();
+      const funnelGapData = funnelGapIdentifier();
+      const contentQualityData = getContentQualityDistribution();
+      const creditScoreData = getMoodyCreditScore();
+      const cannibalizationLossData = getCannibalizationLoss();
+      const roiRecoveryData = getROIRecoveryPotential(); // Use searchConsoleData for basic metrics calculations
+
+      console.log(
+        "Command Center - Credit Score Data:",
+        "revenueLeakData",
+        revenueLeakData,
+        "contentDecayData",
+        contentDecayData,
+        "keywordMismatchData",
+        keywordMismatchData,
+        "linkDilutionData",
+        linkDilutionData,
+        "psychMismatchData",
+        psychMismatchData,
+        "funnelGapData",
+        funnelGapData,
+        "contentQualityData",
+        contentQualityData,
+        "creditScoreData",
+        creditScoreData,
+        "roiRecoveryData",
+        roiRecoveryData
+      );
+
+      const searchConsoleData = Array.isArray(onboardingData.searchConsoleData)
+        ? onboardingData.searchConsoleData
+        : [];
+      if (searchConsoleData.length === 0) {
+        return { isBlind: true };
+      }
+
+      // Basic search console metrics for display
+      const totalImpressions = searchConsoleData.reduce(
+        (sum, item) => sum + (parseInt(item.impressions) || 0),
+        0
+      );
+      const totalClicks = searchConsoleData.reduce(
+        (sum, item) => sum + (parseInt(item.clicks) || 0),
+        0
+      );
+      const avgCTR =
+        totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
+
+      // Calculate conversion metrics
+      const conversionRateDecimal = conversionRate / 100;
+      const averageOrderValue =
+        parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
+      const totalConversions = totalClicks * conversionRateDecimal;
+      const totalRevenue = totalConversions * averageOrderValue;
+      const contentCost =
+        parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
+      const totalCost = searchConsoleData.length * contentCost;
+      const totalROI =
+        totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : -100;
+
+      // Get funnel analysis data for display
+      const funnelAnalysis = onboardingData.funnelAnalysis || {};
+      const actualFunnelDistribution = funnelAnalysis.funnelDistribution;
+
+      let tofuPercentage, mofuPercentage, bofuPercentage;
+
+      if (
+        actualFunnelDistribution &&
+        actualFunnelDistribution.ToF !== undefined
+      ) {
+        // Use actual funnel data from onboarding context
+        const total =
+          actualFunnelDistribution.ToF +
+          actualFunnelDistribution.MoF +
+          actualFunnelDistribution.BoF;
+        tofuPercentage =
+          total > 0
+            ? Math.round((actualFunnelDistribution.ToF / total) * 100)
+            : 0;
+        mofuPercentage =
+          total > 0
+            ? Math.round((actualFunnelDistribution.MoF / total) * 100)
+            : 0;
+        bofuPercentage =
+          total > 0
+            ? Math.round((actualFunnelDistribution.BoF / total) * 100)
+            : 0;
+      } else {
+        // Fallback to derived funnel analysis using standardized position thresholds
+        tofuPercentage = Math.round(
+          (searchConsoleData.filter((item) => parseFloat(item.position) <= 10)
+            .length /
+            searchConsoleData.length) *
+            100
+        );
+        mofuPercentage = Math.round(
+          (searchConsoleData.filter(
+            (item) =>
+              parseFloat(item.position) > 10 && parseFloat(item.position) <= 20
+          ).length /
+            searchConsoleData.length) *
+            100
+        );
+        bofuPercentage = 100 - tofuPercentage - mofuPercentage;
+      }
+
+      // Traffic sparks - Generate 90-day trend visualization based on actual data
+      const generateSparkData = (baseValue, volatility = 0.3) => {
+        const data = [];
+        for (let i = 0; i < 10; i++) {
+          const variation = (Math.random() - 0.5) * volatility;
+          data.push(Math.max(0, baseValue * (1 + variation)));
+        }
+        return data;
+      };
+
+      const impressionsSparkData = generateSparkData(totalImpressions / 10);
+      const clicksSparkData = generateSparkData(totalClicks / 10);
+      const roiSparkData = generateSparkData(Math.abs(totalROI) / 10);
+      const wasteSparkData = generateSparkData(
+        revenueLeakData?.estimatedRevenueLoss / 10 || 0
+      );
+
+      const recoveryTimeframe =
+        creditScoreData?.summary?.overallScore > 70
+          ? 30
+          : creditScoreData?.summary?.overallScore > 50
+          ? 60
+          : 90;
+      const recoveryTrend = totalROI > 0 ? "positive" : "negative";
+
+      // Psychographic alignment - use actual analysis data when available
+      const psychMatch = psychMismatchData?.summary?.overallPsychHealth || 70;
+
+      return {
+        isBlind: false,
+        domain: onboardingData.domain || "your-domain.com",
+        lastRefresh: new Date().toLocaleString(),
+
+        // Credit Score from context
+        creditScore: creditScoreData?.summary?.overallScore || 50,
+        creditGrade: creditScoreData?.summary?.creditRating || "BBB",
+        creditHealth: creditScoreData?.summary?.riskLevel || "⚠️ At Risk", // ROI Recovery from context
+        roiRecoveryPotential:
+          roiRecoveryData?.summary?.totalRecoveryPotential || 0,
+        recoveryTimeframe,
+        recoveryTrend,
+        // Full recovery breakdown for 30/60/90 day display
+        recoveryTimeframes: roiRecoveryData?.recoveryTimeframes || {},
+        roiRecoveryTooltip: roiRecoveryData?.summary?.tooltip || {},
+
+        // KPI Grid using context data
+
+        kpiMetrics: {
+          wastedSpend: Math.round(revenueLeakData?.estimatedRevenueLoss || 0),
+          deepDecayPages: contentDecayData?.summary?.urlsWithDecay || 0,
+          highDilutionPages: linkDilutionData?.summary?.urlsWithDilution || 0,
+          lowKDHighDAUrls: searchConsoleData.filter(
+            (item) => parseFloat(item.position) <= 20
+          ).length,
+          psychoMismatch: psychMismatchData?.summary?.mismatchPercentage || 0,
+          funnelGap:
+            funnelGapData?.summary?.criticalGapsCount > 0
+              ? "Critical Gap"
+              : "Balanced",
+          // Dollar amounts for each KPI metric from context
+          cannibalizationLossvalue:
+            cannibalizationLossData?.summary?.totalRevenueLoss || 0,
+          deepDecayDollarValue:
+            contentDecayData?.summary?.totalRevenueLoss || 0,
+          dilutionDollarValue: linkDilutionData?.summary?.totalRevenueLoss || 0,
+          keywordMismatchDollarValue:
+            keywordMismatchData?.summary?.totalRevenueLoss || 0,
+          psychoMismatchDollarValue:
+            psychMismatchData?.summary?.totalRevenueLoss || 0,
+          funnelGapDollarValue: funnelGapData?.summary?.totalRevenueLoss || 0,
+        },
+
+        // Traffic & ROI Sparks
+        sparkData: {
+          impressions: impressionsSparkData,
+          clicks: clicksSparkData,
+          roi: roiSparkData,
+          waste: wasteSparkData,
+        },
+
+        // Funnel Coverage
+        funnelCoverage: {
+          tofu: tofuPercentage,
+          mofu: mofuPercentage,
+          bofu: bofuPercentage,
+        },
+
+        // Psychographic alignment
+        psychMatch, // Overall metrics
+        totalPages: searchConsoleData.length,
+        totalImpressions,
+        totalClicks,
+        avgCTR,
+        totalROI,
+
+        // Content grading distribution - use data from FinancialCalculations context
+        contentGrades: contentQualityData?.gradeDistribution || {
+          A: 0,
+          B: 0,
+          C: 0,
+          D: 0,
+          total: 0,
+          percentA: 0,
+          percentB: 0,
+          percentC: 0,
+          percentD: 0,
+        },
+      };
+    } catch (error) {
+      console.error("Error calculating command center metrics:", error);
       return { isBlind: true };
     }
-
-    // Use actual domain cost details from onboardingData.domainCostDetails structure
-    const averageOrderValue =
-      parseFloat(onboardingData.domainCostDetails?.averageOrderValue) || 50;
-    const contentCost =
-      parseFloat(onboardingData.domainCostDetails?.AverageContentCost) || 200;
-
-    // Calculate comprehensive metrics using actual search console data
-    // Field mapping: item.impressions, item.clicks, item.position, item.ctr
-    const totalImpressions = searchConsoleData.reduce(
-      (sum, item) => sum + (parseInt(item.impressions) || 0),
-      0
-    );
-    const totalClicks = searchConsoleData.reduce(
-      (sum, item) => sum + (parseInt(item.clicks) || 0),
-      0
-    );
-    const avgPosition =
-      searchConsoleData.reduce(
-        (sum, item) => sum + (parseFloat(item.position) || 0),
-        0
-      ) / searchConsoleData.length; // Calculate ROI and cost metrics
-    const conversionRateDecimal = conversionRate / 100; // Convert percentage to decimal
-    const totalConversions = totalClicks * conversionRateDecimal;
-    const totalRevenue = totalConversions * averageOrderValue;
-    const totalCost = searchConsoleData.length * contentCost;
-    const totalROI =
-      totalCost > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : -100;
-
-    // Calculate Moody's Credit Score based on comprehensive metrics
-    let creditScore = 50; // Base score
-
-    // ROI factors
-    if (totalROI > 100) creditScore += 30;
-    else if (totalROI > 50) creditScore += 20;
-    else if (totalROI > 0) creditScore += 10;
-    else if (totalROI > -25) creditScore -= 10;
-    else creditScore -= 30;
-
-    // Position factors
-    if (avgPosition <= 10) creditScore += 15;
-    else if (avgPosition <= 20) creditScore += 5;
-    else if (avgPosition > 50) creditScore -= 15;
-
-    // CTR factors
-    const avgCTR =
-      totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
-    if (avgCTR > 5) creditScore += 10;
-    else if (avgCTR > 2) creditScore += 5;
-    else if (avgCTR < 1) creditScore -= 10; // Content decay analysis
-    const decayingPages = searchConsoleData.filter(
-      (item) => parseFloat(item.position) > 30
-    ).length;
-    const decayPercentage = (decayingPages / searchConsoleData.length) * 100;
-    if (decayPercentage > 50) creditScore -= 15;
-    else if (decayPercentage > 25) creditScore -= 10; // Ensure score is within bounds
-    creditScore = Math.max(0, Math.min(100, creditScore));
-
-    // Determine credit grade
-    let creditGrade, creditHealth;
-    if (creditScore >= 90) {
-      creditGrade = "AAA";
-      creditHealth = "🟢 Elite";
-    } else if (creditScore >= 80) {
-      creditGrade = "AA";
-      creditHealth = "🟢 Strong";
-    } else if (creditScore >= 70) {
-      creditGrade = "BBB";
-      creditHealth = "🟡 Stable";
-    } else if (creditScore >= 60) {
-      creditGrade = "BBB-";
-      creditHealth = "⚠️ At Risk";
-    } else if (creditScore >= 40) {
-      creditGrade = "CCC";
-      creditHealth = "🔴 High Risk";
-    } else {
-      creditGrade = "DD";
-      creditHealth = "🔥 Critical";
-    } // Calculate KPI metrics using standardized processed data from GSCAnalysisData
-    const wastedSpend = (() => {
-      // Use processed content cost waste data if available
-      if (contentCostWasteData.length > 0) {
-        return contentCostWasteData.reduce(
-          (sum, item) => sum + (item.wastedSpend || 0),
-          0
-        );
-      } else {
-        // Percentage-based calculation: 25% waste for underperforming content
-        const underperformingCount = searchConsoleData.filter((item) => {
-          const position = parseFloat(item.position) || 0;
-          const ctr = parseFloat(item.ctr) || 0;
-          const expectedCTR =
-            position <= 10 ? 5 : position <= 20 ? 2 : position <= 30 ? 1 : 0.5;
-          return position > 30 || ctr < expectedCTR * 0.5; // Significantly underperforming
-        }).length;
-        const wastePercentage =
-          searchConsoleData.length > 0
-            ? (underperformingCount / searchConsoleData.length) * 0.25
-            : 0; // 25% impact
-        return totalInvestment * wastePercentage * conversionMultiplier;
-      }
-    })();
-    const lowKDHighDAUrls = searchConsoleData.filter(
-      (item) => parseFloat(item.position) <= 20
-    ).length;
-
-    // Use actual funnel analysis data if available, otherwise derive from search data
-    const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const actualFunnelDistribution = funnelAnalysis.funnelDistribution; // Get total website investment for percentage calculations
-    const totalInvestment =
-      onboardingData?.domainCostDetails?.totalInvested || 10000;
-
-    // Apply conversion rate multiplier to dollar calculations (lower conversion = higher losses)
-    const conversionMultiplier = 4.5 / conversionRate; // Inverse: 2% = 2.25x, 4.5% = 1x, 1% = 4.5x
-
-    // Extract additional GSC Analysis data for percentage calculations
-    const contentDecayData30 = gscAnalysisData.contentDecay?.decay30Days || [];
-    const contentDecayData60 = gscAnalysisData.contentDecay?.decay60Days || [];
-    const contentDecayData90 = gscAnalysisData.contentDecay?.decay90Days || [];
-    const keywordMismatchData = gscAnalysisData.keywordMismatch || [];
-    const linkDilutionData = gscAnalysisData.linkDilution || [];
-    const cannibalizationData = gscAnalysisData.cannibalization || [];
-
-    // Calculate percentage-based metrics like main Dashboard
-    const allDecayData = [
-      ...contentDecayData30,
-      ...contentDecayData60,
-      ...contentDecayData90,
-    ];
-    const severeDecayCount = allDecayData.filter(
-      (item) => item.decayStatus === "Severe-Decay"
-    ).length;
-    const deepDecayPages = severeDecayCount; // Use severe decay as "deep decay"
-
-    const highDilutionCount = linkDilutionData.filter(
-      (item) => (item.dilutionScore || 0) > 0.01
-    ).length;
-    const highDilutionPages = highDilutionCount;
-
-    let tofuPercentage, mofuPercentage, bofuPercentage;
-
-    if (
-      actualFunnelDistribution &&
-      actualFunnelDistribution.ToF !== undefined
-    ) {
-      // Use actual funnel data from onboarding context
-      const total =
-        actualFunnelDistribution.ToF +
-        actualFunnelDistribution.MoF +
-        actualFunnelDistribution.BoF;
-      tofuPercentage =
-        total > 0
-          ? Math.round((actualFunnelDistribution.ToF / total) * 100)
-          : 0;
-      mofuPercentage =
-        total > 0
-          ? Math.round((actualFunnelDistribution.MoF / total) * 100)
-          : 0;
-      bofuPercentage =
-        total > 0
-          ? Math.round((actualFunnelDistribution.BoF / total) * 100)
-          : 0;
-    } else {
-      // Fallback to derived funnel analysis using standardized position thresholds
-      tofuPercentage = Math.round(
-        (searchConsoleData.filter((item) => parseFloat(item.position) <= 10)
-          .length /
-          searchConsoleData.length) *
-          100
-      );
-      mofuPercentage = Math.round(
-        (searchConsoleData.filter(
-          (item) =>
-            parseFloat(item.position) > 10 && parseFloat(item.position) <= 20
-        ).length /
-          searchConsoleData.length) *
-          100
-      );
-      bofuPercentage = 100 - tofuPercentage - mofuPercentage;
-    }
-
-    // FIXED: Funnel gap analysis - detect multiple types of imbalances
-    let funnelGap = "Balanced";
-    if (mofuPercentage < 10)
-      funnelGap = "MoF Crisis"; // Less than 10% middle funnel is critical
-    else if (tofuPercentage < 20)
-      funnelGap = "ToF Deficit"; // Less than 20% top funnel
-    else if (bofuPercentage > 60) funnelGap = "BoF Heavy";
-    // More than 60% bottom funnel indicates imbalance
-    else if (bofuPercentage < 15) funnelGap = "BoF Deficit"; // Less than 15% bottom funnel
-
-    // FIXED: Psychographic mismatch using actual psychographic data when available
-    let psychoMismatch;
-    if (funnelAnalysis.psychCompositeSummary) {
-      // Use actual psychographic analysis data
-      const psychData = funnelAnalysis.psychCompositeSummary.overall;
-      // Convert composite scores to mismatch percentage (lower scores = higher mismatch)
-      const avgPsychScore =
-        (psychData.emotionalResonance +
-          psychData.cognitiveClarity +
-          psychData.persuasionLeverage +
-          psychData.behavioralMomentum) /
-        4;
-      psychoMismatch = Math.round(100 - avgPsychScore); // Invert to show mismatch
-    } else {
-      // Fallback to CTR-based calculation
-      psychoMismatch = Math.round(
-        (searchConsoleData.filter((item) => parseFloat(item.ctr) < 2).length /
-          searchConsoleData.length) *
-          100
-      );
-    }
-
-    // Calculate percentage-based dollar amounts using same approach as main Dashboard
-    // Deep Decay Loss - percentage based on severe decay
-    const deepDecayPercentage =
-      allDecayData.length > 0
-        ? (severeDecayCount / allDecayData.length) * 0.25
-        : 0; // 25% impact for severe decay
-    const deepDecayDollarValue =
-      totalInvestment * deepDecayPercentage * conversionMultiplier;
-
-    // Link Dilution Loss - percentage based on high dilution scores
-    const linkDilutionPercentage =
-      linkDilutionData.length > 0
-        ? (highDilutionCount / linkDilutionData.length) * 0.12
-        : 0; // 12% impact for high dilution
-    const dilutionDollarValue =
-      totalInvestment * linkDilutionPercentage * conversionMultiplier;
-
-    // Keyword Mismatch Loss - percentage based on mismatch severity
-    const underOptimizedCount = keywordMismatchData.filter(
-      (item) => item.mismatchType === "Under-optimized"
-    ).length;
-    const overOptimizedCount = keywordMismatchData.filter(
-      (item) => item.mismatchType === "Over-optimized"
-    ).length;
-    const kwMismatchPercentage =
-      keywordMismatchData.length > 0
-        ? (underOptimizedCount * 0.08 + overOptimizedCount * 0.05) /
-          keywordMismatchData.length
-        : 0;
-    const keywordMismatchDollarValue =
-      totalInvestment * kwMismatchPercentage * conversionMultiplier; // Psychographic Mismatch Loss - percentage based on cannibalization
-    const cannibalizationCount = cannibalizationData.filter(
-      (item) => (item.competingUrls || []).length > 1
-    ).length;
-    const psychoMismatchDollarPercentage =
-      cannibalizationData.length > 0
-        ? (cannibalizationCount / cannibalizationData.length) * 0.2
-        : 0; // 20% impact
-    const psychoMismatchDollarValue =
-      totalInvestment * psychoMismatchDollarPercentage * conversionMultiplier; // Funnel Gap Dollar Impact - simplified percentage-based calculation with conversion rate impact
-    let funnelGapDollarValue = 0;
-    if (funnelGap === "MoF Crisis") {
-      const mofDeficit = Math.max(15 - mofuPercentage, 0); // Target at least 15% MoF
-      funnelGapDollarValue =
-        totalInvestment * (mofDeficit / 100) * 0.1 * conversionMultiplier; // 10% impact per percentage point deficit
-    } else if (funnelGap === "BoF Heavy") {
-      const bofExcess = Math.max(bofuPercentage - 40, 0); // Ideal max 40% BoF
-      funnelGapDollarValue =
-        totalInvestment * (bofExcess / 100) * 0.08 * conversionMultiplier; // 8% impact per percentage point excess
-    } else if (funnelGap === "ToF Deficit") {
-      const tofDeficit = Math.max(20 - tofuPercentage, 0); // Target at least 20% ToF
-      funnelGapDollarValue =
-        totalInvestment * (tofDeficit / 100) * 0.12 * conversionMultiplier; // 12% impact per percentage point deficit
-    } else if (funnelGap === "BoF Deficit") {
-      const bofDeficit = Math.max(15 - bofuPercentage, 0); // Target at least 15% BoF
-      funnelGapDollarValue =
-        totalInvestment * (bofDeficit / 100) * 0.15 * conversionMultiplier; // 15% impact per percentage point deficit    }
-    } // ROI Recovery Potential - Simplified calculation: average of all KPI grid costs * conversion rate
-    const allKpiCosts = [
-      wastedSpend,
-      deepDecayDollarValue,
-      dilutionDollarValue,
-      keywordMismatchDollarValue,
-      psychoMismatchDollarValue,
-      funnelGapDollarValue,
-    ];
-    const averageKpiCost =
-      allKpiCosts.reduce((sum, cost) => sum + cost, 0) / allKpiCosts.length;
-    const roiRecoveryPotential = Math.round(
-      averageKpiCost * conversionRateDecimal * 10
-    );
-
-    // Traffic sparks - Generate 90-day trend visualization based on actual data
-    const generateSparkData = (baseValue, volatility = 0.3) => {
-      const data = [];
-      for (let i = 0; i < 10; i++) {
-        const variation = (Math.random() - 0.5) * volatility;
-        data.push(Math.max(0, baseValue * (1 + variation)));
-      }
-      return data;
-    };
-
-    const impressionsSparkData = generateSparkData(totalImpressions / 10);
-    const clicksSparkData = generateSparkData(totalClicks / 10);
-    const roiSparkData = generateSparkData(Math.abs(totalROI) / 10);
-    const wasteSparkData = generateSparkData(wastedSpend / 10);
-
-    const recoveryTimeframe =
-      creditScore > 70 ? 30 : creditScore > 50 ? 60 : 90;
-    const recoveryTrend = totalROI > 0 ? "positive" : "negative";
-
-    // Psychographic alignment - use actual analysis data when available
-    const psychMatch = Math.max(40, 100 - psychoMismatch);
-
-    return {
-      isBlind: false,
-      domain: onboardingData.domain || "your-domain.com",
-      lastRefresh: new Date().toLocaleString(),
-
-      // Credit Score
-      creditScore,
-      creditGrade,
-      creditHealth,
-
-      // ROI Recovery
-      roiRecoveryPotential,
-      recoveryTimeframe,
-      recoveryTrend, // KPI Grid
-      kpiMetrics: {
-        wastedSpend: Math.round(wastedSpend),
-        deepDecayPages,
-        highDilutionPages,
-        lowKDHighDAUrls,
-        psychoMismatch,
-        funnelGap,
-        // Dollar amounts for each KPI metric
-        deepDecayDollarValue,
-        dilutionDollarValue,
-        keywordMismatchDollarValue,
-        psychoMismatchDollarValue,
-        funnelGapDollarValue,
-      },
-
-      // Traffic & ROI Sparks
-      sparkData: {
-        impressions: impressionsSparkData,
-        clicks: clicksSparkData,
-        roi: roiSparkData,
-        waste: wasteSparkData,
-      },
-
-      // Funnel Coverage
-      funnelCoverage: {
-        tofu: tofuPercentage,
-        mofu: mofuPercentage,
-        bofu: bofuPercentage,
-      },
-
-      // Psychographic alignment
-      psychMatch, // Overall metrics
-      totalPages: searchConsoleData.length,
-      totalImpressions,
-      totalClicks,
-      avgCTR,
-      totalROI, // Content grading distribution - use standardized position-based calculation for consistency
-      contentGrades: (() => {
-        // Use standardized position-based ROI calculation consistent with Risk Dashboard
-        const contentMetrics = searchConsoleData.map((item) => {
-          const avgPosition = parseFloat(item.position) || 0;
-          const avgCTR = parseFloat(item.ctr) || 0;
-
-          // Calculate ROI based on position and performance (same as Risk Dashboard)
-          const roi =
-            avgPosition <= 10
-              ? 160
-              : avgPosition <= 20
-              ? 90
-              : avgPosition <= 30
-              ? 20
-              : -30;
-
-          // Calculate traffic trend based on CTR vs expected CTR for position
-          const expectedCTR =
-            avgPosition <= 10
-              ? 5
-              : avgPosition <= 20
-              ? 2
-              : avgPosition <= 30
-              ? 1
-              : 0.5;
-          const trafficTrend = avgCTR > expectedCTR ? 10 : -5;
-
-          // Engagement score based on position
-          const engagementScore =
-            avgPosition < 10 ? 85 : avgPosition < 20 ? 65 : 40;
-
-          return {
-            roi,
-            trafficTrend,
-            conversionRate: conversionRateDecimal * 100,
-            engagementScore,
-          };
-        });
-        const gradeResult = calculateGradeDistribution(contentMetrics);
-        return gradeResult;
-      })(),
-    };
-  }, [onboardingData, loading, conversionRate]);
+  }, [
+    onboardingData,
+    loading,
+    conversionRate,
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+    funnelGapIdentifier,
+    getContentQualityDistribution,
+    getMoodyCreditScore,
+    getROIRecoveryPotential,
+    expandedPlans,
+    isRecoveryBreakdownExpanded,
+    togglePlan,
+  ]);
 
   if (loading) {
     return (
@@ -662,7 +526,7 @@ const CommandCenterDashboard = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div>{" "}
         <div className="roi-recovery-section">
           <h3>ROI Recovery Potential</h3>
           <div className="recovery-display">
@@ -677,6 +541,333 @@ const CommandCenterDashboard = () => {
             <div className="recovery-timeframe">
               in ≤ {commandCenterData.recoveryTimeframe} days
             </div>
+          </div>{" "}
+          {/* 30/60/90 Day Recovery Breakdown */}
+          <div className="recovery-breakdown">
+            {" "}
+            <div
+              className="recovery-breakdown-header"
+              onClick={() => {
+                console.log(
+                  "Header clicked, current state:",
+                  isRecoveryBreakdownExpanded
+                );
+                setIsRecoveryBreakdownExpanded(!isRecoveryBreakdownExpanded);
+              }}
+            >
+              <h4>
+                Recovery Timeline Breakdown
+                <span
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "#64748b",
+                    marginLeft: "0.5rem",
+                  }}
+                >
+                  ({isRecoveryBreakdownExpanded ? "Expanded" : "Collapsed"})
+                </span>
+              </h4>{" "}
+              <button
+                className="collapse-toggle-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log(
+                    "Toggle button clicked, current state:",
+                    isRecoveryBreakdownExpanded
+                  );
+                  setIsRecoveryBreakdownExpanded(!isRecoveryBreakdownExpanded);
+                }}
+              >
+                {isRecoveryBreakdownExpanded ? (
+                  <ChevronUp size={24} />
+                ) : (
+                  <ChevronDown size={24} />
+                )}
+              </button>
+            </div>
+            {isRecoveryBreakdownExpanded && (
+              <div className="recovery-timeline">
+                {" "}
+                {/* 30-Day Recovery */}
+                <div className="recovery-period" data-period="30-day">
+                  <div className="period-header">
+                    <span className="period-label">30 Days</span>
+                    <span className="period-amount">
+                      $
+                      {(
+                        Object.values(
+                          commandCenterData.recoveryTimeframes?.["30-day"]
+                            ?.opportunities || {}
+                        ).reduce(
+                          (sum, opp) => sum + (opp.recoveryPotential || 0),
+                          0
+                        ) || 0
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="period-opportunities">
+                    {Object.entries(
+                      commandCenterData.recoveryTimeframes?.["30-day"]
+                        ?.opportunities || {}
+                    ).map(([name, data]) => (
+                      <div key={name} className="opportunity-item">
+                        <span className="opportunity-name">{name}</span>
+                        <span className="opportunity-value">
+                          ${(data.recoveryPotential || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>{" "}
+                  <button
+                    className="view-plan-btn"
+                    onClick={() => togglePlan("30-day")}
+                  >
+                    {expandedPlans["30-day"] ? "Hide Plan" : "View 30-Day Plan"}
+                    {expandedPlans["30-day"] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {expandedPlans["30-day"] && (
+                    <div className="recovery-plan-content">
+                      <div className="plan-content">
+                        <h5>🚀 30-Day Quick Wins Strategy</h5>
+                        <div className="plan-section">
+                          <h6>Immediate Actions (Week 1-2):</h6>
+                          <ul>
+                            <li>
+                              <strong>Keyword Optimization:</strong> Fix
+                              high-impact keyword mismatches on top-performing
+                              pages
+                            </li>
+                            <li>
+                              <strong>Technical Quick Fixes:</strong> Resolve
+                              critical SEO issues like broken links and meta tag
+                              optimization
+                            </li>
+                            <li>
+                              <strong>Content Updates:</strong> Refresh outdated
+                              statistics and information on decay-affected pages
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="plan-section">
+                          <h6>Follow-up Actions (Week 3-4):</h6>
+                          <ul>
+                            <li>
+                              <strong>Internal Linking:</strong> Improve link
+                              structure for priority pages
+                            </li>
+                            <li>
+                              <strong>Performance Monitoring:</strong> Track
+                              improvements and adjust tactics
+                            </li>
+                            <li>
+                              <strong>Quick Content Additions:</strong> Add FAQ
+                              sections and related content blocks
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="expected-results">
+                          <strong>Expected Results:</strong> 10-15% improvement
+                          in organic traffic and 5-10% boost in conversion rates
+                          within 30 days.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>{" "}
+                {/* 60-Day Recovery */}
+                <div className="recovery-period" data-period="60-day">
+                  <div className="period-header">
+                    <span className="period-label">60 Days</span>
+                    <span className="period-amount">
+                      $
+                      {(
+                        Object.values(
+                          commandCenterData.recoveryTimeframes?.["60-day"]
+                            ?.opportunities || {}
+                        ).reduce(
+                          (sum, opp) => sum + (opp.recoveryPotential || 0),
+                          0
+                        ) || 0
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="period-opportunities">
+                    {Object.entries(
+                      commandCenterData.recoveryTimeframes?.["60-day"]
+                        ?.opportunities || {}
+                    ).map(([name, data]) => (
+                      <div key={name} className="opportunity-item">
+                        <span className="opportunity-name">{name}</span>
+                        <span className="opportunity-value">
+                          ${(data.recoveryPotential || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>{" "}
+                  <button
+                    className="view-plan-btn"
+                    onClick={() => togglePlan("60-day")}
+                  >
+                    {expandedPlans["60-day"] ? "Hide Plan" : "View 60-Day Plan"}
+                    {expandedPlans["60-day"] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {expandedPlans["60-day"] && (
+                    <div className="recovery-plan-content">
+                      <div className="plan-content">
+                        <h5>📈 60-Day Comprehensive Recovery</h5>
+                        <div className="plan-section">
+                          <h6>Strategic Content Improvements (Week 1-4):</h6>
+                          <ul>
+                            <li>
+                              <strong>Content Decay Recovery:</strong>{" "}
+                              Comprehensive refresh of underperforming content
+                              with new data and enhanced UX
+                            </li>
+                            <li>
+                              <strong>Keyword Strategy Refinement:</strong>{" "}
+                              Optimize content alignment with search intent and
+                              user behavior
+                            </li>
+                            <li>
+                              <strong>Competitive Analysis:</strong> Identify
+                              content gaps and opportunities vs competitors
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="plan-section">
+                          <h6>
+                            Technical & Structural Optimization (Week 5-8):
+                          </h6>
+                          <ul>
+                            <li>
+                              <strong>Cannibalization Resolution:</strong>{" "}
+                              Consolidate competing pages with proper redirects
+                              and canonical tags
+                            </li>
+                            <li>
+                              <strong>Site Architecture:</strong> Improve
+                              internal linking structure and site hierarchy
+                            </li>
+                            <li>
+                              <strong>Performance Optimization:</strong> Enhance
+                              page speed and Core Web Vitals
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="expected-results">
+                          <strong>Expected Results:</strong> 15-25% improvement
+                          in organic traffic and 20-30% boost in conversion
+                          rates within 60 days.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>{" "}
+                {/* 90-Day Recovery */}
+                <div className="recovery-period" data-period="90-day">
+                  <div className="period-header">
+                    <span className="period-label">90 Days</span>
+                    <span className="period-amount">
+                      $
+                      {(
+                        Object.values(
+                          commandCenterData.recoveryTimeframes?.["90-day"]
+                            ?.opportunities || {}
+                        ).reduce(
+                          (sum, opp) => sum + (opp.recoveryPotential || 0),
+                          0
+                        ) || 0
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="period-opportunities">
+                    {Object.entries(
+                      commandCenterData.recoveryTimeframes?.["90-day"]
+                        ?.opportunities || {}
+                    ).map(([name, data]) => (
+                      <div key={name} className="opportunity-item">
+                        <span className="opportunity-name">{name}</span>
+                        <span className="opportunity-value">
+                          ${(data.recoveryPotential || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>{" "}
+                  <button
+                    className="view-plan-btn"
+                    onClick={() => togglePlan("90-day")}
+                  >
+                    {expandedPlans["90-day"] ? "Hide Plan" : "View 90-Day Plan"}
+                    {expandedPlans["90-day"] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {expandedPlans["90-day"] && (
+                    <div className="recovery-plan-content">
+                      <div className="plan-content">
+                        <h5>🚀 90-Day Strategic Transformation</h5>
+                        <div className="plan-section">
+                          <h6>Advanced SEO & Authority Building (Week 1-6):</h6>
+                          <ul>
+                            <li>
+                              <strong>Link Structure Optimization:</strong>{" "}
+                              Complete audit and restructuring of
+                              internal/external links for maximum SEO value
+                            </li>
+                            <li>
+                              <strong>Content Authority Enhancement:</strong>{" "}
+                              Develop comprehensive topic clusters and pillar
+                              pages
+                            </li>
+                            <li>
+                              <strong>Technical SEO Mastery:</strong> Advanced
+                              schema markup, site speed optimization, and
+                              crawlability improvements
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="plan-section">
+                          <h6>Funnel & Conversion Optimization (Week 7-12):</h6>
+                          <ul>
+                            <li>
+                              <strong>Funnel Alignment:</strong> Strategic
+                              content mapping to buyer journey stages with
+                              psychological triggers
+                            </li>
+                            <li>
+                              <strong>Conversion Rate Optimization:</strong> A/B
+                              testing of landing pages, CTAs, and user
+                              experience flows
+                            </li>
+                            <li>
+                              <strong>Analytics & Attribution:</strong> Enhanced
+                              tracking and attribution modeling for better
+                              decision making
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="expected-results">
+                          <strong>Expected Results:</strong> 30-50% improvement
+                          in domain authority, 40-60% boost in qualified lead
+                          generation, and sustainable long-term growth
+                          foundation.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -805,10 +996,10 @@ const CommandCenterDashboard = () => {
               />
             </div>
             <div className="kpi-value">
-              {commandCenterData.kpiMetrics.psychoMismatch}% mis
+              {commandCenterData.kpiMetrics.psychoMismatch}% miss
               <div className="kpi-dollar">
                 $
-                {commandCenterData.kpiMetrics.psychoMismatchDollarValue.toLocaleString()}{" "}
+                {commandCenterData.kpiMetrics.cannibalizationLossvalue.toLocaleString()}{" "}
                 loss
               </div>
             </div>
@@ -833,7 +1024,7 @@ const CommandCenterDashboard = () => {
               <div className="kpi-dollar">
                 $
                 {Math.round(
-                  commandCenterData.kpiMetrics.funnelGapDollarValue
+                  commandCenterData.kpiMetrics.psychoMismatchDollarValue
                 ).toLocaleString()}{" "}
                 loss
               </div>
