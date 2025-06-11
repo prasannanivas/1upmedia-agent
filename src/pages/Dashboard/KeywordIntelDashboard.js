@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import { Search, AlertTriangle, RefreshCw, Download } from "lucide-react";
 import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
 import FinancialTooltip from "../../components/FinancialTooltip";
@@ -144,7 +145,19 @@ const getRealMozData = (onboardingData) => {
 
 const KeywordIntelDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Import individual risk metric functions from FinancialCalculations
+  const {
+    getMismatchRisk,
+    getLinkDilutionRisk,
+    getCannibalRisk,
+    getCrawlErrorPercentage,
+    getTotalWastedSpend,
+    getContentWastePages,
+    getMoodyCreditScore,
+    getHighCTRLeak,
+    getRevenueLeak,
+  } = useFinancialCalculations();
+
   const [refreshing, setRefreshing] = useState(false);
 
   // Conversion rate state (1% to 4.5% range) - same as CommandCenterDashboard
@@ -317,187 +330,404 @@ const KeywordIntelDashboard = () => {
       searchConsoleData.reduce(
         (sum, page) => sum + (parseFloat(page.position) || 0),
         0
-      ) / searchConsoleData.length;
-
-    // Content credit rating based on performance
+      ) / searchConsoleData.length; // Content credit rating using FinancialCalculations function
     const getContentCreditRating = () => {
-      if (avg_ctr > 3 && avg_position < 5) return "A-";
-      if (avg_ctr > 2 && avg_position < 10) return "BBB";
-      return "BB";
-    }; // 5. Risk calculations - use percentage-based approach like other dashboards
-    const high_ctr_leak_pages = searchConsoleData.filter(
-      (page) => parseInt(page.impressions) >= 500 && parseFloat(page.ctr) < 1.5 // Lowered threshold for more realistic detection
-    ).length; // Calculate percentage-based High CTR Leak Risk
-    const highCtrLeakPercentage =
-      searchConsoleData.length > 0
-        ? (high_ctr_leak_pages / searchConsoleData.length) * 0.15
-        : 0; // 15% impact for high CTR leak pages
-    let high_ctr_leak_risk =
-      totalInvestment * highCtrLeakPercentage * conversionMultiplier;
+      console.log(
+        "🎯 KeywordIntel: Getting Moody's Credit Score from FinancialCalculations"
+      );
+      const creditScore = getMoodyCreditScore();
 
-    // Cap High CTR Leak risk at maximum 20% of total investment
-    high_ctr_leak_risk = Math.min(high_ctr_leak_risk, totalInvestment * 0.2); // Enhanced cannibal clashes using real cannibalization data from GSC analysis
-    const cannibalizationData = gscAnalysisData.cannibalization || [];
+      return creditScore?.summary?.creditRating || "N/A";
+    };
+
+    // ===============================================
+    // INDIVIDUAL RISK CALCULATIONS FROM FINANCIAL FUNCTIONS
+    // ===============================================
+    console.log(
+      "🎯 KeywordIntel: Starting individual risk function calculations..."
+    );
+
+    // High CTR Leak using FinancialCalculations
+    let high_ctr_leak_risk = 0;
+    let high_ctr_leak_pages = 0;
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting High CTR Leak from FinancialCalculations"
+      );
+      const ctrLeakResult = getHighCTRLeak();
+      console.log("✅ KeywordIntel: High CTR Leak result:", ctrLeakResult);
+      high_ctr_leak_risk = ctrLeakResult?.estimatedRevenueLoss || 0;
+      high_ctr_leak_pages = ctrLeakResult?.urlsBelowThreshold || 0;
+    } catch (error) {
+      console.error("❌ KeywordIntel: Error getting High CTR Leak:", error);
+      // Fallback calculation
+      high_ctr_leak_pages = searchConsoleData.filter(
+        (page) =>
+          parseInt(page.impressions) >= 500 && parseFloat(page.ctr) < 1.5
+      ).length;
+      const highCtrLeakPercentage =
+        searchConsoleData.length > 0
+          ? (high_ctr_leak_pages / searchConsoleData.length) * 0.15
+          : 0;
+      high_ctr_leak_risk =
+        totalInvestment * highCtrLeakPercentage * conversionMultiplier;
+      high_ctr_leak_risk = Math.min(high_ctr_leak_risk, totalInvestment * 0.2);
+    }
+
+    // DA/KD mismatch exposure using FinancialCalculations
+    let mismatch_risk = 0;
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting Mismatch Risk from FinancialCalculations"
+      );
+      const mismatchResult = getMismatchRisk();
+      console.log("✅ KeywordIntel: Mismatch Risk result:", mismatchResult);
+      mismatch_risk = mismatchResult?.summary?.totalRevenueLoss || 0;
+    } catch (error) {
+      console.error("❌ KeywordIntel: Error getting Mismatch Risk:", error);
+      // Fallback calculation
+      const mismatch_keywords = mozData.keywords.filter(
+        (kw) => kw.kd > blended_authority + 15
+      );
+      mismatch_risk = mismatch_keywords.reduce((total, kw) => {
+        const mismatchPercentage = 0.02;
+        return (
+          total + totalInvestment * mismatchPercentage * conversionMultiplier
+        );
+      }, 0);
+      mismatch_risk = Math.min(mismatch_risk, totalInvestment * 0.25);
+    }
+
+    // Crawl error percentage using FinancialCalculations
+    let crawl_error_percentage = 0;
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting Crawl Error Percentage from FinancialCalculations"
+      );
+      const crawlErrorResult = getCrawlErrorPercentage();
+      console.log(
+        "✅ KeywordIntel: Crawl Error Percentage result:",
+        crawlErrorResult
+      );
+      crawl_error_percentage = crawlErrorResult?.summary?.errorPercentage || 0;
+    } catch (error) {
+      console.error(
+        "❌ KeywordIntel: Error getting Crawl Error Percentage:",
+        error
+      );
+      // Fallback calculation
+      const crawl_error_pages = searchConsoleData.filter(
+        (page) =>
+          parseFloat(page.position) > 50 && parseInt(page.impressions) < 10
+      ).length;
+      crawl_error_percentage =
+        searchConsoleData.length > 0
+          ? Math.round((crawl_error_pages / searchConsoleData.length) * 100)
+          : 0;
+    } // Content cost waste using getRevenueLeak function
+    let total_wasted_spend = 0;
+    let content_waste_pages = 0;
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting Revenue Leak (Content Cost Waste) from FinancialCalculations"
+      );
+      const revenueLeakResult = getRevenueLeak();
+      console.log("✅ KeywordIntel: Revenue Leak result:", revenueLeakResult);
+      total_wasted_spend = Math.abs(
+        revenueLeakResult?.estimatedRevenueLoss || 0
+      );
+      content_waste_pages = revenueLeakResult?.urlsBelowThreshold || 0;
+    } catch (error) {
+      console.error(
+        "❌ KeywordIntel: Error getting Content Waste metrics:",
+        error
+      );
+      // Fallback calculation
+      const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
+      if (contentCostWasteData.length > 0) {
+        const wastePercentage =
+          contentCostWasteData.length > 0
+            ? (contentCostWasteData.filter(
+                (waste) =>
+                  (waste.impressions || 0) > 50 && (waste.position || 100) > 25
+              ).length /
+                contentCostWasteData.length) *
+              0.25
+            : 0;
+        total_wasted_spend =
+          totalInvestment * wastePercentage * conversionMultiplier;
+        content_waste_pages = contentCostWasteData.filter(
+          (waste) =>
+            (waste.impressions || 0) > 50 && (waste.position || 100) > 25
+        ).length;
+      } else {
+        const poorPerformingPages = searchConsoleData.filter(
+          (page) =>
+            parseFloat(page.position) > 30 && parseInt(page.impressions) < 50
+        );
+        content_waste_pages = poorPerformingPages.length;
+        const wastePercentage =
+          searchConsoleData.length > 0
+            ? (poorPerformingPages.length / searchConsoleData.length) * 0.25
+            : 0;
+        total_wasted_spend =
+          totalInvestment * wastePercentage * conversionMultiplier;
+      }
+      total_wasted_spend = Math.min(total_wasted_spend, totalInvestment * 0.3);
+    }
+
+    // Link dilution risk using FinancialCalculations
+    let link_dilution_risk = 0;
+    let high_dilution_pages = 0;
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting Link Dilution Risk from FinancialCalculations"
+      );
+      const linkDilutionResult = getLinkDilutionRisk();
+      console.log(
+        "✅ KeywordIntel: Link Dilution Risk result:",
+        linkDilutionResult
+      );
+      link_dilution_risk = linkDilutionResult?.summary?.totalRevenueLoss || 0;
+      high_dilution_pages = linkDilutionResult?.summary?.urlsWithDilution || 0;
+    } catch (error) {
+      console.error(
+        "❌ KeywordIntel: Error getting Link Dilution Risk:",
+        error
+      );
+      // Fallback calculation
+      const linkDilutionData = gscAnalysisData.linkDilution || [];
+      if (linkDilutionData.length > 0) {
+        high_dilution_pages = linkDilutionData.filter(
+          (dilution) => (dilution.dilutionScore || 0) > 0.02
+        ).length;
+        const linkDilutionPercentage =
+          linkDilutionData.length > 0
+            ? (high_dilution_pages / linkDilutionData.length) * 0.12
+            : 0;
+        link_dilution_risk =
+          totalInvestment * linkDilutionPercentage * conversionMultiplier;
+      } else {
+        high_dilution_pages = Math.floor(searchConsoleData.length * 0.1);
+        const linkDilutionPercentage =
+          searchConsoleData.length > 0
+            ? (high_dilution_pages / searchConsoleData.length) * 0.12
+            : 0;
+        link_dilution_risk =
+          totalInvestment * linkDilutionPercentage * conversionMultiplier;
+      }
+      link_dilution_risk = Math.min(link_dilution_risk, totalInvestment * 0.18);
+    }
+
+    // Cannibal risk using FinancialCalculations
     let cannibal_risk = 0;
     let cannibal_conflicts_count = 0;
     let competitive_conflicts = [];
+    try {
+      console.log(
+        "🎯 KeywordIntel: Getting Cannibal Risk from FinancialCalculations"
+      );
+      const cannibalResult = getCannibalRisk();
+      console.log("✅ KeywordIntel: Cannibal Risk result:", cannibalResult);
+      cannibal_risk = cannibalResult?.summary?.totalRevenueLoss || 0;
+      cannibal_conflicts_count =
+        cannibalResult?.summary?.cannibalConflicts || 0;
 
-    if (cannibalizationData.length > 0) {
-      // Use real cannibalization analysis data
-      cannibal_conflicts_count = cannibalizationData.length;
-      // Process competitive conflicts for intelligence dashboard
-      competitive_conflicts = cannibalizationData
-        .map((conflict) => {
-          const primaryPosition = Math.round(
-            conflict.primaryUrl?.position || 0
-          );
-          const competingPosition = conflict.competingUrls?.[0]?.position
-            ? Math.round(conflict.competingUrls[0].position)
-            : 0;
-
-          // Calculate impact level based on position difference and impressions
-          const positionGap = Math.abs(primaryPosition - competingPosition);
-          const totalImpressions =
-            (conflict.primaryUrl?.impressions || 0) +
-            (conflict.competingUrls?.[0]?.impressions || 0);
-
+      // Extract competitive conflicts for display using correct structure
+      competitive_conflicts =
+        cannibalResult?.conflictDetails?.slice(0, 10)?.map((conflict) => {
+          // Determine impact level based on impressions and competing count
           let impact_level = "low";
-          if (totalImpressions > 100 && positionGap < 5) impact_level = "high";
-          else if (totalImpressions > 50 || positionGap < 10)
+          const totalImpressions =
+            conflict.primaryImpressions +
+            (conflict.totalCompetingImpressions || 0);
+          if (totalImpressions > 500 && conflict.competingCount > 2) {
+            impact_level = "high";
+          } else if (totalImpressions > 100 || conflict.competingCount > 1) {
             impact_level = "medium";
+          }
 
           return {
-            keyword: conflict.keyword,
-            primary_position: primaryPosition,
-            competing_position: competingPosition,
-            competing_urls: conflict.competingUrls?.length || 1,
+            keyword: conflict.keyword || "Unknown",
+            primary_position: 0, // Not available in current structure
+            competing_position: 0, // Not available in current structure
+            competing_urls: conflict.competingCount || 1,
             impact_level: impact_level,
             total_impressions: totalImpressions,
-            primary_clicks: conflict.primaryUrl?.clicks || 0,
-            competing_clicks: conflict.competingUrls?.[0]?.clicks || 0,
+            primary_clicks: conflict.currentClicks || 0,
+            competing_clicks: 0, // Included in currentClicks
+            revenue_loss: conflict.estimatedRevenueLoss || 0,
           };
-        })
-        .sort((a, b) => b.total_impressions - a.total_impressions);
-      cannibal_risk = cannibalizationData.reduce((total, conflict) => {
-        // FIXED: Use much smaller per-conflict percentage to prevent inflated values
-        const competingCount = conflict.competingUrls?.length || 0;
-        const cannibalizationPercentage =
-          competingCount > 1 ? 0.00005 : 0.00002; // 0.005% for multiple conflicts, 0.002% for single
-        return (
-          total + totalInvestment * cannibalizationPercentage // Removed conversionMultiplier - business risk shouldn't be scaled by conversion
+        }) || [];
+
+      // If we have very few conflicts detected, supplement with keyword analysis
+      if (competitive_conflicts.length < 3) {
+        console.log(
+          "🔍 KeywordIntel: Supplementing with keyword overlap analysis..."
         );
-      }, 0);
 
-      // Cap cannibalization risk at maximum 15% of total investment (realistic business limit)
-      cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.15);
-    } else {
-      // Fallback to search console pattern analysis
-      const keyword_groups = {};
-      searchConsoleData.forEach((page) => {
-        if (page.query) {
-          const words = page.query.toLowerCase().split(" ");
-          words.forEach((word) => {
-            if (word.length > 3) {
-              if (!keyword_groups[word]) keyword_groups[word] = [];
-              keyword_groups[word].push(page);
+        // Analyze search console data for potential keyword conflicts
+        const keywordGroups = {};
+        searchConsoleData.forEach((page) => {
+          if (page.query && page.query.length > 3) {
+            const query = page.query.toLowerCase().trim();
+            const words = query.split(" ").filter((word) => word.length > 3);
+
+            words.forEach((word) => {
+              if (!keywordGroups[word]) keywordGroups[word] = [];
+              keywordGroups[word].push({
+                query: page.query,
+                url: page.page || page.url || "Unknown",
+                impressions: parseInt(page.impressions) || 0,
+                clicks: parseInt(page.clicks) || 0,
+                position: parseFloat(page.position) || 100,
+              });
+            });
+          }
+        }); // Find keyword groups with multiple competing pages (more conservative)
+        Object.entries(keywordGroups).forEach(([keyword, pages]) => {
+          if (
+            pages.length > 2 &&
+            competitive_conflicts.length < 8 &&
+            keyword.length > 4
+          ) {
+            const totalImpressions = pages.reduce(
+              (sum, p) => sum + p.impressions,
+              0
+            );
+            const totalClicks = pages.reduce((sum, p) => sum + p.clicks, 0);
+
+            // Much more conservative thresholds - only include significant conflicts
+            if (totalImpressions > 500 && pages.length > 2) {
+              let impact_level = "low";
+              if (totalImpressions > 5000 && pages.length > 4) {
+                impact_level = "high";
+              } else if (totalImpressions > 2000 && pages.length > 3) {
+                impact_level = "medium";
+              } // Get best and worst positions for this keyword group
+              const positions = pages
+                .map((p) => p.position)
+                .filter((p) => p && p < 100);
+              const bestPosition =
+                positions.length > 0 ? Math.min(...positions) : 0;
+              const worstPosition =
+                positions.length > 0 ? Math.max(...positions) : 0;
+
+              competitive_conflicts.push({
+                keyword: keyword,
+                primary_position: Math.round(bestPosition),
+                competing_position: Math.round(worstPosition),
+                competing_urls: pages.length,
+                impact_level: impact_level,
+                total_impressions: totalImpressions,
+                primary_clicks: totalClicks,
+                competing_clicks: 0,
+                revenue_loss: Math.round(totalImpressions * 0.005 * 75 * 0.02), // More conservative estimate
+              });
             }
-          });
-        }
-      });
-      const cannibal_groups = Object.values(keyword_groups).filter(
-        (group) => group.length > 1
-      );
-      cannibal_conflicts_count = cannibal_groups.length;
-      cannibal_risk = cannibal_groups.length * (totalInvestment * 0.00005); // FIXED: 0.005% impact per group fallback - removed conversion multiplier
+          }
+        });
 
-      // Cap fallback cannibalization risk at maximum 10% of total investment
-      cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.1);
-    } // DA/KD mismatch exposure with enhanced calculation
-    const mismatch_keywords = mozData.keywords.filter(
-      (kw) => kw.kd > blended_authority + 15
-    ); // Calculate percentage-based mismatch risk
-    let mismatch_risk = mismatch_keywords.reduce((total, kw) => {
-      const mismatchPercentage = 0.02; // 2% impact per mismatch keyword
-      return (
-        total + totalInvestment * mismatchPercentage * conversionMultiplier
-      );
-    }, 0);
+        // Sort by impact
+        competitive_conflicts.sort((a, b) => {
+          const impactOrder = { high: 3, medium: 2, low: 1 };
+          return (
+            (impactOrder[b.impact_level] || 0) -
+              (impactOrder[a.impact_level] || 0) ||
+            b.total_impressions - a.total_impressions
+          );
+        });
+        console.log(
+          `✅ KeywordIntel: Added ${competitive_conflicts.length} competitive conflicts from GSC keyword overlap analysis (not real cannibalization data)`
+        );
+      }
 
-    // Cap mismatch risk at maximum 25% of total investment
-    mismatch_risk = Math.min(mismatch_risk, totalInvestment * 0.25);
-
-    // Calculate crawl errors and other technical issues
-    const crawl_error_pages = searchConsoleData.filter(
-      (page) =>
-        parseFloat(page.position) > 50 && parseInt(page.impressions) < 10
-    ).length;
-    const crawl_error_percentage =
-      searchConsoleData.length > 0
-        ? Math.round((crawl_error_pages / searchConsoleData.length) * 100)
-        : 0; // Enhanced content cost waste analysis using percentage-based approach
-    const contentCostWasteData = gscAnalysisData.contentCostWaste || [];
-    let total_wasted_spend = 0;
-    let content_waste_pages = 0;
-    if (contentCostWasteData.length > 0) {
-      // Use percentage-based calculation like other dashboards
-      const wastePercentage =
-        contentCostWasteData.length > 0
-          ? (contentCostWasteData.filter(
-              (waste) =>
-                (waste.impressions || 0) > 50 && (waste.position || 100) > 25
-            ).length /
-              contentCostWasteData.length) *
-            0.25
-          : 0; // 25% impact for wasted content
-      total_wasted_spend =
-        totalInvestment * wastePercentage * conversionMultiplier;
-      content_waste_pages = contentCostWasteData.filter(
-        (waste) => (waste.impressions || 0) > 50 && (waste.position || 100) > 25 // Pages with traffic but poor position
-      ).length;
-    } else {
-      // Fallback calculation using percentage-based approach
-      const poorPerformingPages = searchConsoleData.filter(
-        (page) =>
-          parseFloat(page.position) > 30 && parseInt(page.impressions) < 50
+      // Update conflicts count to include supplemented data
+      cannibal_conflicts_count = Math.max(
+        cannibal_conflicts_count,
+        competitive_conflicts.length
       );
-      content_waste_pages = poorPerformingPages.length;
-      const wastePercentage =
-        searchConsoleData.length > 0
-          ? (poorPerformingPages.length / searchConsoleData.length) * 0.25
-          : 0; // 25% impact
-      total_wasted_spend =
-        totalInvestment * wastePercentage * conversionMultiplier;
+    } catch (error) {
+      console.error("❌ KeywordIntel: Error getting Cannibal Risk:", error);
+      // Fallback calculation - same as before
+      const cannibalizationData = gscAnalysisData.cannibalization || [];
+      if (cannibalizationData.length > 0) {
+        cannibal_conflicts_count = cannibalizationData.length;
+        competitive_conflicts = cannibalizationData
+          .map((conflict) => {
+            const primaryPosition = Math.round(
+              conflict.primaryUrl?.position || 0
+            );
+            const competingPosition = conflict.competingUrls?.[0]?.position
+              ? Math.round(conflict.competingUrls[0].position)
+              : 0;
+            const positionGap = Math.abs(primaryPosition - competingPosition);
+            const totalImpressions =
+              (conflict.primaryUrl?.impressions || 0) +
+              (conflict.competingUrls?.[0]?.impressions || 0);
+            let impact_level = "low";
+            if (totalImpressions > 100 && positionGap < 5)
+              impact_level = "high";
+            else if (totalImpressions > 50 || positionGap < 10)
+              impact_level = "medium";
+            return {
+              keyword: conflict.keyword,
+              primary_position: primaryPosition,
+              competing_position: competingPosition,
+              competing_urls: conflict.competingUrls?.length || 1,
+              impact_level: impact_level,
+              total_impressions: totalImpressions,
+              primary_clicks: conflict.primaryUrl?.clicks || 0,
+              competing_clicks: conflict.competingUrls?.[0]?.clicks || 0,
+            };
+          })
+          .sort((a, b) => b.total_impressions - a.total_impressions);
+        cannibal_risk = cannibalizationData.reduce((total, conflict) => {
+          const competingCount = conflict.competingUrls?.length || 0;
+          const cannibalizationPercentage =
+            competingCount > 1 ? 0.00005 : 0.00002;
+          return total + totalInvestment * cannibalizationPercentage;
+        }, 0);
+        cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.15);
+      } else {
+        const keyword_groups = {};
+        searchConsoleData.forEach((page) => {
+          if (page.query) {
+            const words = page.query.toLowerCase().split(" ");
+            words.forEach((word) => {
+              if (word.length > 3) {
+                if (!keyword_groups[word]) keyword_groups[word] = [];
+                keyword_groups[word].push(page);
+              }
+            });
+          }
+        });
+        const cannibal_groups = Object.values(keyword_groups).filter(
+          (group) => group.length > 1
+        );
+        cannibal_conflicts_count = cannibal_groups.length;
+        cannibal_risk = cannibal_groups.length * (totalInvestment * 0.00005);
+        cannibal_risk = Math.min(cannibal_risk, totalInvestment * 0.1);
+      }
     }
 
-    // Cap content waste at maximum 30% of total investment
-    total_wasted_spend = Math.min(total_wasted_spend, totalInvestment * 0.3); // Enhanced link dilution analysis using percentage-based approach
-    const linkDilutionData = gscAnalysisData.linkDilution || [];
-    let link_dilution_risk = 0;
-    let high_dilution_pages = 0;
-    if (linkDilutionData.length > 0) {
-      // Calculate dilution risk using percentage-based approach like other dashboards
-      high_dilution_pages = linkDilutionData.filter(
-        (dilution) => (dilution.dilutionScore || 0) > 0.02 // High dilution threshold
-      ).length;
-      const linkDilutionPercentage =
-        linkDilutionData.length > 0
-          ? (high_dilution_pages / linkDilutionData.length) * 0.12
-          : 0; // 12% impact for high dilution
-      link_dilution_risk =
-        totalInvestment * linkDilutionPercentage * conversionMultiplier;
-    } else {
-      // Fallback - estimate based on pages with many external links
-      high_dilution_pages = Math.floor(searchConsoleData.length * 0.1); // 10% estimate
-      const linkDilutionPercentage =
-        searchConsoleData.length > 0
-          ? (high_dilution_pages / searchConsoleData.length) * 0.12
-          : 0; // 12% impact
-      link_dilution_risk =
-        totalInvestment * linkDilutionPercentage * conversionMultiplier;
-    }
+    console.log(
+      "✅ KeywordIntel: All individual risk calculations completed:",
+      {
+        mismatch_risk,
+        crawl_error_percentage,
+        total_wasted_spend,
+        content_waste_pages,
+        link_dilution_risk,
+        high_dilution_pages,
+        cannibal_risk,
+        cannibal_conflicts_count,
+      }
+    );
 
-    // Cap link dilution risk at maximum 18% of total investment
-    link_dilution_risk = Math.min(link_dilution_risk, totalInvestment * 0.18); // 6. Intent distribution - Use actual funnel analysis data from onboardingData
+    // ===============================================
+    // CONTINUE WITH EXISTING CALCULATIONS
+    // ===============================================// 6. Intent distribution - Use actual funnel analysis data from onboardingData
     const funnelAnalysis = onboardingData.funnelAnalysis || {};
     const actualFunnelDistribution = funnelAnalysis.funnelDistribution || {
       ToF: 0,
@@ -551,33 +781,95 @@ const KeywordIntelDashboard = () => {
           intent: kw.intent,
         };
       })
-      .sort((a, b) => b.baa - a.baa || b.irr - a.irr); // 8. Enhanced momentum data with real GA4 metrics and revenue calculations
+      .sort((a, b) => b.baa - a.baa || b.irr - a.irr);
+
+    // 8. Enhanced momentum data with real GA4 metrics and revenue calculations
+    console.log(
+      "🎯 KeywordIntel: Processing GA data for momentum calculations"
+    );
     const gaDataMetrics = gscAnalysisData.gaData || {};
-    const urlMetricsData = gaDataMetrics.urlMetrics || {};
+    console.log("✅ KeywordIntel: GA data structure:", gaDataMetrics);
+
+    // Use correct GA data structure from sample data
+    const gaSummary = gaDataMetrics.insights?.summary || {};
+    const gaUrlAnalysis = gaDataMetrics.insights?.urlAnalysis || [];
+
+    console.log("✅ KeywordIntel: GA Summary:", gaSummary);
+    console.log(
+      "✅ KeywordIntel: GA URL Analysis count:",
+      gaUrlAnalysis.length
+    );
+
     // Calculate 30-day revenue momentum using real GA4 data
-    let totalRevenue = 0;
-    let totalSessions = 0;
-    let engagedSessionsTotal = 0;
+    let totalRevenue = gaSummary.estimatedTotalRevenue || 0;
+    let totalSessions = gaSummary.totalSessions || 0;
+    let avgEngagementRate = gaSummary.overallEngagementRate || 0;
+    let engagedSessionsTotal = totalSessions * avgEngagementRate;
 
-    Object.entries(urlMetricsData).forEach(([url, metrics]) => {
-      const sessions = metrics.sessions || 0;
-      const engagedSessions = metrics.engagedSessions || 0;
+    // If no summary data, calculate from URL analysis
+    if (!totalSessions && gaUrlAnalysis.length > 0) {
+      totalSessions = gaUrlAnalysis.reduce(
+        (sum, urlData) => sum + (urlData.sessions || 0),
+        0
+      );
+      engagedSessionsTotal = gaUrlAnalysis.reduce(
+        (sum, urlData) =>
+          sum + (urlData.sessions || 0) * (urlData.engagementRate || 0),
+        0
+      );
+      avgEngagementRate =
+        totalSessions > 0 ? engagedSessionsTotal / totalSessions : 0;
 
-      totalSessions += sessions;
-      engagedSessionsTotal += engagedSessions;
+      // Calculate revenue from URL data if not in summary
+      if (!totalRevenue) {
+        totalRevenue = gaUrlAnalysis.reduce((sum, urlData) => {
+          const sessions = urlData.sessions || 0;
+          const engagementRate = urlData.engagementRate || 0;
+          const adjustedConversionRate =
+            conversionRateDecimal * (1 + engagementRate);
+          return sum + sessions * adjustedConversionRate * averageOrderValue;
+        }, 0);
+      }
+    }
+    console.log("✅ KeywordIntel: Final GA metrics:", {
+      totalRevenue,
+      totalSessions,
+      avgEngagementRate,
+      engagedSessionsTotal,
+    }); // Calculate conservative content-attributed revenue using clicks-based approach
+    // This follows the same methodology as risk calculations to avoid unrealistic values
 
-      // Calculate revenue using engagement-based conversion rates
-      const engagementRate = sessions > 0 ? engagedSessions / sessions : 0;
-      const adjustedConversionRate =
-        conversionRateDecimal * (1 + engagementRate);
-      const pageRevenue = sessions * adjustedConversionRate * averageOrderValue;
-      totalRevenue += pageRevenue;
+    // Ultra-conservative revenue attribution based on actual clicks and realistic conversion rates
+    // Use actual clicks from GSC data with conservative conversion rate
+    const actualTotalClicks = total_clicks; // Already calculated above
+    const conservativeConversionRate = conversionRateDecimal; // Use the user's conversion rate setting
+
+    // Calculate conservative attributed revenue: clicks * conversion rate * AOV
+    const clicksBasedRevenue =
+      actualTotalClicks * conservativeConversionRate * averageOrderValue;
+
+    // Cap at maximum of 30% of total investment to prevent unrealistic values
+    const maxReasonableRevenue = totalInvestment * 0.3; // Max 30% of investment
+
+    const conservativeAttributedRevenue = Math.min(
+      clicksBasedRevenue,
+      maxReasonableRevenue,
+      totalRevenue * 0.05 // Or 5% of calculated GA revenue, whichever is lowest
+    );
+
+    const contentAttributedRevenue = Math.round(conservativeAttributedRevenue);
+    console.log("🎯 KeywordIntel: Conservative revenue attribution:", {
+      originalGARevenue: Math.round(totalRevenue).toLocaleString(),
+      totalInvestment: totalInvestment.toLocaleString(),
+      actualTotalClicks: actualTotalClicks.toLocaleString(),
+      clicksBasedRevenue: Math.round(clicksBasedRevenue).toLocaleString(),
+      maxReasonableRevenue: Math.round(maxReasonableRevenue).toLocaleString(),
+      conservativeAttributedRevenue: Math.round(
+        conservativeAttributedRevenue
+      ).toLocaleString(),
+      finalContentAttributedRevenue: contentAttributedRevenue.toLocaleString(),
     });
-
-    // Calculate content attribution metrics
-    const contentAttributedRevenue = Math.round(totalRevenue);
-    const avgEngagementRate =
-      totalSessions > 0 ? (engagedSessionsTotal / totalSessions) * 100 : 0;
+    // avgEngagementRate already calculated above with GA data
 
     // Calculate CAC payback using content costs and revenue
     const totalContentInvestment = searchConsoleData.length * contentCost;
@@ -719,9 +1011,8 @@ const KeywordIntelDashboard = () => {
       ).length,
       mismatch_risk,
       crawl_error_percentage,
-      // Real content analysis metrics with centralized calculation
-      total_wasted_spend:
-        centralizedMetrics.wastedSpend || Math.round(total_wasted_spend),
+      // Real content analysis metrics using getRevenueLeak function
+      total_wasted_spend: Math.round(total_wasted_spend),
       content_waste_pages,
       link_dilution_risk: Math.round(link_dilution_risk),
       high_dilution_pages,
@@ -740,7 +1031,20 @@ const KeywordIntelDashboard = () => {
       hasRealMozData: mozData.hasRealMozData,
       isBlind: false,
     };
-  }, [onboardingData, loading, conversionRate]); // Added conversionRate to dependencies
+  }, [
+    onboardingData,
+    loading,
+    conversionRate,
+    getMismatchRisk,
+    getLinkDilutionRisk,
+    getCannibalRisk,
+    getCrawlErrorPercentage,
+    getTotalWastedSpend,
+    getContentWastePages,
+    getMoodyCreditScore,
+    getHighCTRLeak,
+    getRevenueLeak,
+  ]); // Added individual risk functions to dependencies
 
   // Handle data refresh
   const handleRefresh = async () => {

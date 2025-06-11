@@ -313,7 +313,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
         // Apply severity multiplier
         const severityMultiplier = getSeverityMultiplier(item.decayStatus);
-        urlRevenueLoss = potentialRevenue * severityMultiplier; // Add base cost waste for pages with decay
+        urlRevenueLoss = potentialRevenue * severityMultiplier; // Add base content cost waste for pages with decay
         urlRevenueLoss += costPerUrl * 0.1; // 10% of content cost is wasted for decaying pages
       }
 
@@ -2182,7 +2182,6 @@ export const FinancialCalculationsProvider = ({ children }) => {
       }),
     };
   };
-
   const getROIRecoveryPotential = () => {
     // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
@@ -2456,7 +2455,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       "Investment Required (5% of content cost):",
       totalContentCost * 0.05
     );
-    console.log("=== End ROI Debug ==="); // Calculate ROI scenarios with more realistic investment using 30-day recovery data
+    // Calculate ROI scenarios with more realistic investment using 30-day recovery data
     const investmentRequired = Math.max(
       thirtyDayRecovery.currentLoss * 0.5,
       totalContentCost * 0.01 // Reduced from 2% to 1% for 30-day focus
@@ -2935,6 +2934,718 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     if (revenueLoss > 200) return "Medium";
     return "Low";
   };
+  const getHighCTRLeak = () => {
+    // Get AOV and Total Cost from onboardingData, throw error if not available
+    const averageOrderValue =
+      calculations.averageOrderValue ||
+      onboardingData?.domainCostDetails?.averageOrderValue;
+
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
+
+    if (!averageOrderValue || averageOrderValue === 0) {
+      console.error("❌ getHighCTRLeak: AOV not available, returning 0");
+      return {
+        estimatedRevenueLoss: 0,
+        urlsBelowThreshold: 0,
+        totalUrls: (contentCostWaste || []).length,
+      };
+    }
+
+    if (!totalContentCost || totalContentCost === 0) {
+      console.error(
+        "❌ getHighCTRLeak: Total content cost not available, returning 0"
+      );
+      return {
+        estimatedRevenueLoss: 0,
+        urlsBelowThreshold: 0,
+        totalUrls: (contentCostWaste || []).length,
+      };
+    }
+    const conversionRate = 0.02; // 2% conversion rate
+
+    // Calculate average content cost per URL
+    const totalUrls = (contentCostWaste || []).length;
+    const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400; // Default $400 if no URLs
+
+    console.log("📊 High CTR Leak calculation details:", {
+      totalContentCost: totalContentCost.toLocaleString(),
+      totalUrls,
+      avgContentCost: avgContentCost.toFixed(2),
+    });
+
+    // Filter URLs with CTR less than 1% (0.01)
+    const lowCTRUrls = (contentCostWaste || []).filter((item) => {
+      const ctr = parseFloat(item.ctr) || 0;
+      const impressions = parseInt(item.impressions) || 0;
+
+      // Only include URLs that have impressions but low CTR
+      return impressions > 0 && ctr < 0.01; // Less than 1% CTR
+    });
+
+    // Calculate total revenue loss based on content cost waste methodology
+    // Low CTR pages represent wasted content investment since they fail to attract clicks
+    const ctrWastePercentage = 0.3; // 30% of content cost is wasted due to poor CTR performance
+    const contentCostBasedLoss =
+      lowCTRUrls.length * avgContentCost * ctrWastePercentage;
+
+    // Alternative calculation: Factor in conversion opportunity loss
+    const conversionOpportunityFactor =
+      conversionRate * (averageOrderValue / avgContentCost);
+    const opportunityAdjustedLoss =
+      contentCostBasedLoss * Math.min(conversionOpportunityFactor, 2.0); // Cap at 2x
+
+    // Use the more conservative of the two calculations
+    const totalRevenueLoss = Math.min(
+      contentCostBasedLoss,
+      opportunityAdjustedLoss
+    );
+
+    const urlDetails = [];
+    lowCTRUrls.forEach((item) => {
+      const impressions = parseInt(item.impressions) || 0;
+      const actualClicks = parseInt(item.clicks) || 0;
+      const currentCTR = impressions > 0 ? actualClicks / impressions : 0;
+
+      // Calculate potential clicks if we had 2% CTR (reasonable target)
+      const targetCTR = 0.02;
+      const potentialClicks = impressions * targetCTR;
+      const missedClicks = Math.max(0, potentialClicks - actualClicks);
+
+      // Content cost waste for this specific URL
+      const urlContentCost = item.contentCost || avgContentCost;
+      const urlWastedCost = urlContentCost * ctrWastePercentage;
+
+      urlDetails.push({
+        url: item.url,
+        impressions,
+        actualClicks,
+        currentCTR: Math.round(currentCTR * 10000) / 100, // Convert to percentage with 2 decimals
+        targetCTR: targetCTR * 100, // 2%
+        potentialClicks: Math.round(potentialClicks),
+        missedClicks: Math.round(missedClicks),
+        estimatedRevenueLoss: Math.round(urlWastedCost),
+        contentCost: urlContentCost,
+        position: item.position || 0,
+      });
+    });
+
+    // Sort by revenue loss (highest first)
+    urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
+
+    console.log("✅ High CTR Leak analysis completed:", {
+      totalLowCTRUrls: lowCTRUrls.length,
+      avgContentCost: avgContentCost.toFixed(2),
+      ctrWastePercentage: `${ctrWastePercentage * 100}%`,
+      contentCostBasedLoss: contentCostBasedLoss.toLocaleString(),
+      opportunityAdjustedLoss: opportunityAdjustedLoss.toLocaleString(),
+      finalTotalRevenueLoss: totalRevenueLoss.toLocaleString(),
+      topLosers: urlDetails
+        .slice(0, 3)
+        .map((u) => ({ url: u.url, loss: u.estimatedRevenueLoss })),
+    });
+
+    return {
+      estimatedRevenueLoss: Math.round(totalRevenueLoss),
+      urlsBelowThreshold: lowCTRUrls.length,
+      totalUrls: (contentCostWaste || []).length,
+      targetCTR: 2.0, // 2% target
+      summary: {
+        totalRevenueLoss: Math.round(totalRevenueLoss),
+        urlsWithLowCTR: lowCTRUrls.length,
+        averageCTRGap:
+          urlDetails.length > 0
+            ? Math.round(
+                (urlDetails.reduce(
+                  (sum, url) => sum + (2.0 - url.currentCTR),
+                  0
+                ) /
+                  urlDetails.length) *
+                  100
+              ) / 100
+            : 0,
+        totalMissedClicks: urlDetails.reduce(
+          (sum, url) => sum + url.missedClicks,
+          0
+        ),
+        tooltip: {
+          title: "Content Investment Waste from Low CTR",
+          content: `This measures content investment wasted due to poor click-through performance. We analyzed ${
+            (contentCostWaste || []).length
+          } URLs with total investment of $${Math.round(
+            totalContentCost
+          ).toLocaleString()} (avg: $${Math.round(
+            avgContentCost
+          )} per page). Found ${
+            lowCTRUrls.length
+          } pages with CTR below 1% - these pages represent $${Math.round(
+            totalRevenueLoss
+          ).toLocaleString()} in wasted content investment (${
+            ctrWastePercentage * 100
+          }% waste rate). 
+
+**Calculation Method:**
+• Average Content Cost: $${Math.round(
+            totalContentCost
+          ).toLocaleString()} ÷ ${totalUrls} URLs = $${Math.round(
+            avgContentCost
+          )}
+• Wasted Investment: ${lowCTRUrls.length} low-CTR pages × $${Math.round(
+            avgContentCost
+          )} × ${ctrWastePercentage * 100}% waste = $${Math.round(
+            contentCostBasedLoss
+          ).toLocaleString()}
+• Opportunity Factor: ${
+            conversionRate * 100
+          }% conversion × $${averageOrderValue} AOV ÷ $${Math.round(
+            avgContentCost
+          )} cost = ${Math.round(conversionOpportunityFactor * 100) / 100}x
+• Final Loss: Conservative estimate of $${Math.round(
+            totalRevenueLoss
+          ).toLocaleString()}`,
+        },
+      },
+      urlDetails: urlDetails.slice(0, 10), // Top 10 worst performers
+      calculationDetails: {
+        targetCTR: "2%",
+        formula:
+          "Wasted Investment = Low-CTR URLs × Avg Content Cost × Waste Percentage",
+        conversionRate: `${conversionRate * 100}%`,
+        averageOrderValue,
+        avgContentCost: Math.round(avgContentCost),
+        ctrWastePercentage: `${ctrWastePercentage * 100}%`,
+      },
+    };
+  };
+
+  // Individual Risk Metric Functions for KeywordIntelDashboard
+  const getMismatchRisk = () => {
+    // Get AOV and Total Cost from onboardingData, throw error if not available
+    const averageOrderValue =
+      calculations.averageOrderValue ||
+      onboardingData?.domainCostDetails?.averageOrderValue;
+
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
+
+    if (!averageOrderValue || averageOrderValue === 0) {
+      console.error("❌ getMismatchRisk: AOV not available, returning 0");
+      return {
+        estimatedRevenueLoss: 0,
+        urlsWithMismatch: 0,
+        totalUrls: (keywordMismatch || []).length,
+      };
+    }
+
+    if (!totalContentCost || totalContentCost === 0) {
+      console.error(
+        "❌ getMismatchRisk: Total content cost not available, returning 0"
+      );
+      return {
+        estimatedRevenueLoss: 0,
+        urlsWithMismatch: 0,
+        totalUrls: (keywordMismatch || []).length,
+      };
+    }
+
+    const mismatchData = keywordMismatch || [];
+
+    console.log("🔍 Starting Mismatch Risk analysis...");
+    console.log("Keyword Mismatch data:", mismatchData.length, "items");
+
+    // Calculate average content cost per URL
+    const totalUrls = (contentCostWaste || []).length;
+    const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
+
+    // Group by URL to avoid double counting
+    const urlMap = new Map();
+    mismatchData.forEach((item) => {
+      const url = item.url;
+      if (!urlMap.has(url)) {
+        urlMap.set(url, []);
+      }
+      urlMap.get(url).push(item);
+    });
+
+    // Filter URLs with mismatch issues
+    const mismatchUrls = Array.from(urlMap.entries()).filter(([url, items]) => {
+      return items.some(
+        (item) =>
+          item.mismatchType === "Over-optimized" ||
+          item.estimatedLoss?.high > 0 ||
+          item.missedClicks > 5
+      );
+    });
+
+    // Calculate total revenue loss using content cost methodology
+    // Mismatch represents 20% waste of content investment
+    const mismatchWastePercentage = 0.2;
+    const totalRevenueLoss =
+      mismatchUrls.length * avgContentCost * mismatchWastePercentage;
+
+    // Cap at 3% of total investment
+    const maxLoss = totalContentCost * 0.03;
+    const cappedRevenueLoss = Math.min(totalRevenueLoss, maxLoss);
+
+    const urlDetails = [];
+    mismatchUrls.forEach(([url, items]) => {
+      const totalMissedClicks = items.reduce(
+        (sum, item) => sum + (item.missedClicks || 0),
+        0
+      );
+      const urlContentCost = avgContentCost;
+      const urlWastedCost = urlContentCost * mismatchWastePercentage;
+
+      urlDetails.push({
+        url,
+        mismatchTypes: items.map((i) => i.mismatchType).join(", "),
+        totalMissedClicks,
+        estimatedRevenueLoss: Math.round(urlWastedCost),
+        keywords: items.length,
+        contentCost: urlContentCost,
+      });
+    });
+
+    // Sort by revenue loss (highest first)
+    urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
+
+    console.log("✅ Mismatch Risk analysis completed:", {
+      totalUrlsAnalyzed: urlMap.size,
+      urlsWithMismatch: mismatchUrls.length,
+      avgContentCost: avgContentCost.toFixed(2),
+      totalRevenueLoss: Math.round(cappedRevenueLoss),
+      wastePercentage: `${mismatchWastePercentage * 100}%`,
+    });
+
+    return {
+      estimatedRevenueLoss: Math.round(cappedRevenueLoss),
+      urlsWithMismatch: mismatchUrls.length,
+      totalUrls: urlMap.size,
+      summary: {
+        totalRevenueLoss: Math.round(cappedRevenueLoss),
+        urlsWithMismatch: mismatchUrls.length,
+        tooltip: {
+          title: "Keyword Mismatch Content Investment Waste",
+          content: `This measures content investment wasted due to keyword targeting misalignment. We analyzed ${
+            urlMap.size
+          } URLs and found ${
+            mismatchUrls.length
+          } with keyword mismatch issues. These pages represent $${Math.round(
+            cappedRevenueLoss
+          ).toLocaleString()} in wasted content investment (${
+            mismatchWastePercentage * 100
+          }% waste rate on affected pages).`,
+        },
+      },
+      urlDetails: urlDetails.slice(0, 10), // Top 10 worst performers
+    };
+  };
+  const getLinkDilutionRisk = () => {
+    // Get AOV and Total Cost from onboardingData, throw error if not available
+    const averageOrderValue =
+      calculations.averageOrderValue ||
+      onboardingData?.domainCostDetails?.averageOrderValue;
+
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
+
+    if (!averageOrderValue || averageOrderValue === 0) {
+      console.error("❌ getLinkDilutionRisk: AOV not available, returning 0");
+      return {
+        estimatedRevenueLoss: 0,
+        urlsWithDilution: 0,
+        totalUrls: (linkDilution || []).length,
+      };
+    }
+
+    if (!totalContentCost || totalContentCost === 0) {
+      console.error(
+        "❌ getLinkDilutionRisk: Total content cost not available, returning 0"
+      );
+      return {
+        estimatedRevenueLoss: 0,
+        urlsWithDilution: 0,
+        totalUrls: (linkDilution || []).length,
+      };
+    }
+
+    const dilutionData = linkDilution || [];
+
+    console.log("🔍 Starting Link Dilution Risk analysis...");
+    console.log("Link Dilution data:", dilutionData.length, "items");
+
+    // Calculate average content cost per URL
+    const totalUrls = (contentCostWaste || []).length;
+    const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
+
+    // Filter URLs with high dilution
+    const highDilutionUrls = dilutionData.filter((item) => {
+      const dilutionScore = parseFloat(item.dilutionScore) || 0;
+      const estimatedLoss =
+        item.estimatedLoss?.high || item.estimatedLoss?.mid || 0;
+      return dilutionScore > 0.01 || estimatedLoss > 0;
+    });
+
+    // Calculate total revenue loss using content cost methodology
+    // Link dilution represents 15% waste of content investment (less than mismatch)
+    const dilutionWastePercentage = 0.15;
+    const totalRevenueLoss =
+      highDilutionUrls.length * avgContentCost * dilutionWastePercentage;
+
+    // Cap at 2% of total investment
+    const maxLoss = totalContentCost * 0.02;
+    const cappedRevenueLoss = Math.min(totalRevenueLoss, maxLoss);
+
+    const urlDetails = [];
+    highDilutionUrls.forEach((item) => {
+      const dilutionScore = parseFloat(item.dilutionScore) || 0;
+      const urlContentCost = avgContentCost;
+      const urlWastedCost = urlContentCost * dilutionWastePercentage;
+
+      urlDetails.push({
+        url: item.url,
+        dilutionScore: Math.round(dilutionScore * 10000) / 100, // Convert to percentage
+        externalLinks: item.externalLinks || 0,
+        internalLinks: item.internalLinks || 0,
+        clicks: parseInt(item.clicks) || 0,
+        estimatedRevenueLoss: Math.round(urlWastedCost),
+        contentCost: urlContentCost,
+      });
+    });
+
+    // Sort by revenue loss (highest first)
+    urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
+
+    console.log("✅ Link Dilution Risk analysis completed:", {
+      totalUrlsAnalyzed: dilutionData.length,
+      urlsWithDilution: highDilutionUrls.length,
+      avgContentCost: avgContentCost.toFixed(2),
+      totalRevenueLoss: Math.round(cappedRevenueLoss),
+      wastePercentage: `${dilutionWastePercentage * 100}%`,
+    });
+
+    return {
+      estimatedRevenueLoss: Math.round(cappedRevenueLoss),
+      urlsWithDilution: highDilutionUrls.length,
+      totalUrls: dilutionData.length,
+      summary: {
+        totalRevenueLoss: Math.round(cappedRevenueLoss),
+        urlsWithDilution: highDilutionUrls.length,
+        tooltip: {
+          title: "Link Dilution Content Investment Waste",
+          content: `This measures content investment wasted due to dispersed link equity. We analyzed ${
+            dilutionData.length
+          } URLs and found ${
+            highDilutionUrls.length
+          } with link dilution issues. These pages represent $${Math.round(
+            cappedRevenueLoss
+          ).toLocaleString()} in wasted content investment (${
+            dilutionWastePercentage * 100
+          }% waste rate on affected pages).`,
+        },
+      },
+      urlDetails: urlDetails.slice(0, 10), // Top 10 worst performers
+    };
+  };
+  const getCannibalRisk = () => {
+    // Get AOV and Total Cost from onboardingData, throw error if not available
+    const averageOrderValue =
+      calculations.averageOrderValue ||
+      onboardingData?.domainCostDetails?.averageOrderValue;
+
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
+
+    if (!averageOrderValue || averageOrderValue === 0) {
+      console.error("❌ getCannibalRisk: AOV not available, returning 0");
+      return {
+        estimatedRevenueLoss: 0,
+        cannibalConflicts: 0,
+        totalKeywords: (cannibalization || []).length,
+      };
+    }
+
+    if (!totalContentCost || totalContentCost === 0) {
+      console.error(
+        "❌ getCannibalRisk: Total content cost not available, returning 0"
+      );
+      return {
+        estimatedRevenueLoss: 0,
+        cannibalConflicts: 0,
+        totalKeywords: (cannibalization || []).length,
+      };
+    }
+
+    const cannibalizationData = cannibalization || [];
+
+    console.log("🔍 Starting Cannibalization Risk analysis...");
+    console.log("Cannibalization data:", cannibalizationData.length, "items");
+
+    // Calculate average content cost per URL
+    const totalUrls = (contentCostWaste || []).length;
+    const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
+
+    // Filter keywords with cannibalization conflicts
+    const cannibalConflicts = cannibalizationData.filter((item) => {
+      const competingUrls = item.competingUrls || [];
+      return competingUrls.length > 0;
+    });
+
+    // Calculate total revenue loss using content cost methodology
+    // Cannibalization represents 25% waste of content investment (higher than others)
+    const cannibalWastePercentage = 0.25;
+
+    // Count affected URLs (primary + competing)
+    let totalAffectedUrls = 0;
+    cannibalConflicts.forEach((item) => {
+      const competingUrls = item.competingUrls || [];
+      totalAffectedUrls += 1 + competingUrls.length; // primary + competing
+    });
+
+    const totalRevenueLoss =
+      totalAffectedUrls * avgContentCost * cannibalWastePercentage;
+
+    // Cap at 4% of total investment (higher than others due to severity)
+    const maxLoss = totalContentCost * 0.04;
+    const cappedRevenueLoss = Math.min(totalRevenueLoss, maxLoss);
+
+    const conflictDetails = [];
+    cannibalConflicts.forEach((item) => {
+      const competingUrls = item.competingUrls || [];
+      const competingCount = competingUrls.length;
+
+      // Calculate per-conflict waste
+      const affectedUrlsInConflict = 1 + competingCount;
+      const conflictWaste =
+        affectedUrlsInConflict * avgContentCost * cannibalWastePercentage;
+
+      const primaryImpressions = item.primaryUrl?.impressions || 0;
+      const primaryClicks = item.primaryUrl?.clicks || 0;
+
+      // Total competing impressions
+      const totalCompetingImpressions = competingUrls.reduce(
+        (sum, url) => sum + (url.impressions || 0),
+        0
+      );
+
+      const currentClicks =
+        primaryClicks +
+        competingUrls.reduce((sum, url) => sum + (url.clicks || 0), 0);
+
+      conflictDetails.push({
+        keyword: item.keyword,
+        primaryUrl: item.primaryUrl?.url || "N/A",
+        competingCount,
+        primaryImpressions,
+        totalCompetingImpressions,
+        currentClicks,
+        estimatedRevenueLoss: Math.round(conflictWaste),
+        affectedUrls: affectedUrlsInConflict,
+        contentCost: avgContentCost,
+      });
+    });
+
+    // Sort by revenue loss (highest first)
+    conflictDetails.sort(
+      (a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss
+    );
+
+    console.log("✅ Cannibalization Risk analysis completed:", {
+      totalKeywordsAnalyzed: cannibalizationData.length,
+      cannibalConflicts: cannibalConflicts.length,
+      totalAffectedUrls,
+      avgContentCost: avgContentCost.toFixed(2),
+      totalRevenueLoss: Math.round(cappedRevenueLoss),
+      wastePercentage: `${cannibalWastePercentage * 100}%`,
+    });
+
+    return {
+      estimatedRevenueLoss: Math.round(cappedRevenueLoss),
+      cannibalConflicts: cannibalConflicts.length,
+      totalKeywords: cannibalizationData.length,
+      summary: {
+        totalRevenueLoss: Math.round(cappedRevenueLoss),
+        cannibalConflicts: cannibalConflicts.length,
+        tooltip: {
+          title: "Keyword Cannibalization Content Investment Waste",
+          content: `This measures content investment wasted due to keyword competition between your own pages. We analyzed ${
+            cannibalizationData.length
+          } keywords and found ${
+            cannibalConflicts.length
+          } with cannibalization issues affecting ${totalAffectedUrls} URLs. These conflicts represent $${Math.round(
+            cappedRevenueLoss
+          ).toLocaleString()} in wasted content investment (${
+            cannibalWastePercentage * 100
+          }% waste rate on affected pages).`,
+        },
+      },
+      conflictDetails: conflictDetails.slice(0, 10), // Top 10 worst conflicts
+    };
+  };
+
+  const getCrawlErrorPercentage = () => {
+    // Calculate crawl error percentage based on available data
+    const totalUrls = (contentCostWaste || []).length;
+    const errorUrls = (notFoundPages || []).length;
+
+    if (totalUrls === 0) {
+      return {
+        errorPercentage: 0,
+        totalUrls: 0,
+        errorUrls: 0,
+      };
+    }
+
+    const errorPercentage = (errorUrls / totalUrls) * 100;
+
+    console.log("✅ Crawl Error analysis completed:", {
+      totalUrls,
+      errorUrls,
+      errorPercentage: Math.round(errorPercentage * 100) / 100,
+    });
+
+    return {
+      errorPercentage: Math.round(errorPercentage * 100) / 100, // Round to 2 decimal places
+      totalUrls,
+      errorUrls,
+      summary: {
+        tooltip: {
+          title: "Crawl Error Analysis",
+          content: `Found ${errorUrls} pages with crawl errors out of ${totalUrls} total URLs (${
+            Math.round(errorPercentage * 100) / 100
+          }% error rate). Crawl errors prevent search engines from indexing your content, leading to lost visibility and traffic.`,
+        },
+      },
+    };
+  };
+  const getTotalWastedSpend = () => {
+    // Get AOV and Total Cost from onboardingData, throw error if not available
+    const averageOrderValue =
+      calculations.averageOrderValue ||
+      onboardingData?.domainCostDetails?.averageOrderValue;
+
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
+
+    if (!averageOrderValue || averageOrderValue === 0) {
+      console.error("❌ getTotalWastedSpend: AOV not available, returning 0");
+      return {
+        totalWastedSpend: 0,
+        wastePages: 0,
+        totalUrls: (contentCostWaste || []).length,
+      };
+    }
+
+    if (!totalContentCost || totalContentCost === 0) {
+      console.error(
+        "❌ getTotalWastedSpend: Total content cost not available, returning 0"
+      );
+      return {
+        totalWastedSpend: 0,
+        wastePages: 0,
+        totalUrls: (contentCostWaste || []).length,
+      };
+    }
+
+    const wasteData = contentCostWaste || [];
+
+    if (wasteData.length === 0) {
+      return {
+        totalWastedSpend: 0,
+        wastePages: 0,
+        totalUrls: 0,
+      };
+    }
+
+    // Calculate average content cost per URL
+    const totalUrls = wasteData.length;
+    const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
+
+    // Filter pages with poor performance (waste indicators)
+    const wastePages = wasteData.filter((item) => {
+      const wastedSpend = parseFloat(item.wastedSpend) || 0;
+      const roi = parseFloat(item.roi) || 0;
+      const ctr = parseFloat(item.ctr) || 0;
+
+      // Consider wasteful if wastedSpend > 0, ROI < 0, or very low CTR
+      return wastedSpend > 0 || roi < 0 || ctr < 0.005; // Less than 0.5% CTR
+    });
+
+    // Calculate total wasted spend using content cost methodology
+    // General content waste represents 10% of content investment on affected pages
+    const generalWastePercentage = 0.1;
+    const totalWastedSpend =
+      wastePages.length * avgContentCost * generalWastePercentage;
+
+    // Cap at 2% of total investment
+    const maxWaste = totalContentCost * 0.02;
+    const cappedWastedSpend = Math.min(totalWastedSpend, maxWaste);
+
+    console.log("✅ Total Wasted Spend analysis completed:", {
+      totalUrls: wasteData.length,
+      wastePages: wastePages.length,
+      avgContentCost: avgContentCost.toFixed(2),
+      totalWastedSpend: Math.round(cappedWastedSpend),
+      wastePercentage: `${generalWastePercentage * 100}%`,
+    });
+
+    return {
+      totalWastedSpend: Math.round(cappedWastedSpend),
+      wastePages: wastePages.length,
+      totalUrls: wasteData.length,
+      summary: {
+        tooltip: {
+          title: "Content Investment Waste Analysis",
+          content: `Found ${wastePages.length} underperforming pages out of ${
+            wasteData.length
+          } total URLs. Total wasted spend: $${Math.round(
+            cappedWastedSpend
+          ).toLocaleString()} (${
+            generalWastePercentage * 100
+          }% waste rate on affected pages). This represents content that's not generating adequate returns and needs optimization.`,
+        },
+      },
+    };
+  };
+
+  const getContentWastePages = () => {
+    // Get count of content waste pages from contentCostWaste data
+    const wasteData = contentCostWaste || [];
+
+    if (wasteData.length === 0) {
+      return {
+        wastePages: 0,
+        totalUrls: 0,
+        wastePercentage: 0,
+      };
+    }
+
+    const wastePages = wasteData.filter((item) => {
+      const roi = parseFloat(item.roi) || 0;
+      const wastedSpend = parseFloat(item.wastedSpend) || 0;
+      return roi < 0 || wastedSpend > 0;
+    }).length;
+
+    const wastePercentage = (wastePages / wasteData.length) * 100;
+
+    console.log("✅ Content Waste Pages analysis completed:", {
+      totalUrls: wasteData.length,
+      wastePages,
+      wastePercentage: Math.round(wastePercentage * 100) / 100,
+    });
+
+    return {
+      wastePages,
+      totalUrls: wasteData.length,
+      wastePercentage: Math.round(wastePercentage * 100) / 100,
+      summary: {
+        tooltip: {
+          title: "Content Waste Pages Analysis",
+          content: `Found ${wastePages} underperforming pages out of ${
+            wasteData.length
+          } total URLs (${
+            Math.round(wastePercentage * 100) / 100
+          }% waste rate). These pages require optimization to improve ROI and reduce content investment waste.`,
+        },
+      },
+    };
+  };
+
   return (
     <FinancialCalculationsContext.Provider
       value={{
@@ -2966,6 +3677,13 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         getMoodyCreditScore,
         getROIRecoveryPotential,
         getKeywordConflicts,
+        getHighCTRLeak,
+        getMismatchRisk,
+        getLinkDilutionRisk,
+        getCannibalRisk,
+        getCrawlErrorPercentage,
+        getTotalWastedSpend,
+        getContentWastePages,
       }}
     >
       {children}
