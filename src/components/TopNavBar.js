@@ -168,6 +168,12 @@ const searchRoutes = (query) => {
       keywords:
         "protection authentication access security settings encryption passwords 2fa two factor mfa multi factor ssl certificates",
     },
+    {
+      path: "/synthetic-decay",
+      label: "Synthetic Decay Analysis",
+      keywords:
+        "synthetic decay sitemap analysis content performance prediction url analysis artificial intelligence content decay analytics",
+    },
   ];
 
   return allRoutes.filter(

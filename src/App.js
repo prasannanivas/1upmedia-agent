@@ -51,6 +51,7 @@ import NotFound from "./pages/NotFound";
 import RAG from "./pages/RAG";
 import TermsOfService from "./TermsOfService";
 import PostAnalytics from "./pages/PostAnalytics";
+import SyntheticDecay from "./pages/SyntheticDecay";
 
 const AppWrapper = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(true);
@@ -165,8 +166,9 @@ const AppWrapper = () => {
           <Route
             path="/settings/advanced-config/security"
             element={<Security />}
-          />
+          />{" "}
           <Route path="/RAG" element={<RAG />} />
+          <Route path="/synthetic-decay" element={<SyntheticDecay />} />
           <Route path="/analytics/:postId" element={<PostAnalytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

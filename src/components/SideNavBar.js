@@ -73,6 +73,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
     { path: "/contentledger", label: "Content Ledger", icon: FiDatabase },
     { path: "/riskdashboard", label: "Risk Dashboard", icon: FiShield },
     { path: "/strategy-analysis", label: "Strategy Dashboard", icon: FiTarget },
+    { path: "/synthetic-decay", label: "Synthetic Decay", icon: FiActivity },
     { path: "/dashboard", label: "Posts", icon: FiFileText },
     { path: "/onboarding", label: "Setup", icon: FiBox },
     { path: "/analytics", label: "Analytics", icon: FiActivity },
