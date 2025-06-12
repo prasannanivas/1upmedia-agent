@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/1upmedia-agent/static/css/main.7cc3bf12.css",
-    "main.js": "/1upmedia-agent/static/js/main.43fd2bbd.js",
+    "main.css": "/1upmedia-agent/static/css/main.3e9b2d59.css",
+    "main.js": "/1upmedia-agent/static/js/main.81a8353a.js",
     "static/media/instagram-logo.png": "/1upmedia-agent/static/media/instagram-logo.8813ee4ddfbe23739448.png",
     "static/media/wordpress-logo.png": "/1upmedia-agent/static/media/wordpress-logo.8be7749da6c714d49c9d.png",
     "static/media/facebook-logo.png": "/1upmedia-agent/static/media/facebook-logo.27e15bab1389dd245011.png",
@@ -11,11 +11,11 @@
     "static/media/logo1.png": "/1upmedia-agent/static/media/logo1.5f49ec9498f65e0e4659.png",
     "static/media/linkedin-logo.png": "/1upmedia-agent/static/media/linkedin-logo.68ac41e1459436bfd38f.png",
     "index.html": "/1upmedia-agent/index.html",
-    "main.7cc3bf12.css.map": "/1upmedia-agent/static/css/main.7cc3bf12.css.map",
-    "main.43fd2bbd.js.map": "/1upmedia-agent/static/js/main.43fd2bbd.js.map"
+    "main.3e9b2d59.css.map": "/1upmedia-agent/static/css/main.3e9b2d59.css.map",
+    "main.81a8353a.js.map": "/1upmedia-agent/static/js/main.81a8353a.js.map"
   },
   "entrypoints": [
-    "static/css/main.7cc3bf12.css",
-    "static/js/main.43fd2bbd.js"
+    "static/css/main.3e9b2d59.css",
+    "static/js/main.81a8353a.js"
   ]
 }
