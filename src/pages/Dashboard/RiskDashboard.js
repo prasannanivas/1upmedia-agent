@@ -1240,20 +1240,52 @@ const RiskDashboard = () => {
                 expandedSections.creditScore ? "expanded" : ""
               }`}
             />
-          </div>
+          </div>{" "}
           <div className="section-content">
+            {console.log(
+              "DEBUG: riskMetrics.creditScore:",
+              riskMetrics.creditScore
+            )}
             <div className="credit-grades">
-              <span className="grade grade-a">
-                A ({riskMetrics.creditScore.aGrade})
+              <span
+                className="grade grade-a"
+                style={{
+                  color: "white !important",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                A ({riskMetrics.creditScore.aGrade || 0})
               </span>
-              <span className="grade grade-b">
-                B ({riskMetrics.creditScore.bGrade})
+              <span
+                className="grade grade-b"
+                style={{
+                  color: "white !important",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                B ({riskMetrics.creditScore.bGrade || 0})
               </span>
-              <span className="grade grade-c">
-                C ({riskMetrics.creditScore.cGrade})
+              <span
+                className="grade grade-c"
+                style={{
+                  color: "white !important",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                C ({riskMetrics.creditScore.cGrade || 0})
               </span>
-              <span className="grade grade-d">
-                D ({riskMetrics.creditScore.dGrade})
+              <span
+                className="grade grade-d"
+                style={{
+                  color: "white !important",
+                  fontSize: "16px",
+                  fontWeight: "bold",
+                }}
+              >
+                D ({riskMetrics.creditScore.dGrade || 0})
               </span>
             </div>
             <div className="risk-details">
