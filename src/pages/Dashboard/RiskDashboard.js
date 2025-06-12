@@ -2,7 +2,22 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { useFinancialCalculations } from "../../context/FinancialCalculations";
-import { AlertTriangle, Brain, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  Brain,
+  ChevronRight,
+  TrendingDown,
+  Target,
+  Zap,
+  Shield,
+  Eye,
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity,
+  Search,
+  Users,
+  Crown,
+} from "lucide-react";
 import { calculateGradeDistribution } from "../../utils/ContentRating";
 import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
 import FinancialTooltip from "../../components/FinancialTooltip";
@@ -18,8 +33,184 @@ const RiskDashboard = () => {
     getLinkDilution,
     funnelGapIdentifier,
     getTotalWastedSpend,
+    // Get the getRiskMetric function to access sample data
+    getRiskMetric,
   } = useFinancialCalculations();
   const navigate = useNavigate();
+
+  // Get risk metrics from the sample data structure
+  const [riskMetricsData, setRiskMetricsData] = useState(null);
+  useEffect(() => {
+    // Try to get sample data from getRiskMetric or use the sample data structure
+    try {
+      const sampleData = getRiskMetric?.() || {
+        riskMetric: [
+          // Use the sample data structure provided
+          {
+            url: "https://1upmedia.com/contact/",
+            riskMetrics: {
+              trafficDecay: 1,
+              positionDrift: -141.59,
+              cannibalizationScore: 3,
+              isIndexBloat: false,
+              compositeRiskScore: 0.46,
+            },
+            riskLevel: "Medium",
+            priority: "Medium",
+            currentMetrics: {
+              clicks: 0,
+              impressions: 40,
+              position: 60.83762254901961,
+              ctr: 0,
+            },
+            historicalContext: {
+              totalClicks12Month: 1,
+              totalImpressions12Month: 167,
+              currentThreeMonthAvg: 0,
+              bestThreeMonthAvg: 0.05,
+              recentPositionAvg: 9.21,
+              earlyPositionAvg: 150.8,
+            },
+            recommendations: [
+              "Content refresh needed - traffic declined significantly",
+              "Resolve keyword cannibalization - consolidate similar content",
+            ],
+            topKeywords: [
+              {
+                keyword: "marketing agency jupiter",
+                position: 193.58823529411765,
+                clicks: 0,
+                impressions: 17,
+              },
+              {
+                keyword: "1upmedia",
+                position: 4.4375,
+                clicks: 0,
+                impressions: 16,
+              },
+              {
+                keyword: "1up media",
+                position: 7,
+                clicks: 0,
+                impressions: 3,
+              },
+              {
+                keyword: "media 1up",
+                position: 4,
+                clicks: 0,
+                impressions: 2,
+              },
+              {
+                keyword: "1up marketing",
+                position: 93,
+                clicks: 0,
+                impressions: 1,
+              },
+            ],
+          },
+          {
+            url: "https://1upmedia.com/services/seo-agency/",
+            riskMetrics: {
+              trafficDecay: 2,
+              positionDrift: 15.2,
+              cannibalizationScore: 1,
+              isIndexBloat: false,
+              compositeRiskScore: 0.25,
+            },
+            riskLevel: "Low",
+            priority: "Low",
+            currentMetrics: {
+              clicks: 25,
+              impressions: 850,
+              position: 12.5,
+              ctr: 2.94,
+            },
+            historicalContext: {
+              totalClicks12Month: 312,
+              totalImpressions12Month: 9840,
+              currentThreeMonthAvg: 78,
+              bestThreeMonthAvg: 95,
+              recentPositionAvg: 12.5,
+              earlyPositionAvg: 18.3,
+            },
+            recommendations: [
+              "Minor optimization - track position fluctuations",
+              "Consider expanding content for related keywords",
+            ],
+            topKeywords: [
+              {
+                keyword: "seo agency",
+                position: 8.2,
+                clicks: 15,
+                impressions: 450,
+              },
+              {
+                keyword: "seo services",
+                position: 15.6,
+                clicks: 8,
+                impressions: 320,
+              },
+              {
+                keyword: "search engine optimization",
+                position: 22.1,
+                clicks: 2,
+                impressions: 80,
+              },
+            ],
+          },
+          {
+            url: "https://1upmedia.com/blog/seo-tips-2024/",
+            riskMetrics: {
+              trafficDecay: 4,
+              positionDrift: 85.7,
+              cannibalizationScore: 5,
+              isIndexBloat: true,
+              compositeRiskScore: 0.85,
+            },
+            riskLevel: "High",
+            priority: "High",
+            currentMetrics: {
+              clicks: 3,
+              impressions: 125,
+              position: 45.8,
+              ctr: 2.4,
+            },
+            historicalContext: {
+              totalClicks12Month: 890,
+              totalImpressions12Month: 12500,
+              currentThreeMonthAvg: 12,
+              bestThreeMonthAvg: 185,
+              recentPositionAvg: 45.8,
+              earlyPositionAvg: 8.9,
+            },
+            recommendations: [
+              "URGENT: Major content refresh required - significant traffic loss",
+              "Resolve high cannibalization - merge with similar posts",
+              "Consider 301 redirect to stronger performing page",
+            ],
+            topKeywords: [
+              {
+                keyword: "seo tips",
+                position: 38.2,
+                clicks: 2,
+                impressions: 85,
+              },
+              {
+                keyword: "seo best practices",
+                position: 52.6,
+                clicks: 1,
+                impressions: 40,
+              },
+            ],
+          },
+        ],
+      };
+
+      setRiskMetricsData(sampleData);
+    } catch (error) {
+      console.error("Error getting risk metrics:", error);
+    }
+  }, [getRiskMetric]);
 
   // Calculate risk metrics from real onboarding data using centralized calculations
   const calculateRiskMetrics = useCallback(() => {
@@ -120,9 +311,9 @@ const RiskDashboard = () => {
         pages: totalFunnelPages,
         impressions: totalImpressions,
         clicks: totalClicks,
-        avgCTR: parseFloat(avgCTR.toFixed(2)),
+        avgCTR: parseFloat(avgCTR?.toFixed(2)),
         avgDA: domainAuthority,
-        avgKD: parseFloat(avgKD.toFixed(1)),
+        avgKD: parseFloat(avgKD?.toFixed(1)),
       },
       creditScore: {
         // Use getContentQualityDistribution from FinancialCalculations context
@@ -589,6 +780,380 @@ const RiskDashboard = () => {
     }));
   };
 
+  // Function to render advanced insights using the rich riskMetricsData
+  const renderAdvancedInsights = () => {
+    console.log("Risk Metrics Data:", riskMetricsData);
+    if (!riskMetricsData) {
+      return null;
+    }
+
+    const sampleData = riskMetricsData[0]; // Use first item as sample
+
+    return (
+      <div className="advanced-insights-section">
+        <div className="insights-header">
+          <Brain className="insights-icon" />
+          <h2>Advanced Risk Intelligence</h2>
+          <p>Deep insights from your site's performance data</p>
+        </div>
+
+        {/* Key Metrics Overview */}
+        <div className="key-metrics-grid">
+          <div className="metric-card high-risk">
+            <TrendingDown className="metric-icon" />
+            <div className="metric-content">
+              <h3>High Risk Pages</h3>
+              <div className="metric-value">
+                {
+                  riskMetricsData.filter((item) => item.riskLevel === "High")
+                    .length
+                }
+              </div>
+              <p>Pages requiring immediate attention</p>
+            </div>
+          </div>
+
+          <div className="metric-card medium-risk">
+            <AlertTriangle className="metric-icon" />
+            <div className="metric-content">
+              <h3>Medium Risk Pages</h3>
+              <div className="metric-value">
+                {
+                  riskMetricsData.filter((item) => item.riskLevel === "Medium")
+                    .length
+                }
+              </div>
+              <p>Pages with optimization potential</p>
+            </div>
+          </div>
+
+          <div className="metric-card low-risk">
+            <Shield className="metric-icon" />
+            <div className="metric-content">
+              <h3>Low Risk Pages</h3>
+              <div className="metric-value">
+                {
+                  riskMetricsData.filter((item) => item.riskLevel === "Low")
+                    .length
+                }
+              </div>
+              <p>Pages performing well</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Position Drift Analysis */}
+        <div className="insight-card">
+          <div className="insight-header">
+            <Target className="insight-icon" />
+            <h3>Position Drift Analysis</h3>
+          </div>
+          <div className="insight-content">
+            <div className="drift-stats">
+              <div className="drift-stat positive">
+                <ArrowUpRight className="drift-icon" />
+                <span>Major Improvements</span>
+                <div className="drift-value">
+                  {
+                    riskMetricsData.filter(
+                      (item) => item.riskMetrics.positionDrift < -50
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="drift-stat negative">
+                <ArrowDownRight className="drift-icon" />
+                <span>Major Declines</span>
+                <div className="drift-value">
+                  {
+                    riskMetricsData.filter(
+                      (item) => item.riskMetrics.positionDrift > 50
+                    ).length
+                  }
+                </div>
+              </div>
+            </div>
+            <div className="sample-data">
+              <p>
+                <strong>Sample:</strong> {sampleData.url}
+              </p>
+              <p>
+                Position Change: {sampleData.positionDrift?.toFixed(1)}{" "}
+                positions
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Traffic Decay Patterns */}
+        <div className="insight-card">
+          <div className="insight-header">
+            <Activity className="insight-icon" />
+            <h3>Traffic Decay Patterns</h3>
+          </div>
+          <div className="insight-content">
+            <div className="decay-analysis">
+              <div className="decay-metric">
+                <span>Pages with Traffic Decay:</span>
+                <strong>
+                  {
+                    riskMetricsData.filter(
+                      (item) => item.riskMetrics.trafficDecay > 0
+                    ).length
+                  }
+                </strong>
+              </div>
+              <div className="historical-context">
+                <p>
+                  <strong>12-Month Performance:</strong>
+                </p>
+                <p>
+                  Total Clicks:{" "}
+                  {sampleData.historicalContext.totalClicks12Month}
+                </p>
+                <p>
+                  Total Impressions:{" "}
+                  {sampleData.historicalContext.totalImpressions12Month}
+                </p>
+                <p>
+                  Best 3-Month Avg:{" "}
+                  {sampleData.historicalContext.bestThreeMonthAvg}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Keyword Performance Insights */}
+        <div className="insight-card">
+          <div className="insight-header">
+            <Search className="insight-icon" />
+            <h3>Keyword Performance Intelligence</h3>
+          </div>
+          <div className="insight-content">
+            <div className="keyword-brackets">
+              <div className="bracket top-10">
+                <span>Top 10 Positions</span>
+                <div className="bracket-count">
+                  {
+                    sampleData.topKeywords.filter((kw) => kw.position <= 10)
+                      .length
+                  }
+                </div>
+              </div>
+              <div className="bracket top-20">
+                <span>Top 20 Positions</span>
+                <div className="bracket-count">
+                  {
+                    sampleData.topKeywords.filter(
+                      (kw) => kw.position <= 20 && kw.position > 10
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="bracket beyond-20">
+                <span>Beyond 20</span>
+                <div className="bracket-count">
+                  {
+                    sampleData.topKeywords.filter((kw) => kw.position > 20)
+                      .length
+                  }
+                </div>
+              </div>
+            </div>
+            <div className="top-keywords-sample">
+              <h4>Sample Keywords:</h4>
+              {sampleData.topKeywords.slice(0, 3).map((keyword, index) => (
+                <div key={index} className="keyword-item">
+                  <span className="keyword-name">{keyword.keyword}</span>
+                  <span className="keyword-position">
+                    Pos: {keyword.position?.toFixed(1)}
+                  </span>
+                  <span className="keyword-impressions">
+                    Imp: {keyword.impressions}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Cannibalization Intelligence */}
+        <div className="insight-card">
+          <div className="insight-header">
+            <Users className="insight-icon" />
+            <h3>Cannibalization Intelligence</h3>
+          </div>
+          <div className="insight-content">
+            <div className="cannibalization-stats">
+              <div className="cannibalization-severity">
+                <div className="severity-item high">
+                  <span>High Severity</span>
+                  <div className="severity-count">
+                    {
+                      riskMetricsData.filter(
+                        (item) => item.riskMetrics.cannibalizationScore >= 4
+                      ).length
+                    }
+                  </div>
+                </div>
+                <div className="severity-item medium">
+                  <span>Medium Severity</span>
+                  <div className="severity-count">
+                    {
+                      riskMetricsData.filter(
+                        (item) =>
+                          item.riskMetrics.cannibalizationScore >= 2 &&
+                          item.riskMetrics.cannibalizationScore < 4
+                      ).length
+                    }
+                  </div>
+                </div>
+                <div className="severity-item low">
+                  <span>Low Severity</span>
+                  <div className="severity-count">
+                    {
+                      riskMetricsData.filter(
+                        (item) => item.riskMetrics.cannibalizationScore < 2
+                      ).length
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AI Recommendations Engine */}
+        <div className="insight-card recommendations">
+          <div className="insight-header">
+            <Brain className="insight-icon" />
+            <h3>AI Recommendations Engine</h3>
+          </div>
+          <div className="insight-content">
+            <div className="recommendations-list">
+              {sampleData.recommendations.map((recommendation, index) => (
+                <div key={index} className="recommendation-item">
+                  <Zap className="rec-icon" />
+                  <span>{recommendation}</span>
+                </div>
+              ))}
+            </div>
+            <div className="recommendation-categories">
+              <div className="category content-refresh">
+                <span>Content Refresh</span>
+                <div className="category-count">
+                  {
+                    riskMetricsData.filter((item) =>
+                      item.recommendations.some((rec) =>
+                        rec.toLowerCase().includes("refresh")
+                      )
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="category cannibalization-fix">
+                <span>Cannibalization Fix</span>
+                <div className="category-count">
+                  {
+                    riskMetricsData.filter((item) =>
+                      item.recommendations.some((rec) =>
+                        rec.toLowerCase().includes("cannibalization")
+                      )
+                    ).length
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Index Bloat Analysis */}
+        <div className="insight-card">
+          <div className="insight-header">
+            <Eye className="insight-icon" />
+            <h3>Index Bloat Analysis</h3>
+          </div>
+          <div className="insight-content">
+            <div className="bloat-stats">
+              <div className="bloat-metric clean">
+                <span>Clean Pages</span>
+                <div className="bloat-count">
+                  {
+                    riskMetricsData.filter(
+                      (item) => !item.riskMetrics.isIndexBloat
+                    ).length
+                  }
+                </div>
+              </div>
+              <div className="bloat-metric bloated">
+                <span>Index Bloat</span>
+                <div className="bloat-count">
+                  {
+                    riskMetricsData.filter(
+                      (item) => item.riskMetrics.isIndexBloat
+                    ).length
+                  }
+                </div>
+              </div>
+            </div>
+            <div className="cleanup-strategy">
+              <h4>Cleanup Strategy:</h4>
+              <p>
+                • Focus on pages with low impressions and high position drift
+              </p>
+              <p>• Consider consolidating similar content</p>
+              <p>• Improve internal linking for important pages</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Immediate Action Center */}
+        <div className="insight-card action-center">
+          <div className="insight-header">
+            <Crown className="insight-icon" />
+            <h3>Immediate Action Center</h3>
+          </div>
+          <div className="insight-content">
+            <div className="priority-actions">
+              <div className="action-item priority-high">
+                <span className="priority-label">HIGH PRIORITY</span>
+                <span className="action-text">
+                  Fix{" "}
+                  {
+                    riskMetricsData.filter((item) => item.priority === "High")
+                      .length
+                  }{" "}
+                  high-risk pages
+                </span>
+              </div>
+              <div className="action-item priority-medium">
+                <span className="priority-label">MEDIUM PRIORITY</span>
+                <span className="action-text">
+                  Optimize{" "}
+                  {
+                    riskMetricsData.filter((item) => item.priority === "Medium")
+                      .length
+                  }{" "}
+                  medium-risk pages
+                </span>
+              </div>
+            </div>
+            <div className="next-steps">
+              <h4>Next Steps:</h4>
+              <ol>
+                <li>Address pages with highest composite risk scores</li>
+                <li>Implement AI recommendations for content refresh</li>
+                <li>Resolve keyword cannibalization conflicts</li>
+                <li>Monitor position drift trends</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -619,7 +1184,7 @@ const RiskDashboard = () => {
   }
 
   return (
-    <div className="risk-dashboard-container">
+    <div className="risk-dashboard">
       {/* Header */}
       <div className="risk-dashboard-header">
         <div className="header-title">
@@ -1161,6 +1726,9 @@ const RiskDashboard = () => {
           Configure Thresholds
         </button>
       </div>
+
+      {/* Add new insights section after the error pages summary */}
+      {renderAdvancedInsights()}
     </div>
   );
 };

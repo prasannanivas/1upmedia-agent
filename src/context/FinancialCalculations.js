@@ -2785,6 +2785,10 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
       },
     };
   };
+
+  const getRiskMetric = () => {
+    return riskMetrics;
+  };
   // Helper functions for the new analysis functions - Using unified A-D grading system
   const getQualityGrade = (score) => {
     if (score >= 90) return "A";
@@ -3568,6 +3572,7 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         gaDataInsightsSummary,
         gaDataTopPerformers,
         gaDataProblemAreas,
+        getRiskMetric,
         getRevenueLeak,
         getContentDecay,
         getKeywordMismatch,
