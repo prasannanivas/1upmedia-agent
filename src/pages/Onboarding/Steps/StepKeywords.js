@@ -479,6 +479,8 @@ const StepKeywords = () => {
                 averageOrderValue: domainCostDetails.averageOrderValue,
                 averageContentCost: domainCostDetails.AverageContentCost || 50,
                 totalInvested: domainCostDetails.totalInvested,
+                domainAuthority:
+                  onboardingData.initialAnalysisState?.domainAuthority || 26,
                 conversionRate: 0.03,
                 // Include Google Analytics property if available
                 ...(hasGoogleAnalytics && {

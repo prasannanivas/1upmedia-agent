@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import { AlertTriangle, Brain, ChevronRight } from "lucide-react";
 import { calculateGradeDistribution } from "../../utils/ContentRating";
 import { executeCalculationsForDashboard } from "../../utils/calculationMapping";
@@ -10,6 +11,14 @@ import "./RiskDashboard.css";
 
 const RiskDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
+  const {
+    getContentQualityDistribution,
+    getContentDecay,
+    getCannibalizationLoss,
+    getLinkDilution,
+    funnelGapIdentifier,
+    getTotalWastedSpend,
+  } = useFinancialCalculations();
   const navigate = useNavigate();
 
   // Calculate risk metrics from real onboarding data using centralized calculations
@@ -116,114 +125,224 @@ const RiskDashboard = () => {
         avgKD: parseFloat(avgKD.toFixed(1)),
       },
       creditScore: {
-        // Calculate standardized content grades using ContentRating utility
+        // Use getContentQualityDistribution from FinancialCalculations context
         ...(() => {
-          // Prepare content data for grading
-          const contentMetrics = searchConsoleData.map((item) => {
-            const avgPosition = parseFloat(item.position) || 0;
-            const ctr = parseFloat(item.ctr) || 0;
+          try {
+            const contentQualityData = getContentQualityDistribution();
+            const gradeDistribution = contentQualityData?.gradeDistribution || {
+              A: 0,
+              B: 0,
+              C: 0,
+              D: 0,
+            };
 
-            // Calculate ROI based on position and performance
-            const roi =
-              avgPosition <= 10
-                ? 160
-                : avgPosition <= 20
-                ? 90
-                : avgPosition <= 30
-                ? 20
-                : -30;
+            // Calculate downgraded pages from content cost waste
+            const downgraded = contentCostWasteData.length;
 
-            // Calculate traffic trend based on CTR vs position
-            const expectedCTR =
-              avgPosition <= 10
-                ? 5
-                : avgPosition <= 20
-                ? 2
-                : avgPosition <= 30
-                ? 1
-                : 0.5;
-            const trafficTrend = ctr > expectedCTR ? 10 : -5;
-
-            // Engagement score based on impressions and position
-            const engagementScore =
-              avgPosition < 10 ? 85 : avgPosition < 20 ? 65 : 40;
+            // Calculate D-grade CTR loss
+            const dGradeCTRLoss = Math.max(
+              0,
+              parseFloat((avgCTR * 0.7).toFixed(2))
+            );
 
             return {
-              roi,
-              trafficTrend,
-              conversionRate: 2.0, // Default conversion rate
-              engagementScore,
+              aGrade: gradeDistribution.A,
+              bGrade: gradeDistribution.B,
+              cGrade: gradeDistribution.C,
+              dGrade: gradeDistribution.D,
+              downgraded,
+              dGradeCTRLoss,
             };
-          });
+          } catch (error) {
+            console.error("Error getting content quality distribution:", error);
+            // Fallback to manual calculation
+            const contentMetrics = searchConsoleData.map((item) => {
+              const avgPosition = parseFloat(item.position) || 0;
+              const ctr = parseFloat(item.ctr) || 0;
 
-          // Calculate grade distribution
-          const gradeDistribution = calculateGradeDistribution(contentMetrics);
+              const roi =
+                avgPosition <= 10
+                  ? 160
+                  : avgPosition <= 20
+                  ? 90
+                  : avgPosition <= 30
+                  ? 20
+                  : -30;
 
-          // Calculate downgraded pages
-          const downgraded = contentCostWasteData.length;
+              const expectedCTR =
+                avgPosition <= 10
+                  ? 5
+                  : avgPosition <= 20
+                  ? 2
+                  : avgPosition <= 30
+                  ? 1
+                  : 0.5;
+              const trafficTrend = ctr > expectedCTR ? 10 : -5;
 
-          // Calculate D-grade CTR loss
-          const dGradeCTRLoss = Math.max(
-            0,
-            parseFloat((avgCTR * 0.7).toFixed(2))
-          );
+              const engagementScore =
+                avgPosition < 10 ? 85 : avgPosition < 20 ? 65 : 40;
 
-          return {
-            aGrade: gradeDistribution.A,
-            bGrade: gradeDistribution.B,
-            cGrade: gradeDistribution.C,
-            dGrade: gradeDistribution.D,
-            downgraded,
-            dGradeCTRLoss,
-          };
+              return {
+                roi,
+                trafficTrend,
+                conversionRate: 2.0,
+                engagementScore,
+              };
+            });
+
+            const gradeDistribution =
+              calculateGradeDistribution(contentMetrics);
+            const downgraded = contentCostWasteData.length;
+            const dGradeCTRLoss = Math.max(
+              0,
+              parseFloat((avgCTR * 0.7).toFixed(2))
+            );
+
+            return {
+              aGrade: gradeDistribution.A,
+              bGrade: gradeDistribution.B,
+              cGrade: gradeDistribution.C,
+              dGrade: gradeDistribution.D,
+              downgraded,
+              dGradeCTRLoss,
+            };
+          }
         })(),
       },
       contentDecay: {
-        stable: stablePages,
-        deepDecay: decayPages,
-        growing: growingPages,
-        avgDropPercent:
-          contentDecayData.length > 0
-            ? parseFloat(
-                (
-                  (contentDecayData.reduce(
-                    (sum, item) => sum + (item.dropRatio || 0),
-                    0
-                  ) /
-                    contentDecayData.length) *
-                  -100
-                ).toFixed(1)
-              )
-            : 0,
-        noROIPages: negativeROIPages,
-        topDroppers: contentDecayData
-          .filter((item) => item.dropRatio && item.dropRatio < -0.3)
-          .slice(0, 2)
-          .map((item) => ({
-            url: item.url || "Unknown page",
-            drop: parseFloat((item.dropRatio * 100).toFixed(1)),
-          })),
-        impact: centralizedMetrics.contentRisk || 0, // Use centralized calculation
+        // Use getContentDecay function from FinancialCalculations context
+        ...(() => {
+          try {
+            const contentDecayData = getContentDecay();
+            return {
+              stable: contentDecayData?.stablePages || stablePages,
+              deepDecay: contentDecayData?.decayPages || decayPages,
+              growing: contentDecayData?.growingPages || growingPages,
+              avgDropPercent:
+                contentDecayData?.avgDropPercent ||
+                (contentDecayData.length > 0
+                  ? parseFloat(
+                      (
+                        (contentDecayData.reduce(
+                          (sum, item) => sum + (item.dropRatio || 0),
+                          0
+                        ) /
+                          contentDecayData.length) *
+                        -100
+                      ).toFixed(1)
+                    )
+                  : 0),
+              noROIPages:
+                contentDecayData?.negativeROIPages || negativeROIPages,
+              topDroppers:
+                contentDecayData?.topDroppers ||
+                contentDecayData
+                  .filter((item) => item.dropRatio && item.dropRatio < -0.3)
+                  .slice(0, 2)
+                  .map((item) => ({
+                    url: item.url || "Unknown page",
+                    drop: parseFloat((item.dropRatio * 100).toFixed(1)),
+                  })),
+              impact:
+                contentDecayData?.impact || centralizedMetrics.contentRisk || 0,
+            };
+          } catch (error) {
+            console.error("Error getting content decay data:", error);
+            // Fallback to manual calculation
+            return {
+              stable: stablePages,
+              deepDecay: decayPages,
+              growing: growingPages,
+              avgDropPercent:
+                contentDecayData.length > 0
+                  ? parseFloat(
+                      (
+                        (contentDecayData.reduce(
+                          (sum, item) => sum + (item.dropRatio || 0),
+                          0
+                        ) /
+                          contentDecayData.length) *
+                        -100
+                      ).toFixed(1)
+                    )
+                  : 0,
+              noROIPages: negativeROIPages,
+              topDroppers: contentDecayData
+                .filter((item) => item.dropRatio && item.dropRatio < -0.3)
+                .slice(0, 2)
+                .map((item) => ({
+                  url: item.url || "Unknown page",
+                  drop: parseFloat((item.dropRatio * 100).toFixed(1)),
+                })),
+              impact: centralizedMetrics.contentRisk || 0,
+            };
+          }
+        })(),
       },
       cannibalization: {
-        keywordOverlaps: cannibalizationData.length,
-        impressionShareLoss: cannibalizationData.reduce(
-          (sum, item) =>
-            sum +
-            (item.primaryUrl?.impressions || 0) +
-            (item.competingUrls?.reduce(
-              (urlSum, url) => urlSum + (url.impressions || 0),
-              0
-            ) || 0),
-          0
-        ),
-        similarityPages: cannibalizationData.reduce(
-          (sum, item) => sum + 1 + (item.competingUrls?.length || 0),
-          0
-        ),
-        exampleKeyword:
-          cannibalizationData[0]?.keyword || keywordList[0] || "target keyword",
-        impact: centralizedMetrics.cannibalizationRisk || 0, // Use centralized calculation
+        // Use getCannibalizationLoss function from FinancialCalculations context
+        ...(() => {
+          try {
+            const cannibalizationLossData = getCannibalizationLoss();
+            return {
+              keywordOverlaps:
+                cannibalizationLossData?.keywordOverlaps ||
+                cannibalizationData.length,
+              impressionShareLoss:
+                cannibalizationLossData?.impressionShareLoss ||
+                cannibalizationData.reduce(
+                  (sum, item) =>
+                    sum +
+                    (item.primaryUrl?.impressions || 0) +
+                    (item.competingUrls?.reduce(
+                      (urlSum, url) => urlSum + (url.impressions || 0),
+                      0
+                    ) || 0),
+                  0
+                ),
+              similarityPages:
+                cannibalizationLossData?.similarityPages ||
+                cannibalizationData.reduce(
+                  (sum, item) => sum + 1 + (item.competingUrls?.length || 0),
+                  0
+                ),
+              exampleKeyword:
+                cannibalizationLossData?.exampleKeyword ||
+                cannibalizationData[0]?.keyword ||
+                keywordList[0] ||
+                "target keyword",
+              impact:
+                cannibalizationLossData?.impact ||
+                centralizedMetrics.cannibalizationRisk ||
+                0,
+            };
+          } catch (error) {
+            console.error("Error getting cannibalization loss data:", error);
+            // Fallback to manual calculation
+            return {
+              keywordOverlaps: cannibalizationData.length,
+              impressionShareLoss: cannibalizationData.reduce(
+                (sum, item) =>
+                  sum +
+                  (item.primaryUrl?.impressions || 0) +
+                  (item.competingUrls?.reduce(
+                    (urlSum, url) => urlSum + (url.impressions || 0),
+                    0
+                  ) || 0),
+                0
+              ),
+              similarityPages: cannibalizationData.reduce(
+                (sum, item) => sum + 1 + (item.competingUrls?.length || 0),
+                0
+              ),
+              exampleKeyword:
+                cannibalizationData[0]?.keyword ||
+                keywordList[0] ||
+                "target keyword",
+              impact: centralizedMetrics.cannibalizationRisk || 0,
+            };
+          }
+        })(),
       },
       keywordEfficiency: {
         avgKD: parseFloat(avgKD.toFixed(1)),
@@ -245,16 +364,57 @@ const RiskDashboard = () => {
           centralizedMetrics.keywordEfficiency?.blendedAuthority || 0,
         efficiencyRatio:
           centralizedMetrics.keywordEfficiency?.efficiencyRatio || 0,
-      },
-      // ...existing code for remaining metrics...
+      }, // ...existing code for remaining metrics...
       strategyRatio: {
-        tofu: funnelData.funnelDistribution?.ToF || 0,
-        mofu: funnelData.funnelDistribution?.MoF || 0,
-        bofu: funnelData.funnelDistribution?.BoF || 0,
-        retention: funnelData.funnelDistribution?.Retention || 0,
-        advocacy: funnelData.funnelDistribution?.Advocacy || 0,
-        modu: funnelData.funnelDistribution?.Unknown || 0,
-        bofuDecay: Math.floor((funnelData.funnelDistribution?.BoF || 0) * 0.6),
+        // Use funnelGapIdentifier function from FinancialCalculations context
+        ...(() => {
+          try {
+            const funnelGapData = funnelGapIdentifier();
+            return {
+              tofu:
+                funnelGapData?.funnelDistribution?.ToF ||
+                funnelData.funnelDistribution?.ToF ||
+                0,
+              mofu:
+                funnelGapData?.funnelDistribution?.MoF ||
+                funnelData.funnelDistribution?.MoF ||
+                0,
+              bofu:
+                funnelGapData?.funnelDistribution?.BoF ||
+                funnelData.funnelDistribution?.BoF ||
+                0,
+              retention:
+                funnelGapData?.funnelDistribution?.Retention ||
+                funnelData.funnelDistribution?.Retention ||
+                0,
+              advocacy:
+                funnelGapData?.funnelDistribution?.Advocacy ||
+                funnelData.funnelDistribution?.Advocacy ||
+                0,
+              modu:
+                funnelGapData?.funnelDistribution?.Unknown ||
+                funnelData.funnelDistribution?.Unknown ||
+                0,
+              bofuDecay:
+                funnelGapData?.bofuDecay ||
+                Math.floor((funnelData.funnelDistribution?.BoF || 0) * 0.6),
+            };
+          } catch (error) {
+            console.error("Error getting funnel gap data:", error);
+            // Fallback to manual calculation
+            return {
+              tofu: funnelData.funnelDistribution?.ToF || 0,
+              mofu: funnelData.funnelDistribution?.MoF || 0,
+              bofu: funnelData.funnelDistribution?.BoF || 0,
+              retention: funnelData.funnelDistribution?.Retention || 0,
+              advocacy: funnelData.funnelDistribution?.Advocacy || 0,
+              modu: funnelData.funnelDistribution?.Unknown || 0,
+              bofuDecay: Math.floor(
+                (funnelData.funnelDistribution?.BoF || 0) * 0.6
+              ),
+            };
+          }
+        })(),
       },
       psychographicMismatch: {
         driftPages: funnelData.funnelDistribution?.Unknown || 0,
@@ -262,20 +422,73 @@ const RiskDashboard = () => {
         impact: centralizedMetrics.psychoMismatch || 0, // Use centralized calculation
       },
       linkDilution: {
-        lowDALinks: Math.max(0, pageAuthority - domainAuthority),
-        conflictingAnchors: cannibalizationData.length,
-        lostBacklinks: Math.max(0, citationFlow - trustFlow),
-        impact: centralizedMetrics.linkDilution || 0, // Use centralized calculation
+        // Use getLinkDilution function from FinancialCalculations context
+        ...(() => {
+          try {
+            const linkDilutionData = getLinkDilution();
+            return {
+              lowDALinks:
+                linkDilutionData?.lowDALinks ||
+                Math.max(0, pageAuthority - domainAuthority),
+              conflictingAnchors:
+                linkDilutionData?.conflictingAnchors ||
+                cannibalizationData.length,
+              lostBacklinks:
+                linkDilutionData?.lostBacklinks ||
+                Math.max(0, citationFlow - trustFlow),
+              impact:
+                linkDilutionData?.impact ||
+                centralizedMetrics.linkDilution ||
+                0,
+            };
+          } catch (error) {
+            console.error("Error getting link dilution data:", error);
+            // Fallback to manual calculation
+            return {
+              lowDALinks: Math.max(0, pageAuthority - domainAuthority),
+              conflictingAnchors: cannibalizationData.length,
+              lostBacklinks: Math.max(0, citationFlow - trustFlow),
+              impact: centralizedMetrics.linkDilution || 0,
+            };
+          }
+        })(),
       },
       inventoryBloat: {
-        lowImpressionPages: searchConsoleData.filter(
-          (item) => (item.impressions || 0) < 10
-        ).length,
-        noBacklinks: contentCostWasteData.filter(
-          (item) => (item.impressions || 0) === 0
-        ).length,
-        crawlBudgetWaste: contentCostWasteData.length,
-        impact: centralizedMetrics.contentWaste || 0, // Use centralized calculation
+        // Use getTotalWastedSpend function from FinancialCalculations context
+        ...(() => {
+          try {
+            const wastedSpendData = getTotalWastedSpend();
+            return {
+              lowImpressionPages:
+                wastedSpendData?.lowImpressionPages ||
+                searchConsoleData.filter((item) => (item.impressions || 0) < 10)
+                  .length,
+              noBacklinks:
+                wastedSpendData?.noBacklinks ||
+                contentCostWasteData.filter(
+                  (item) => (item.impressions || 0) === 0
+                ).length,
+              crawlBudgetWaste:
+                wastedSpendData?.crawlBudgetWaste ||
+                contentCostWasteData.length,
+              impact:
+                wastedSpendData?.impact || centralizedMetrics.contentWaste || 0,
+            };
+          } catch (error) {
+            console.error("Error getting wasted spend data:", error);
+            // Fallback to manual calculation
+            return {
+              lowImpressionPages: searchConsoleData.filter(
+                (item) => (item.impressions || 0) < 10
+              ).length,
+              noBacklinks: contentCostWasteData.filter(
+                (item) => (item.impressions || 0) === 0
+              ).length,
+              crawlBudgetWaste: contentCostWasteData.length,
+              impact: centralizedMetrics.contentWaste || 0,
+            };
+          }
+        })(),
       },
       timeToROI: {
         avgBreakeven:
@@ -347,7 +560,15 @@ const RiskDashboard = () => {
         ),
       },
     };
-  }, [onboardingData]);
+  }, [
+    onboardingData,
+    getContentQualityDistribution,
+    getContentDecay,
+    getCannibalizationLoss,
+    getLinkDilution,
+    getTotalWastedSpend,
+    funnelGapIdentifier,
+  ]);
 
   // Initialize risk metrics state with calculated values
   const [riskMetrics, setRiskMetrics] = useState(calculateRiskMetrics());

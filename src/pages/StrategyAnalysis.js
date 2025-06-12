@@ -6,6 +6,7 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../context/OnboardingContext";
+import { useFinancialCalculations } from "../context/FinancialCalculations";
 import {
   AlertTriangle,
   RefreshCw,
@@ -40,6 +41,12 @@ import "./StrategyAnalysis.css";
 
 const StrategyAnalysis = () => {
   const { onboardingData, loading } = useOnboarding();
+  const {
+    getRevenueLeak,
+    getCannibalizationLoss,
+    getLinkDilution,
+    funnelGapIdentifier,
+  } = useFinancialCalculations();
   const navigate = useNavigate();
   // Calculate strategy engine metrics
   const strategyData = useMemo(() => {
@@ -80,100 +87,171 @@ const StrategyAnalysis = () => {
 
     const efficiencyRatio =
       avgKeywordDifficulty > 0 ? domainAuthority / avgKeywordDifficulty : 1.0;
-    const deltaAboveClass = Math.max(0, avgKeywordDifficulty - domainAuthority);
+    const deltaAboveClass = Math.max(0, avgKeywordDifficulty - domainAuthority); // Get funnel analysis data using funnelGapIdentifier from FinancialCalculations
+    let tofPercentage = 0;
+    let mofPercentage = 0;
+    let bofPercentage = 0;
+    let totalFunnelPages = 1;
+    let idealToF = 25;
+    let idealMoF = 10;
+    let idealBoF = 65;
 
-    // Get real funnel analysis data
-    const funnelAnalysis = onboardingData.funnelAnalysis || {};
-    const funnelData = funnelAnalysis.funnelDistribution || {
-      ToF: 0,
-      MoF: 0,
-      BoF: 0,
-      Retention: 0,
-      Advocacy: 0,
-      Unknown: 0,
-    };
+    try {
+      // Use funnelGapIdentifier for comprehensive funnel analysis
+      const funnelGapData = funnelGapIdentifier();
+      const stageAnalysis = funnelGapData?.stageAnalysis || {};
 
-    const totalFunnelPages =
-      funnelAnalysis.totalAnalyzed ||
-      funnelData.ToF +
-        funnelData.MoF +
-        funnelData.BoF +
-        funnelData.Retention +
-        funnelData.Advocacy +
-        funnelData.Unknown ||
-      searchConsoleData.length ||
-      1;
-    const tofPercentage = (funnelData.ToF / totalFunnelPages) * 100;
-    const mofPercentage = (funnelData.MoF / totalFunnelPages) * 100;
-    const bofPercentage = (funnelData.BoF / totalFunnelPages) * 100;
+      // Extract funnel percentages from gap analysis
+      if (Object.keys(stageAnalysis).length > 0) {
+        const tofData = stageAnalysis.ToF || {};
+        const mofData = stageAnalysis.MoF || {};
+        const bofData = stageAnalysis.BoF || {};
 
-    // Calculate cannibalization from Search Console data
-    const cannibalizationPages = searchConsoleData.filter((page, index) => {
-      const query = (page.query || page.keys?.[0] || "").toLowerCase();
-      if (query.length <= 3) return false;
+        tofPercentage = tofData.currentPercentage || 0;
+        mofPercentage = mofData.currentPercentage || 0;
+        bofPercentage = bofData.currentPercentage || 0;
 
-      return searchConsoleData.some((otherPage, otherIndex) => {
-        if (index >= otherIndex) return false;
-        const otherQuery = (
-          otherPage.query ||
-          otherPage.keys?.[0] ||
-          ""
-        ).toLowerCase();
+        // Use optimal percentages from funnel gap analysis
+        idealToF = tofData.optimalPercentage || 25;
+        idealMoF = mofData.optimalPercentage || 10;
+        idealBoF = bofData.optimalPercentage || 65;
 
-        if (otherQuery.length <= 3) return false;
+        totalFunnelPages = funnelGapData?.summary?.totalAnalyzed || 1;
+      }
+    } catch (error) {
+      console.error("Error getting funnel gap data:", error);
+      // Fallback to manual calculation from onboarding data
+      const funnelAnalysis = onboardingData.funnelAnalysis || {};
+      const funnelData = funnelAnalysis.funnelDistribution || {
+        ToF: 0,
+        MoF: 0,
+        BoF: 0,
+        Retention: 0,
+        Advocacy: 0,
+        Unknown: 0,
+      };
 
-        // Check for keyword cannibalization
-        const words1 = query.split(" ").filter((w) => w.length > 2);
-        const words2 = otherQuery.split(" ").filter((w) => w.length > 2);
-        const overlap = words1.filter((word) => words2.includes(word));
+      totalFunnelPages =
+        funnelAnalysis.totalAnalyzed ||
+        funnelData.ToF +
+          funnelData.MoF +
+          funnelData.BoF +
+          funnelData.Retention +
+          funnelData.Advocacy +
+          funnelData.Unknown ||
+        searchConsoleData.length ||
+        1;
+      tofPercentage = (funnelData.ToF / totalFunnelPages) * 100;
+      mofPercentage = (funnelData.MoF / totalFunnelPages) * 100;
+      bofPercentage = (funnelData.BoF / totalFunnelPages) * 100;
+    } // Calculate cannibalization from Search Console data (for fallback only)
+    // This will only be used if FinancialCalculations fails// Calculate lost equity value using FinancialCalculations functions
+    let lostEquityValue = 0;
+    let cannibalizationValue = 0;
+    let dilutionValue = 0;
+    let cannibalizationUrls = 0;
+    let dilutionPercentage = 0;
 
-        return overlap.length >= 2; // At least 2 words in common
+    try {
+      // Use getCannibalizationLoss for cannibalization analysis
+      const cannibalizationData = getCannibalizationLoss();
+      cannibalizationValue =
+        cannibalizationData?.summary?.totalRevenueLoss || 0;
+      cannibalizationUrls =
+        cannibalizationData?.summary?.keywordsWithCannibalization || 0;
+    } catch (error) {
+      console.error("Error getting cannibalization data:", error);
+      // Fallback to manual calculation
+      const cannibalizationPages = searchConsoleData.filter((page, index) => {
+        const query = (page.query || page.keys?.[0] || "").toLowerCase();
+        if (query.length <= 3) return false;
+
+        return searchConsoleData.some((otherPage, otherIndex) => {
+          if (index >= otherIndex) return false;
+          const otherQuery = (
+            otherPage.query ||
+            otherPage.keys?.[0] ||
+            ""
+          ).toLowerCase();
+
+          if (otherQuery.length <= 3) return false;
+
+          // Check for keyword cannibalization
+          const words1 = query.split(" ").filter((w) => w.length > 2);
+          const words2 = otherQuery.split(" ").filter((w) => w.length > 2);
+          const overlap = words1.filter((word) => words2.includes(word));
+
+          return overlap.length >= 2; // At least 2 words in common
+        });
       });
-    });
 
-    // Calculate orphan pages (high position, low impressions)
-    const orphanPages = searchConsoleData.filter(
-      (page) =>
-        parseFloat(page.position) > 50 &&
-        parseInt(page.impressions || page.impressions) < 10
-    );
+      const totalInvestment =
+        onboardingData.domainCostDetails?.totalInvested || 10000;
 
-    const cannibalizationPercentage =
-      searchConsoleData.length > 0
-        ? (cannibalizationPages.length / searchConsoleData.length) * 100
-        : 0;
+      const cannibalizationImpactPercentage =
+        searchConsoleData.length > 0
+          ? (cannibalizationPages.length / searchConsoleData.length) * 0.12 // 12% impact for cannibalization
+          : 0;
+      cannibalizationValue = totalInvestment * cannibalizationImpactPercentage;
+      cannibalizationUrls = cannibalizationPages.length;
+    }
 
-    const dilutionPercentage =
-      searchConsoleData.length > 0
-        ? (orphanPages.length / searchConsoleData.length) * 100
-        : 0; // Calculate lost equity value using percentage-based approach consistent with other dashboards
+    try {
+      // Use getLinkDilution for link dilution analysis
+      const linkDilutionData = getLinkDilution();
+      dilutionValue = linkDilutionData?.summary?.totalRevenueLoss || 0;
+      dilutionPercentage = linkDilutionData?.summary?.dilutionPercentage || 0;
+    } catch (error) {
+      console.error("Error getting link dilution data:", error);
+      // Fallback to manual calculation
+      const orphanPages = searchConsoleData.filter(
+        (page) =>
+          parseFloat(page.position) > 50 &&
+          parseInt(page.impressions || page.impressions) < 10
+      );
+
+      const totalInvestment =
+        onboardingData.domainCostDetails?.totalInvested || 10000;
+
+      const dilutionImpactPercentage =
+        searchConsoleData.length > 0
+          ? (orphanPages.length / searchConsoleData.length) * 0.08 // 8% impact for dilution
+          : 0;
+      dilutionValue = totalInvestment * dilutionImpactPercentage;
+      dilutionPercentage =
+        searchConsoleData.length > 0
+          ? (orphanPages.length / searchConsoleData.length) * 100
+          : 0;
+    }
+
+    try {
+      // Use getRevenueLeak for additional revenue leak analysis
+      const revenueLeakData = getRevenueLeak();
+      const additionalLeak = revenueLeakData?.estimatedRevenueLoss || 0;
+      lostEquityValue =
+        cannibalizationValue + dilutionValue + additionalLeak * 0.1; // 10% of revenue leak
+    } catch (error) {
+      console.error("Error getting revenue leak data:", error);
+      // Fallback calculation
+      lostEquityValue = cannibalizationValue + dilutionValue;
+    }
+
     const totalInvestment =
       onboardingData.domainCostDetails?.totalInvested || 10000;
-
-    // Calculate cannibalization impact using percentage-based approach
-    const cannibalizationImpactPercentage =
-      searchConsoleData.length > 0
-        ? (cannibalizationPages.length / searchConsoleData.length) * 0.12 // 12% impact for cannibalization
-        : 0;
-    const cannibalizationValue =
-      totalInvestment * cannibalizationImpactPercentage;
-
-    // Calculate link dilution impact using percentage-based approach
-    const dilutionImpactPercentage =
-      searchConsoleData.length > 0
-        ? (orphanPages.length / searchConsoleData.length) * 0.08 // 8% impact for dilution
-        : 0;
-    const dilutionValue = totalInvestment * dilutionImpactPercentage;
-
-    // Total lost equity value with realistic business caps
-    let lostEquityValue = cannibalizationValue + dilutionValue;
 
     // Cap total lost equity at maximum 25% of total investment (realistic business limit)
     lostEquityValue = Math.min(lostEquityValue, totalInvestment * 0.25);
     lostEquityValue = Math.floor(lostEquityValue);
+    const cannibalizationPercentage =
+      searchConsoleData.length > 0
+        ? (cannibalizationUrls / searchConsoleData.length) * 100
+        : 0;
 
     // Get real framework coverage from funnel analysis
-    const frameworkCoverage = funnelAnalysis.frameworkCoverage || []; // Get real HUTA scores from psychCompositeSummary
+    const funnelAnalysis = onboardingData.funnelAnalysis || {};
+    const frameworkCoverage = funnelAnalysis.frameworkCoverage || [];
+
+    // Get real HUTA scores from psychCompositeSummary
     const psychData = funnelAnalysis.psychCompositeSummary?.overall || {
       emotionalResonance: 42,
       cognitiveClarity: 61,
@@ -307,19 +385,19 @@ const StrategyAnalysis = () => {
         },
         equityLeaks: {
           cannibalizationPercentage: Math.round(cannibalizationPercentage),
-          cannibalizationUrls: cannibalizationPages.length,
+          cannibalizationUrls: cannibalizationUrls,
           dilutionPercentage: Math.round(dilutionPercentage),
           lostEquityValue: lostEquityValue,
           recommendations: [
-            cannibalizationPages.length > 0
+            cannibalizationUrls > 0
               ? `Merge ${Math.min(
-                  cannibalizationPages.length,
+                  cannibalizationUrls,
                   5
                 )} overlapping posts on similar keywords`
               : "No cannibalization detected - maintain keyword focus",
-            orphanPages.length > 0
+            dilutionPercentage > 5
               ? `Redirect ${Math.min(
-                  orphanPages.length,
+                  Math.ceil(dilutionPercentage / 10),
                   8
                 )} orphan pages into core hubs`
               : "No orphan pages detected - good internal linking",
@@ -330,9 +408,9 @@ const StrategyAnalysis = () => {
           tofPercentage: Math.round(tofPercentage),
           mofPercentage: Math.round(mofPercentage),
           bofPercentage: Math.round(bofPercentage),
-          idealToF: 25, // Based on customer journey best practices
-          idealMoF: 10, // Based on real funnel analysis
-          idealBoF: 65, // Based on actual distribution from sample data
+          idealToF: idealToF, // From funnelGapIdentifier analysis
+          idealMoF: idealMoF, // From funnelGapIdentifier analysis
+          idealBoF: idealBoF, // From funnelGapIdentifier analysis
           bofOverweight: bofPercentage > 70,
           recommendations: [
             tofPercentage < 20
@@ -458,7 +536,14 @@ const StrategyAnalysis = () => {
         },
       },
     };
-  }, [onboardingData, loading]);
+  }, [
+    onboardingData,
+    loading,
+    getCannibalizationLoss,
+    getLinkDilution,
+    getRevenueLeak,
+    funnelGapIdentifier,
+  ]);
   if (loading) {
     return (
       <div className="strategy-analysis-loading">

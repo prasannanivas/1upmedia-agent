@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
+import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import {
   ExternalLink,
   Database,
@@ -27,6 +28,14 @@ import "./ContentLedgerDashboard.css";
 
 const ContentLedgerDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
+  const {
+    getTotalWastedSpend,
+    getContentDecay,
+    getLinkDilution,
+    getROIRecoveryPotential,
+    getRevenueLeak,
+    getMoodyCreditScore,
+  } = useFinancialCalculations();
   const navigate = useNavigate(); // State for filters and sorting
   const [activeFilters, setActiveFilters] = useState(new Set(["all"]));
   const [sortConfig, setSortConfig] = useState({
@@ -314,36 +323,126 @@ const ContentLedgerDashboard = () => {
           .toISOString()
           .split("T")[0],
       };
-    });
-
-    // Calculate summary metrics based on real data
+    }); // Calculate summary metrics using FinancialCalculations context functions
     const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0);
-    const totalCost = rows.reduce((sum, row) => sum + row.cost, 0);
-    const totalWastedSpend = rows
-      .filter((r) => r.roi < 0)
-      .reduce((sum, row) => sum + Math.abs(row.revenue - row.cost), 0); // Use centralized deep decay pages count for consistency with Command Center
-    const deepDecayCount = centralizedMetrics.deepDecayPagesCount || 0;
+    const totalCost = rows.reduce((sum, row) => sum + row.cost, 0); // Use FinancialCalculations context for accurate metrics
+    let wastedSpendData,
+      decayAnalysisData,
+      dilutionAnalysisData,
+      roiRecoveryData,
+      revenueLeakData,
+      moodyCreditData;
 
-    // Use centralized high dilution pages count for consistency with Command Center
-    const highDilutionCount = centralizedMetrics.highDilutionPagesCount || 0;
+    try {
+      // Use getRevenueLeak for wasted spend calculation
+      revenueLeakData = getRevenueLeak();
 
-    // Calculate recovery window based on actual performance data
+      // Use getContentDecay for deep decay count
+      decayAnalysisData = getContentDecay();
+
+      // Use getLinkDilution for high dilution count
+      dilutionAnalysisData = getLinkDilution();
+
+      // Use getMoodyCreditScore for credit score
+      moodyCreditData = getMoodyCreditScore();
+
+      // Keep ROI recovery for recovery window
+      roiRecoveryData = getROIRecoveryPotential();
+
+      // Fallback for backward compatibility
+      wastedSpendData = getTotalWastedSpend();
+    } catch (error) {
+      console.error("Error calling FinancialCalculations functions:", error);
+      // Set fallback values
+      revenueLeakData = {
+        estimatedRevenueLoss: 0,
+        urlsBelowThreshold: 0,
+        totalUrls: 0,
+      };
+      decayAnalysisData = {
+        summary: { urlsWithDecay: 0, totalUrlsAnalyzed: 0 },
+      };
+      dilutionAnalysisData = {
+        summary: { urlsWithDilution: 0, totalUrlsAnalyzed: 0 },
+      };
+      moodyCreditData = {
+        summary: {
+          creditRating: "C (High Risk)",
+          overallScore: 0,
+        },
+      };
+      roiRecoveryData = { recoveryTimeframes: {} };
+      wastedSpendData = { totalWastedSpend: 0, wastePages: 0, totalUrls: 0 };
+    } // Debug logging to verify data
+    console.log("=== ContentLedger Financial Calculations Debug ===");
+    console.log("ContentLedger - Financial Calculations Data:", {
+      wastedSpend: {
+        raw: wastedSpendData,
+        value: wastedSpendData?.totalWastedSpend,
+        pages: wastedSpendData?.wastePages,
+        urls: wastedSpendData?.totalUrls,
+      },
+      revenueLeak: {
+        raw: revenueLeakData,
+        value: revenueLeakData?.estimatedRevenueLoss,
+        urlsBelowThreshold: revenueLeakData?.urlsBelowThreshold,
+        totalUrls: revenueLeakData?.totalUrls,
+      },
+      decay: {
+        raw: decayAnalysisData,
+        value: decayAnalysisData?.summary?.urlsWithDecay,
+        total: decayAnalysisData?.summary?.totalUrlsAnalyzed,
+      },
+      dilution: {
+        raw: dilutionAnalysisData,
+        value: dilutionAnalysisData?.summary?.urlsWithDilution,
+        total: dilutionAnalysisData?.summary?.totalUrlsAnalyzed,
+      },
+      moodyCredit: {
+        raw: moodyCreditData,
+        creditRating: moodyCreditData?.summary?.creditRating,
+        overallScore: moodyCreditData?.summary?.overallScore,
+      },
+      recovery: {
+        raw: roiRecoveryData,
+        timeframes: roiRecoveryData?.recoveryTimeframes,
+        hasTimeframes: roiRecoveryData?.recoveryTimeframes
+          ? Object.keys(roiRecoveryData.recoveryTimeframes)
+          : [],
+      },
+    });
+    console.log("=== End ContentLedger Debug ==="); // Use the specific FinancialCalculations functions for each metric
+    const totalWastedSpend = Math.abs(
+      revenueLeakData?.estimatedRevenueLoss || 0
+    );
+    const deepDecayCount = decayAnalysisData?.summary?.urlsWithDecay || 0;
+    const highDilutionCount =
+      dilutionAnalysisData?.summary?.urlsWithDilution || 0;
+    // Calculate recovery window from ROI Recovery data
     const avgPosition =
       rows.reduce((sum, row) => sum + row.position, 0) / rows.length || 0;
-    const avgROIRecovery =
-      avgPosition > 30
-        ? 120
-        : avgPosition > 20
-        ? 90
-        : avgPosition > 10
-        ? 60
-        : 30;
-
-    // Calculate Moody's-style credit score based on performance
+    const avgROIRecovery = roiRecoveryData?.recoveryTimeframes
+      ? Math.min(
+          Object.keys(roiRecoveryData.recoveryTimeframes)
+            .map((key) => parseInt(key.replace("-day", "")))
+            .filter((val) => !isNaN(val))
+            .sort((a, b) => a - b)[0] || 30,
+          90
+        )
+      : avgPosition > 30
+      ? 120
+      : avgPosition > 20
+      ? 90
+      : avgPosition > 10
+      ? 60
+      : 30; // Use getMoodyCreditScore for Moody's credit score instead of manual calculation
     const avgROI =
       totalRevenue > 0 ? ((totalRevenue - totalCost) / totalCost) * 100 : -100;
+
+    // Use the actual getMoodyCreditScore function result or fallback to manual calculation
     const moodyCreditScore =
-      avgROI > 50
+      moodyCreditData?.summary?.creditRating ||
+      (avgROI > 50
         ? "A+ (Prime)"
         : avgROI > 25
         ? "A (Investment Grade)"
@@ -351,7 +450,7 @@ const ContentLedgerDashboard = () => {
         ? "B+ (Investment Grade)"
         : avgROI > -25
         ? "B- (Speculative)"
-        : "C (High Risk)";
+        : "C (High Risk)");
 
     const summary = {
       domain: onboardingData.domain || "your-domain.com",
@@ -367,7 +466,16 @@ const ContentLedgerDashboard = () => {
       avgROI,
     };
     return { summary, rows };
-  }, [onboardingData, loading]);
+  }, [
+    onboardingData,
+    loading,
+    getTotalWastedSpend,
+    getContentDecay,
+    getLinkDilution,
+    getROIRecoveryPotential,
+    getRevenueLeak,
+    getMoodyCreditScore,
+  ]);
 
   // Filter options for quick filter pills
   const filterOptions = [

@@ -71,14 +71,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
     onboardingData?.funnelAnalysis,
   ]);
 
-  console.log(
-    "Financial Calculations Context Initialized",
-    onboardingData.domainCostDetails
-  );
-
   const processGSCDataForCalculations = (gscData) => {
     // This function will process the GSC data for financial calculations
-    console.log("Processing GSC Analysis Data:", gscData);
 
     // Segregate Content Decay Data
     setDecay30Days(gscData?.contentDecay?.decay30Days || []);
@@ -121,21 +115,14 @@ export const FinancialCalculationsProvider = ({ children }) => {
     });
   };
 
-  const getRevenueLeak = (
-    aov = null,
-    contentCost = null,
-    conversionRate = 0.02
-  ) => {
+  const getRevenueLeak = (aov = null, conversionRate = 0.02) => {
     // Use provided values or fall back to onboardingData, throw error if not available
     const averageOrderValue =
       aov ||
       calculations.averageOrderValue ||
       onboardingData?.domainCostDetails?.averageOrderValue;
 
-    const totalContentCost =
-      contentCost ||
-      calculations.contentCost ||
-      onboardingData?.domainCostDetails?.totalInvested;
+    const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
 
     if (!averageOrderValue || averageOrderValue === 0) {
       throw new Error(
@@ -2403,14 +2390,6 @@ export const FinancialCalculationsProvider = ({ children }) => {
     const overallLossCap = totalContentCost * 0.05; // 5% cap
     if (totalCurrentLoss > overallLossCap) {
       const scalingFactor = overallLossCap / totalCurrentLoss;
-      console.log(
-        `Applying scaling factor: ${scalingFactor.toFixed(
-          3
-        )} to keep total loss under ${(
-          (overallLossCap / totalContentCost) *
-          100
-        ).toFixed(1)}%`
-      );
 
       // Scale down all loss amounts proportionally
       Object.keys(recoveryOpportunities).forEach((key) => {
@@ -2449,12 +2428,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         `  ${name}: Loss $${data.currentLoss}, Recovery $${data.recoveryPotential}`
       );
     });
-    console.log("Total Current Loss:", totalCurrentLoss);
-    console.log("Total Recovery Potential:", totalRecoveryPotential);
-    console.log(
-      "Investment Required (5% of content cost):",
-      totalContentCost * 0.05
-    );
+
     // Calculate ROI scenarios with more realistic investment using 30-day recovery data
     const investmentRequired = Math.max(
       thirtyDayRecovery.currentLoss * 0.5,
@@ -2967,12 +2941,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     const totalUrls = (contentCostWaste || []).length;
     const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400; // Default $400 if no URLs
 
-    console.log("📊 High CTR Leak calculation details:", {
-      totalContentCost: totalContentCost.toLocaleString(),
-      totalUrls,
-      avgContentCost: avgContentCost.toFixed(2),
-    });
-
     // Filter URLs with CTR less than 1% (0.01)
     const lowCTRUrls = (contentCostWaste || []).filter((item) => {
       const ctr = parseFloat(item.ctr) || 0;
@@ -3031,18 +2999,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
     // Sort by revenue loss (highest first)
     urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
-
-    console.log("✅ High CTR Leak analysis completed:", {
-      totalLowCTRUrls: lowCTRUrls.length,
-      avgContentCost: avgContentCost.toFixed(2),
-      ctrWastePercentage: `${ctrWastePercentage * 100}%`,
-      contentCostBasedLoss: contentCostBasedLoss.toLocaleString(),
-      opportunityAdjustedLoss: opportunityAdjustedLoss.toLocaleString(),
-      finalTotalRevenueLoss: totalRevenueLoss.toLocaleString(),
-      topLosers: urlDetails
-        .slice(0, 3)
-        .map((u) => ({ url: u.url, loss: u.estimatedRevenueLoss })),
-    });
 
     return {
       estimatedRevenueLoss: Math.round(totalRevenueLoss),
@@ -3148,9 +3104,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
     const mismatchData = keywordMismatch || [];
 
-    console.log("🔍 Starting Mismatch Risk analysis...");
-    console.log("Keyword Mismatch data:", mismatchData.length, "items");
-
     // Calculate average content cost per URL
     const totalUrls = (contentCostWaste || []).length;
     const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
@@ -3207,14 +3160,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     // Sort by revenue loss (highest first)
     urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
 
-    console.log("✅ Mismatch Risk analysis completed:", {
-      totalUrlsAnalyzed: urlMap.size,
-      urlsWithMismatch: mismatchUrls.length,
-      avgContentCost: avgContentCost.toFixed(2),
-      totalRevenueLoss: Math.round(cappedRevenueLoss),
-      wastePercentage: `${mismatchWastePercentage * 100}%`,
-    });
-
     return {
       estimatedRevenueLoss: Math.round(cappedRevenueLoss),
       urlsWithMismatch: mismatchUrls.length,
@@ -3268,9 +3213,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
     const dilutionData = linkDilution || [];
 
-    console.log("🔍 Starting Link Dilution Risk analysis...");
-    console.log("Link Dilution data:", dilutionData.length, "items");
-
     // Calculate average content cost per URL
     const totalUrls = (contentCostWaste || []).length;
     const avgContentCost = totalUrls > 0 ? totalContentCost / totalUrls : 400;
@@ -3312,14 +3254,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
     // Sort by revenue loss (highest first)
     urlDetails.sort((a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss);
-
-    console.log("✅ Link Dilution Risk analysis completed:", {
-      totalUrlsAnalyzed: dilutionData.length,
-      urlsWithDilution: highDilutionUrls.length,
-      avgContentCost: avgContentCost.toFixed(2),
-      totalRevenueLoss: Math.round(cappedRevenueLoss),
-      wastePercentage: `${dilutionWastePercentage * 100}%`,
-    });
 
     return {
       estimatedRevenueLoss: Math.round(cappedRevenueLoss),
@@ -3373,9 +3307,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     }
 
     const cannibalizationData = cannibalization || [];
-
-    console.log("🔍 Starting Cannibalization Risk analysis...");
-    console.log("Cannibalization data:", cannibalizationData.length, "items");
 
     // Calculate average content cost per URL
     const totalUrls = (contentCostWaste || []).length;
@@ -3446,15 +3377,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
       (a, b) => b.estimatedRevenueLoss - a.estimatedRevenueLoss
     );
 
-    console.log("✅ Cannibalization Risk analysis completed:", {
-      totalKeywordsAnalyzed: cannibalizationData.length,
-      cannibalConflicts: cannibalConflicts.length,
-      totalAffectedUrls,
-      avgContentCost: avgContentCost.toFixed(2),
-      totalRevenueLoss: Math.round(cappedRevenueLoss),
-      wastePercentage: `${cannibalWastePercentage * 100}%`,
-    });
-
     return {
       estimatedRevenueLoss: Math.round(cappedRevenueLoss),
       cannibalConflicts: cannibalConflicts.length,
@@ -3493,12 +3415,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     }
 
     const errorPercentage = (errorUrls / totalUrls) * 100;
-
-    console.log("✅ Crawl Error analysis completed:", {
-      totalUrls,
-      errorUrls,
-      errorPercentage: Math.round(errorPercentage * 100) / 100,
-    });
 
     return {
       errorPercentage: Math.round(errorPercentage * 100) / 100, // Round to 2 decimal places
@@ -3576,14 +3492,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     const maxWaste = totalContentCost * 0.02;
     const cappedWastedSpend = Math.min(totalWastedSpend, maxWaste);
 
-    console.log("✅ Total Wasted Spend analysis completed:", {
-      totalUrls: wasteData.length,
-      wastePages: wastePages.length,
-      avgContentCost: avgContentCost.toFixed(2),
-      totalWastedSpend: Math.round(cappedWastedSpend),
-      wastePercentage: `${generalWastePercentage * 100}%`,
-    });
-
     return {
       totalWastedSpend: Math.round(cappedWastedSpend),
       wastePages: wastePages.length,
@@ -3622,12 +3530,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     }).length;
 
     const wastePercentage = (wastePages / wasteData.length) * 100;
-
-    console.log("✅ Content Waste Pages analysis completed:", {
-      totalUrls: wasteData.length,
-      wastePages,
-      wastePercentage: Math.round(wastePercentage * 100) / 100,
-    });
 
     return {
       wastePages,
