@@ -55,6 +55,29 @@
   flex-direction: column;
 }
 
+/* Highlight the Total Loss card */
+.revenue-card.highlighted-card {
+  background: linear-gradient(145deg, rgba(239, 246, 255, 1) 0%, white 100%);
+  border: 1px solid #3b82f6;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.revenue-card.highlighted-card::before {
+  content: "Unique URL Analysis";
+  position: absolute;
+  top: 10px;
+  right: -25px;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.7rem;
+  padding: 2px 25px;
+  transform: rotate(45deg);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
 .card-header {
   display: flex;
   justify-content: space-between;

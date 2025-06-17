@@ -8,6 +8,7 @@ import {
   DollarSign,
   FileText,
   Activity,
+  AlertTriangle,
 } from "lucide-react";
 import "./Dashboard.css";
 import FinancialTooltip from "../../components/FinancialTooltip";
@@ -21,9 +22,11 @@ const Dashboard = () => {
     getLinkDilution,
     getPsychMismatch,
     getCannibalizationLoss,
+    calculateTotalLoss,
   } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
+    totalLoss: { value: 0, urls: 0, tooltip: null },
     revenueLeak: { value: 0, urls: 0, tooltip: null },
     contentDecay: { value: 0, urls: 0, tooltip: null },
     kwMismatch: { value: 0, urls: 0, tooltip: null },
@@ -44,6 +47,7 @@ const Dashboard = () => {
       const linkDilutionData = getLinkDilution();
       const psychoMismatchData = getPsychMismatch();
       const cannibalizationData = getCannibalizationLoss();
+      const totalLossData = calculateTotalLoss();
 
       console.log(
         "Revenue Leak Data:",
@@ -57,9 +61,30 @@ const Dashboard = () => {
         "Psycho Mismatch Data:",
         psychoMismatchData,
         "Cannibalization Data:",
-        cannibalizationData
-      ); // Update stats with calculated values from FinancialCalculations
+        cannibalizationData,
+        "Total Loss Data:",
+        totalLossData
+      );
+      // Update stats with calculated values from FinancialCalculations
+      console.log("Total Loss Data Detailed:", {
+        totalRevenueLoss: totalLossData?.summary?.totalRevenueLoss,
+        parsedValue: parseFloat(totalLossData?.summary?.totalRevenueLoss || 0),
+        urls: totalLossData?.summary?.urls,
+        tooltip: totalLossData?.summary?.tooltip,
+      });
+
       setStats({
+        totalLoss: {
+          value: parseFloat(totalLossData?.summary?.totalRevenueLoss || 0),
+          urls: totalLossData?.summary?.urls || 0,
+          percentage:
+            totalLossData?.summary?.percentOfContentCost?.toFixed(1) || "0.0",
+          tooltip: {
+            title: "Total Revenue Loss",
+            content:
+              totalLossData?.summary?.tooltip || "No tooltip data available",
+          },
+        },
         revenueLeak: {
           value: Math.abs(
             Math.min(0, revenueLeakData?.estimatedRevenueLoss || 0)
@@ -113,6 +138,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error calculating financial metrics:", error); // Set default values on error
       setStats({
+        totalLoss: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
         revenueLeak: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
         contentDecay: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
         kwMismatch: { value: 0, urls: 0, percentage: "0.0", tooltip: null },
@@ -134,6 +160,7 @@ const Dashboard = () => {
     getLinkDilution,
     getPsychMismatch,
     getCannibalizationLoss,
+    calculateTotalLoss,
   ]);
 
   return (
@@ -153,8 +180,15 @@ const Dashboard = () => {
           </h2>{" "}
           <div className="dashboard-cards">
             {Object.entries(stats).map(([key, data], index) => {
+              // Add a special class for the totalLoss card
+              const isHighlighted = key === "totalLoss";
               return (
-                <div key={key} className="revenue-card">
+                <div
+                  key={key}
+                  className={`revenue-card ${
+                    isHighlighted ? "highlighted-card" : ""
+                  }`}
+                >
                   <div className="card-header">
                     <h3>
                       {formatLeakTitle(key)}
@@ -313,6 +347,8 @@ function formatNumber(num) {
 
 function getIconForLeakType(type) {
   switch (type) {
+    case "totalLoss":
+      return <AlertTriangle size={18} />;
     case "revenueLeak":
       return <DollarSign size={18} />;
     case "contentDecay":

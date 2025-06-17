@@ -2,6 +2,279 @@ import React, { useState } from "react";
 import Loader from "../components/Loader";
 import "./SyntheticDecay.css";
 
+// Global constants
+const MIN_RETAIN = 0.15; // 15% minimum retention
+
+// Helper function to fetch individual sitemap XML links with metadata
+const fetchSitemapLinks = async (xmlUrl) => {
+  try {
+    const response = await fetch(
+      `https://ai.1upmedia.com:443/sitemap/all-links?xml=${encodeURIComponent(
+        xmlUrl
+      )}&includeMetadata=true`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch sitemap: ${xmlUrl}`);
+    }
+
+    const data = await response.json();
+    return data.links || [];
+  } catch (error) {
+    console.error(`Error fetching sitemap ${xmlUrl}:`, error);
+    return [];
+  }
+};
+
+// Helper function to analyze content freshness based on last modified dates
+const analyzeContentFreshness = (links) => {
+  const now = new Date();
+  const analysis = {
+    total: links.length,
+    last7Days: 0,
+    last30Days: 0,
+    last90Days: 0,
+    last180Days: 0,
+    last365Days: 0,
+    over1Year: 0,
+    over2Years: 0,
+    never: 0,
+    averageAge: 0,
+    oldestContent: null,
+    newestContent: null,
+  };
+
+  let totalAge = 0;
+  let validDates = 0;
+  let oldestDate = null;
+  let newestDate = null;
+
+  links.forEach((link) => {
+    if (!link.lastmod) {
+      analysis.never++;
+      return;
+    }
+
+    const lastModified = new Date(link.lastmod);
+    const daysSinceModified = Math.floor(
+      (now - lastModified) / (1000 * 60 * 60 * 24)
+    );
+
+    // Track oldest and newest content
+    if (!oldestDate || lastModified < oldestDate) {
+      oldestDate = lastModified;
+      analysis.oldestContent = {
+        url: link.loc,
+        date: link.lastmod,
+        daysAgo: daysSinceModified,
+      };
+    }
+    if (!newestDate || lastModified > newestDate) {
+      newestDate = lastModified;
+      analysis.newestContent = {
+        url: link.loc,
+        date: link.lastmod,
+        daysAgo: daysSinceModified,
+      };
+    }
+
+    // Categorize by age
+    if (daysSinceModified <= 7) {
+      analysis.last7Days++;
+    } else if (daysSinceModified <= 30) {
+      analysis.last30Days++;
+    } else if (daysSinceModified <= 90) {
+      analysis.last90Days++;
+    } else if (daysSinceModified <= 180) {
+      analysis.last180Days++;
+    } else if (daysSinceModified <= 365) {
+      analysis.last365Days++;
+    } else if (daysSinceModified <= 730) {
+      // 2 years
+      analysis.over1Year++;
+    } else {
+      analysis.over2Years++;
+    }
+
+    totalAge += daysSinceModified;
+    validDates++;
+  });
+
+  analysis.averageAge = validDates > 0 ? Math.round(totalAge / validDates) : 0;
+
+  // Update the over1Year to include 2+ years for display compatibility
+  analysis.over1Year += analysis.over2Years;
+
+  return analysis;
+};
+
+// Helper function to calculate domain-specific decay factors
+const calculateDomainFactors = (
+  domainName,
+  urlCount,
+  avgOrderVal,
+  totalInvest
+) => {
+  // Domain age factor (estimated from TLD and domain structure)
+  const isNewTLD = /\.(io|co|app|dev|xyz|tech)$/.test(domainName);
+  const hasSubdomains = domainName.split(".").length > 2;
+  const domainAgeFactor = isNewTLD ? 1.2 : hasSubdomains ? 0.9 : 1.0;
+
+  // Content density factor (based on URL count relative to investment)
+  const avgCostPerUrl = totalInvest / urlCount;
+  const contentDensityFactor =
+    avgCostPerUrl > 500 ? 0.8 : avgCostPerUrl < 50 ? 1.3 : 1.0;
+
+  // Business model factor (ecommerce vs content)
+  const isEcommerce = avgOrderVal > 0;
+  const businessModelFactor = isEcommerce ? 0.85 : 1.1; // Ecommerce tends to retain value better
+
+  // Site scale factor (larger sites have different decay patterns)
+  const siteScaleFactor = urlCount > 10000 ? 0.9 : urlCount < 100 ? 1.2 : 1.0;
+
+  // Competition factor (estimated from domain characteristics)
+  const isHighCompetition =
+    /\b(shop|store|buy|sale|deal|discount|cheap)\b/.test(domainName);
+  const competitionFactor = isHighCompetition ? 1.3 : 1.0;
+
+  return {
+    domainAge: domainAgeFactor,
+    contentDensity: contentDensityFactor,
+    businessModel: businessModelFactor,
+    siteScale: siteScaleFactor,
+    competition: competitionFactor,
+    overall:
+      (domainAgeFactor +
+        contentDensityFactor +
+        businessModelFactor +
+        siteScaleFactor +
+        competitionFactor) /
+      5,
+  };
+};
+
+// Enhanced decay calculation functions with domain-specific factors
+const calculateDecayModels = (
+  startValue,
+  days,
+  domainName,
+  urlCount,
+  avgOrderVal,
+  totalInvest
+) => {
+  const MIN_VAL = MIN_RETAIN * startValue;
+  const factors = calculateDomainFactors(
+    domainName,
+    urlCount,
+    avgOrderVal,
+    totalInvest
+  );
+
+  // Add some randomization based on domain hash for consistency
+  const domainHash = domainName.split("").reduce((a, b) => {
+    a = (a << 5) - a + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  const randomSeed = (Math.abs(domainHash) % 100) / 1000; // 0-0.099 range
+
+  // Baseline model: adjusted by domain factors
+  const baselineDecayRate = (0.0035 + randomSeed) * factors.overall;
+  const baseline = Math.max(
+    startValue * Math.exp(-baselineDecayRate * days),
+    MIN_VAL
+  );
+
+  // Cannibalization model: affected by content density and site scale
+  const cannibalDecayRate =
+    (0.0042 + randomSeed * 0.5) * factors.contentDensity * factors.siteScale;
+  const cannibal = Math.max(
+    startValue * Math.exp(-cannibalDecayRate * days),
+    MIN_VAL
+  );
+
+  // DA vs KD mismatch model: affected by competition and domain age
+  const dakdBaseRate =
+    (0.003 + randomSeed * 0.3) * factors.competition * factors.domainAge;
+  const dakdAccelRate = (0.006 + randomSeed * 0.2) * factors.competition;
+
+  let dakd;
+  if (days <= 60) {
+    dakd = startValue * Math.exp(-dakdBaseRate * days);
+  } else {
+    dakd =
+      startValue *
+      Math.exp(-dakdBaseRate * 60) *
+      Math.exp(-dakdAccelRate * (days - 60));
+  }
+  dakd = Math.max(dakd, MIN_VAL);
+
+  // Content-waste plateau model: adjusted by business model and content density
+  const plateauAdjustment = factors.businessModel * factors.contentDensity;
+  let plateauMultiplier;
+  if (days <= 7) plateauMultiplier = 1.0;
+  else if (days <= 30)
+    plateauMultiplier = Math.max(0.85 * plateauAdjustment, 0.7);
+  else if (days <= 60)
+    plateauMultiplier = Math.max(0.65 * plateauAdjustment, 0.5);
+  else if (days <= 90)
+    plateauMultiplier = Math.max(0.4 * plateauAdjustment, 0.25);
+  else if (days <= 180)
+    plateauMultiplier = Math.max(0.2 * plateauAdjustment, 0.15);
+  else plateauMultiplier = Math.max(0.15 * plateauAdjustment, 0.1);
+
+  const plateau = Math.max(startValue * plateauMultiplier, MIN_VAL);
+
+  // Calculate weighted aggregate (some models may be more relevant for certain domains)
+  const weights = {
+    baseline: factors.businessModel > 1 ? 0.3 : 0.25, // Content sites weight baseline more
+    cannibal: factors.siteScale < 1 ? 0.2 : 0.3, // Larger sites have more cannibalization
+    dakd: factors.competition > 1 ? 0.3 : 0.2, // High competition sites affected more by DA/KD
+    plateau: factors.contentDensity > 1 ? 0.3 : 0.25, // Low content density sites plateau faster
+  };
+
+  const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+  const currentContentValue =
+    (baseline * weights.baseline +
+      cannibal * weights.cannibal +
+      dakd * weights.dakd +
+      plateau * weights.plateau) /
+    totalWeight;
+
+  const contentDecayPercent = (1 - currentContentValue / startValue) * 100;
+
+  return {
+    models: {
+      baseline,
+      cannibal,
+      daKdMismatch: dakd,
+      plateau,
+    },
+    factors,
+    weights,
+    currentContentValue,
+    contentDecayPercent,
+    startValue,
+  };
+};
+
+// Helper: Calculate a decay modifier based on content freshness analysis
+const getFreshnessDecayModifier = (freshness) => {
+  if (!freshness || freshness.total === 0) return 1.0;
+  // Assign weights: fresh = 0.9, moderately fresh = 1.0, stale = 1.15, missing = 1.05
+  const freshPct =
+    (freshness.last30Days + freshness.last90Days) / freshness.total;
+  const stalePct = freshness.over1Year / freshness.total;
+  const missingPct = freshness.never / freshness.total;
+  // The more fresh content, the lower the modifier; more stale, the higher
+  let modifier = 1.0;
+  modifier -= freshPct * 0.15; // up to -0.15 for very fresh
+  modifier += stalePct * 0.15; // up to +0.15 for very stale
+  modifier += missingPct * 0.05; // up to +0.05 for lots of missing
+  // Clamp between 0.85 and 1.2
+  modifier = Math.max(0.85, Math.min(1.2, modifier));
+  return modifier;
+};
+
 const SyntheticDecay = () => {
   // State management for comprehensive decay analysis
   const [domain, setDomain] = useState("");
@@ -14,45 +287,154 @@ const SyntheticDecay = () => {
   const [error, setError] = useState("");
   const [analysisProgress, setAnalysisProgress] = useState("");
   const [urlCount, setUrlCount] = useState(0);
+  const [urlMetadata, setUrlMetadata] = useState([]);
+  const [contentFreshnessAnalysis, setContentFreshnessAnalysis] = useState({
+    total: 0,
+    last30Days: 0,
+    last90Days: 0,
+    last180Days: 0,
+    last365Days: 0,
+    over1Year: 0,
+    never: 0,
+    averageAge: 0,
+  });
 
   // Available day options for the slider
   const dayOptions = [7, 30, 60, 180, 365, 547];
   // Global constants
   const MIN_RETAIN = 0.15; // 15% minimum retention
+  // Helper function to calculate domain-specific decay factors
+  const calculateDomainFactors = (
+    domainName,
+    urlCount,
+    avgOrderVal,
+    totalInvest
+  ) => {
+    // Domain age factor (estimated from TLD and domain structure)
+    const isNewTLD = /\.(io|co|app|dev|xyz|tech)$/.test(domainName);
+    const hasSubdomains = domainName.split(".").length > 2;
+    const domainAgeFactor = isNewTLD ? 1.2 : hasSubdomains ? 0.9 : 1.0;
 
-  // Decay calculation functions
-  const calculateDecayModels = (startValue, days) => {
+    // Content density factor (based on URL count relative to investment)
+    const avgCostPerUrl = totalInvest / urlCount;
+    const contentDensityFactor =
+      avgCostPerUrl > 500 ? 0.8 : avgCostPerUrl < 50 ? 1.3 : 1.0;
+
+    // Business model factor (ecommerce vs content)
+    const isEcommerce = avgOrderVal > 0;
+    const businessModelFactor = isEcommerce ? 0.85 : 1.1; // Ecommerce tends to retain value better
+
+    // Site scale factor (larger sites have different decay patterns)
+    const siteScaleFactor = urlCount > 10000 ? 0.9 : urlCount < 100 ? 1.2 : 1.0;
+
+    // Competition factor (estimated from domain characteristics)
+    const isHighCompetition =
+      /\b(shop|store|buy|sale|deal|discount|cheap)\b/.test(domainName);
+    const competitionFactor = isHighCompetition ? 1.3 : 1.0;
+
+    return {
+      domainAge: domainAgeFactor,
+      contentDensity: contentDensityFactor,
+      businessModel: businessModelFactor,
+      siteScale: siteScaleFactor,
+      competition: competitionFactor,
+      overall:
+        (domainAgeFactor +
+          contentDensityFactor +
+          businessModelFactor +
+          siteScaleFactor +
+          competitionFactor) /
+        5,
+    };
+  };
+
+  // Enhanced decay calculation functions with domain-specific factors
+  const calculateDecayModels = (
+    startValue,
+    days,
+    domainName,
+    urlCount,
+    avgOrderVal,
+    totalInvest
+  ) => {
     const MIN_VAL = MIN_RETAIN * startValue;
+    const factors = calculateDomainFactors(
+      domainName,
+      urlCount,
+      avgOrderVal,
+      totalInvest
+    );
 
-    // Baseline model: r(d) = e^(-k₁·d) where k₁ = 0.0035
-    const baseline = Math.max(startValue * Math.exp(-0.0035 * days), MIN_VAL);
+    // Add some randomization based on domain hash for consistency
+    const domainHash = domainName.split("").reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const randomSeed = (Math.abs(domainHash) % 100) / 1000; // 0-0.099 range
 
-    // Cannibalization model: r(d) = e^(-k₂·d) where k₂ = 0.0042
-    const cannibal = Math.max(startValue * Math.exp(-0.0042 * days), MIN_VAL);
+    // Baseline model: adjusted by domain factors
+    const baselineDecayRate = (0.0035 + randomSeed) * factors.overall;
+    const baseline = Math.max(
+      startValue * Math.exp(-baselineDecayRate * days),
+      MIN_VAL
+    );
 
-    // DA vs KD mismatch model: piecewise exponential
+    // Cannibalization model: affected by content density and site scale
+    const cannibalDecayRate =
+      (0.0042 + randomSeed * 0.5) * factors.contentDensity * factors.siteScale;
+    const cannibal = Math.max(
+      startValue * Math.exp(-cannibalDecayRate * days),
+      MIN_VAL
+    );
+
+    // DA vs KD mismatch model: affected by competition and domain age
+    const dakdBaseRate =
+      (0.003 + randomSeed * 0.3) * factors.competition * factors.domainAge;
+    const dakdAccelRate = (0.006 + randomSeed * 0.2) * factors.competition;
+
     let dakd;
     if (days <= 60) {
-      dakd = startValue * Math.exp(-0.003 * days);
+      dakd = startValue * Math.exp(-dakdBaseRate * days);
     } else {
       dakd =
-        startValue * Math.exp(-0.003 * 60) * Math.exp(-0.006 * (days - 60));
+        startValue *
+        Math.exp(-dakdBaseRate * 60) *
+        Math.exp(-dakdAccelRate * (days - 60));
     }
     dakd = Math.max(dakd, MIN_VAL);
 
-    // Content-waste plateau model: step function
+    // Content-waste plateau model: adjusted by business model and content density
+    const plateauAdjustment = factors.businessModel * factors.contentDensity;
     let plateauMultiplier;
     if (days <= 7) plateauMultiplier = 1.0;
-    else if (days <= 30) plateauMultiplier = 0.85;
-    else if (days <= 60) plateauMultiplier = 0.65;
-    else if (days <= 90) plateauMultiplier = 0.4;
-    else if (days <= 180) plateauMultiplier = 0.2;
-    else plateauMultiplier = 0.15;
+    else if (days <= 30)
+      plateauMultiplier = Math.max(0.85 * plateauAdjustment, 0.7);
+    else if (days <= 60)
+      plateauMultiplier = Math.max(0.65 * plateauAdjustment, 0.5);
+    else if (days <= 90)
+      plateauMultiplier = Math.max(0.4 * plateauAdjustment, 0.25);
+    else if (days <= 180)
+      plateauMultiplier = Math.max(0.2 * plateauAdjustment, 0.15);
+    else plateauMultiplier = Math.max(0.15 * plateauAdjustment, 0.1);
 
     const plateau = Math.max(startValue * plateauMultiplier, MIN_VAL);
 
-    // Calculate aggregate metrics
-    const currentContentValue = (baseline + cannibal + dakd + plateau) / 4;
+    // Calculate weighted aggregate (some models may be more relevant for certain domains)
+    const weights = {
+      baseline: factors.businessModel > 1 ? 0.3 : 0.25, // Content sites weight baseline more
+      cannibal: factors.siteScale < 1 ? 0.2 : 0.3, // Larger sites have more cannibalization
+      dakd: factors.competition > 1 ? 0.3 : 0.2, // High competition sites affected more by DA/KD
+      plateau: factors.contentDensity > 1 ? 0.3 : 0.25, // Low content density sites plateau faster
+    };
+
+    const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+    const currentContentValue =
+      (baseline * weights.baseline +
+        cannibal * weights.cannibal +
+        dakd * weights.dakd +
+        plateau * weights.plateau) /
+      totalWeight;
+
     const contentDecayPercent = (1 - currentContentValue / startValue) * 100;
 
     return {
@@ -62,6 +444,8 @@ const SyntheticDecay = () => {
         daKdMismatch: dakd,
         plateau,
       },
+      factors,
+      weights,
       currentContentValue,
       contentDecayPercent,
       startValue,
@@ -87,8 +471,7 @@ const SyntheticDecay = () => {
     // Remove trailing slash
     normalized = normalized.replace(/\/$/, "");
     return normalized;
-  };
-  // Helper function to fetch sitemap URLs using the API
+  }; // Helper function to fetch sitemap URLs using the API with enhanced metadata
   const fetchSitemapUrls = async (domainName) => {
     try {
       const response = await fetch(
@@ -106,17 +489,47 @@ const SyntheticDecay = () => {
 
       const sitemapData = await response.json();
 
-      // Extract URLs from sitemapData.data.sites
-      if (
-        sitemapData.data &&
-        sitemapData.data.sites &&
-        Array.isArray(sitemapData.data.sites)
-      ) {
-        // Return top 100 URLs
-        return sitemapData.data.sites.slice(0, 100);
+      // Get XML sitemaps for detailed analysis
+      const xmlList = [
+        ...(sitemapData.data.mainXML || []),
+        ...(sitemapData.data.blindXML || []),
+      ];
+
+      if (xmlList.length === 0) {
+        // Fallback to basic URL list if no XML sitemaps
+        if (
+          sitemapData.data &&
+          sitemapData.data.sites &&
+          Array.isArray(sitemapData.data.sites)
+        ) {
+          return sitemapData.data.sites;
+        }
+        return [];
       }
 
-      return [];
+      // Process individual XML sitemaps to get detailed metadata
+      const allLinks = [];
+      for (const xmlUrl of xmlList) {
+        setAnalysisProgress(`Processing sitemap: ${xmlUrl}`);
+        const links = await fetchSitemapLinks(xmlUrl);
+        allLinks.push(...links);
+      }
+
+      // Remove duplicates based on URL
+      const uniqueLinks = allLinks.filter(
+        (link, index, self) =>
+          index === self.findIndex((l) => l.loc === link.loc)
+      );
+
+      // Store metadata for analysis
+      setUrlMetadata(uniqueLinks);
+
+      // Analyze content freshness
+      const freshnessAnalysis = analyzeContentFreshness(uniqueLinks);
+      setContentFreshnessAnalysis(freshnessAnalysis);
+
+      // Return just the URLs for compatibility
+      return uniqueLinks.map((link) => link.loc);
     } catch (error) {
       console.error("Error fetching sitemap:", error);
       throw error;
@@ -187,13 +600,25 @@ const SyntheticDecay = () => {
       } else {
         // Use total investment as start value
         startValue = totalInvest;
-      }
+      } // Calculate decay using the comprehensive model
+      const decayResults = calculateDecayModels(
+        startValue,
+        selectedDays,
+        normalizedDomain,
+        finalUrlCount,
+        avgOrderVal,
+        totalInvest
+      );
 
-      // Calculate decay using the comprehensive model
-      const decayResults = calculateDecayModels(startValue, selectedDays);
-
-      // Calculate financial loss
-      const financialLoss = startValue - decayResults.currentContentValue;
+      // --- Apply content freshness decay modifier ---
+      const freshnessModifier = getFreshnessDecayModifier(
+        contentFreshnessAnalysis
+      );
+      const adjustedCurrentContentValue =
+        decayResults.currentContentValue * (1 / freshnessModifier);
+      const adjustedContentDecayPercent =
+        (1 - adjustedCurrentContentValue / startValue) * 100;
+      const financialLoss = startValue - adjustedCurrentContentValue;
 
       setResults({
         domain: normalizedDomain,
@@ -203,12 +628,15 @@ const SyntheticDecay = () => {
         selectedDays,
         startValue,
         ...decayResults,
+        currentContentValue: adjustedCurrentContentValue,
+        contentDecayPercent: adjustedContentDecayPercent,
         financialLoss,
         // Legacy compatibility fields
         totalUrls: finalUrlCount,
-        decayPercentage: decayResults.contentDecayPercent,
+        decayPercentage: adjustedContentDecayPercent,
         totalLoss: financialLoss,
         avgCostPerUrl: startValue / finalUrlCount,
+        freshnessModifier,
       });
     } catch (err) {
       console.error("Error during analysis:", err);
@@ -217,10 +645,9 @@ const SyntheticDecay = () => {
       setIsAnalyzing(false);
       setAnalysisProgress("");
     }
-  };
-  // Effect to recalculate when slider changes
+  }; // Effect to recalculate when slider changes
   React.useEffect(() => {
-    if (urlCount > 0 && totalInvestment && !isAnalyzing) {
+    if (urlCount > 0 && totalInvestment && !isAnalyzing && results) {
       const avgOrderVal = avgOrderValue ? parseFloat(avgOrderValue) : null;
       const totalInvest = parseFloat(totalInvestment);
 
@@ -234,8 +661,23 @@ const SyntheticDecay = () => {
       }
 
       if (startValue > 0) {
-        const decayResults = calculateDecayModels(startValue, selectedDays);
-        const financialLoss = startValue - decayResults.currentContentValue;
+        const decayResults = calculateDecayModels(
+          startValue,
+          selectedDays,
+          results.domain,
+          urlCount,
+          avgOrderVal,
+          totalInvest
+        );
+        // --- Apply content freshness decay modifier in effect as well ---
+        const freshnessModifier = getFreshnessDecayModifier(
+          contentFreshnessAnalysis
+        );
+        const adjustedCurrentContentValue =
+          decayResults.currentContentValue * (1 / freshnessModifier);
+        const adjustedContentDecayPercent =
+          (1 - adjustedCurrentContentValue / startValue) * 100;
+        const financialLoss = startValue - adjustedCurrentContentValue;
 
         setResults((prev) =>
           prev
@@ -244,16 +686,28 @@ const SyntheticDecay = () => {
                 selectedDays,
                 startValue,
                 ...decayResults,
+                currentContentValue: adjustedCurrentContentValue,
+                contentDecayPercent: adjustedContentDecayPercent,
                 financialLoss,
-                decayPercentage: decayResults.contentDecayPercent,
+                decayPercentage: adjustedContentDecayPercent,
                 totalLoss: financialLoss,
                 avgCostPerUrl: startValue / urlCount,
+                freshnessModifier,
               }
             : null
         );
       }
     }
-  }, [selectedDays, totalInvestment, avgOrderValue, urlCount, isAnalyzing]);
+  }, [
+    selectedDays,
+    totalInvestment,
+    avgOrderValue,
+    urlCount,
+    isAnalyzing,
+    results,
+    calculateDecayModels,
+    contentFreshnessAnalysis,
+  ]);
 
   return (
     <div className="synthetic-decay">
@@ -280,7 +734,6 @@ const SyntheticDecay = () => {
             disabled={isAnalyzing}
           />
         </div>
-
         <div className="synthetic-decay__input-group">
           <label htmlFor="investment-input" className="synthetic-decay__label">
             Total Website Investment ($)
@@ -296,8 +749,7 @@ const SyntheticDecay = () => {
             step="0.01"
             min="0"
           />
-        </div>
-
+        </div>{" "}
         <div className="synthetic-decay__input-group">
           <label htmlFor="aov-input" className="synthetic-decay__label">
             Average Order Value ($) - Optional
@@ -318,7 +770,6 @@ const SyntheticDecay = () => {
             Otherwise uses total investment.
           </small>
         </div>
-
         <button
           onClick={handleAnalyze}
           disabled={isAnalyzing || !domain.trim() || !totalInvestment.trim()}
@@ -380,7 +831,6 @@ const SyntheticDecay = () => {
       {results && !isAnalyzing && (
         <div className="synthetic-decay__results">
           <h2>📊 Content Decay Analysis for {results.domain}</h2>
-
           {/* Key Metrics */}
           <div className="synthetic-decay__results-grid">
             <div className="synthetic-decay__result-card">
@@ -422,8 +872,7 @@ const SyntheticDecay = () => {
                 Estimated lost value from content decay
               </div>
             </div>
-          </div>
-
+          </div>{" "}
           {/* Decay Models Breakdown */}
           <div className="synthetic-decay__models-section">
             <h3>🔬 Decay Model Analysis</h3>
@@ -496,8 +945,340 @@ const SyntheticDecay = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>{" "}
+          {/* Domain-Specific Factors */}
+          {results.factors && (
+            <div className="synthetic-decay__factors-section">
+              <h3>🎯 Domain-Specific Risk Factors</h3>
+              <div className="synthetic-decay__factors-grid">
+                <div className="synthetic-decay__factor-card">
+                  <h4>Domain Age Factor</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.domainAge.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.factors.domainAge > 1
+                      ? "Higher risk"
+                      : results.factors.domainAge < 1
+                      ? "Lower risk"
+                      : "Neutral"}{" "}
+                    - Based on TLD and domain structure
+                  </div>
+                </div>
 
+                <div className="synthetic-decay__factor-card">
+                  <h4>Content Density</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.contentDensity.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.factors.contentDensity > 1
+                      ? "Thin content risk"
+                      : "Quality content protection"}{" "}
+                    - Based on investment per URL
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__factor-card">
+                  <h4>Business Model</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.businessModel.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.avgOrderValue
+                      ? "E-commerce site"
+                      : "Content/Lead gen site"}{" "}
+                    - Different decay patterns
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__factor-card">
+                  <h4>Site Scale</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.siteScale.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.urlCount > 10000
+                      ? "Large site benefits"
+                      : results.urlCount < 100
+                      ? "Small site risks"
+                      : "Medium scale"}{" "}
+                    - Size-based decay adjustment
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__factor-card">
+                  <h4>Competition Level</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.competition.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.factors.competition > 1
+                      ? "High competition detected"
+                      : "Standard competition"}{" "}
+                    - Based on domain keywords
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__factor-card">
+                  <h4>Overall Risk Score</h4>
+                  <div className="synthetic-decay__factor-value">
+                    {results.factors.overall.toFixed(2)}x
+                  </div>
+                  <div className="synthetic-decay__factor-description">
+                    {results.factors.overall > 1.1
+                      ? "High decay risk"
+                      : results.factors.overall < 0.9
+                      ? "Low decay risk"
+                      : "Average decay risk"}{" "}
+                    - Combined risk multiplier
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}{" "}
+          {/* Content Freshness Analysis */}
+          {contentFreshnessAnalysis.total > 0 && (
+            <div className="synthetic-decay__freshness-section">
+              <h3>📅 Content Freshness Analysis</h3>
+              <div className="synthetic-decay__freshness-grid">
+                <div className="synthetic-decay__freshness-summary">
+                  <h4>📊 Content Freshness Summary</h4>
+                  <div className="synthetic-decay__freshness-stats">
+                    <div className="synthetic-decay__freshness-stat">
+                      <span className="synthetic-decay__freshness-label">
+                        Total URLs Analyzed:
+                      </span>
+                      <span className="synthetic-decay__freshness-value">
+                        {contentFreshnessAnalysis.total.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="synthetic-decay__freshness-stat">
+                      <span className="synthetic-decay__freshness-label">
+                        Average Content Age:
+                      </span>
+                      <span className="synthetic-decay__freshness-value">
+                        {contentFreshnessAnalysis.averageAge > 365
+                          ? `${Math.round(
+                              contentFreshnessAnalysis.averageAge / 365
+                            )} years`
+                          : `${contentFreshnessAnalysis.averageAge} days`}
+                      </span>
+                    </div>
+                    <div className="synthetic-decay__freshness-stat">
+                      <span className="synthetic-decay__freshness-label">
+                        Fresh Content Rate:
+                      </span>
+                      <span className="synthetic-decay__freshness-value">
+                        {(
+                          ((contentFreshnessAnalysis.last30Days +
+                            contentFreshnessAnalysis.last90Days) /
+                            contentFreshnessAnalysis.total) *
+                          100
+                        ).toFixed(1)}
+                        %
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__freshness-card">
+                  <div className="synthetic-decay__freshness-header">
+                    <span className="synthetic-decay__freshness-icon">🟢</span>
+                    <h4>Recently Updated (Last 30 Days)</h4>
+                  </div>
+                  <div className="synthetic-decay__freshness-count">
+                    {contentFreshnessAnalysis.last30Days}
+                  </div>
+                  <div className="synthetic-decay__freshness-percentage">
+                    {(
+                      (contentFreshnessAnalysis.last30Days /
+                        contentFreshnessAnalysis.total) *
+                      100
+                    ).toFixed(1)}
+                    % of all content
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__freshness-card">
+                  <div className="synthetic-decay__freshness-header">
+                    <span className="synthetic-decay__freshness-icon">🟡</span>
+                    <h4>Moderately Fresh (31-90 Days)</h4>
+                  </div>
+                  <div className="synthetic-decay__freshness-count">
+                    {contentFreshnessAnalysis.last90Days}
+                  </div>
+                  <div className="synthetic-decay__freshness-percentage">
+                    {(
+                      (contentFreshnessAnalysis.last90Days /
+                        contentFreshnessAnalysis.total) *
+                      100
+                    ).toFixed(1)}
+                    % of all content
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__freshness-card">
+                  <div className="synthetic-decay__freshness-header">
+                    <span className="synthetic-decay__freshness-icon">🟠</span>
+                    <h4>Getting Stale (3-12 Months)</h4>
+                  </div>
+                  <div className="synthetic-decay__freshness-count">
+                    {contentFreshnessAnalysis.last180Days +
+                      contentFreshnessAnalysis.last365Days}
+                  </div>
+                  <div className="synthetic-decay__freshness-percentage">
+                    {(
+                      ((contentFreshnessAnalysis.last180Days +
+                        contentFreshnessAnalysis.last365Days) /
+                        contentFreshnessAnalysis.total) *
+                      100
+                    ).toFixed(1)}
+                    % of all content
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__freshness-card">
+                  <div className="synthetic-decay__freshness-header">
+                    <span className="synthetic-decay__freshness-icon">🔴</span>
+                    <h4>Stale Content (Over 1 Year)</h4>
+                  </div>
+                  <div className="synthetic-decay__freshness-count">
+                    {contentFreshnessAnalysis.over1Year}
+                  </div>
+                  <div className="synthetic-decay__freshness-percentage">
+                    {(
+                      (contentFreshnessAnalysis.over1Year /
+                        contentFreshnessAnalysis.total) *
+                      100
+                    ).toFixed(1)}
+                    % needs updating
+                  </div>
+                </div>
+
+                <div className="synthetic-decay__freshness-card">
+                  <div className="synthetic-decay__freshness-header">
+                    <span className="synthetic-decay__freshness-icon">❓</span>
+                    <h4>Missing Date Information</h4>
+                  </div>
+                  <div className="synthetic-decay__freshness-count">
+                    {contentFreshnessAnalysis.never}
+                  </div>
+                  <div className="synthetic-decay__freshness-percentage">
+                    {(
+                      (contentFreshnessAnalysis.never /
+                        contentFreshnessAnalysis.total) *
+                      100
+                    ).toFixed(1)}
+                    % lack metadata
+                  </div>
+                </div>
+              </div>
+
+              <div className="synthetic-decay__freshness-insights">
+                <h4>💡 Content Maintenance Insights & Recommendations</h4>
+                <div className="synthetic-decay__insight-list">
+                  {contentFreshnessAnalysis.last30Days > 0 && (
+                    <div className="synthetic-decay__insight-item synthetic-decay__insight-positive">
+                      <span className="synthetic-decay__insight-icon">✅</span>
+                      <span>
+                        <strong>Good content maintenance detected!</strong>{" "}
+                        {contentFreshnessAnalysis.last30Days} pages have been
+                        updated in the last 30 days. This helps maintain search
+                        rankings and user experience.
+                      </span>
+                    </div>
+                  )}
+
+                  {contentFreshnessAnalysis.over1Year >
+                    contentFreshnessAnalysis.total * 0.3 && (
+                    <div className="synthetic-decay__insight-item synthetic-decay__insight-warning">
+                      <span className="synthetic-decay__insight-icon">⚠️</span>
+                      <span>
+                        <strong>Content refresh needed:</strong>{" "}
+                        {contentFreshnessAnalysis.over1Year} pages (
+                        {Math.round(
+                          (contentFreshnessAnalysis.over1Year /
+                            contentFreshnessAnalysis.total) *
+                            100
+                        )}
+                        %) haven't been updated in over a year. Consider
+                        prioritizing these for content refresh to improve SEO
+                        performance.
+                      </span>
+                    </div>
+                  )}
+
+                  {contentFreshnessAnalysis.never >
+                    contentFreshnessAnalysis.total * 0.2 && (
+                    <div className="synthetic-decay__insight-item synthetic-decay__insight-info">
+                      <span className="synthetic-decay__insight-icon">ℹ️</span>
+                      <span>
+                        <strong>Missing metadata:</strong>{" "}
+                        {contentFreshnessAnalysis.never} pages (
+                        {Math.round(
+                          (contentFreshnessAnalysis.never /
+                            contentFreshnessAnalysis.total) *
+                            100
+                        )}
+                        %) lack last-modified dates. Adding these dates helps
+                        search engines understand content freshness.
+                      </span>
+                    </div>
+                  )}
+
+                  {contentFreshnessAnalysis.averageAge > 365 && (
+                    <div className="synthetic-decay__insight-item synthetic-decay__insight-warning">
+                      <span className="synthetic-decay__insight-icon">📅</span>
+                      <span>
+                        <strong>High average content age:</strong> Your content
+                        averages{" "}
+                        {contentFreshnessAnalysis.averageAge > 365
+                          ? `${Math.round(
+                              contentFreshnessAnalysis.averageAge / 365
+                            )} years`
+                          : `${contentFreshnessAnalysis.averageAge} days`}{" "}
+                        old. Consider implementing a content refresh strategy to
+                        maintain competitive search rankings.
+                      </span>
+                    </div>
+                  )}
+
+                  {(contentFreshnessAnalysis.last30Days +
+                    contentFreshnessAnalysis.last90Days) /
+                    contentFreshnessAnalysis.total <
+                    0.2 && (
+                    <div className="synthetic-decay__insight-item synthetic-decay__insight-warning">
+                      <span className="synthetic-decay__insight-icon">🚨</span>
+                      <span>
+                        <strong>Low fresh content rate:</strong> Only{" "}
+                        {(
+                          ((contentFreshnessAnalysis.last30Days +
+                            contentFreshnessAnalysis.last90Days) /
+                            contentFreshnessAnalysis.total) *
+                          100
+                        ).toFixed(1)}
+                        % of your content has been updated in the last 90 days.
+                        This may negatively impact search rankings and user
+                        engagement.
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="synthetic-decay__insight-item synthetic-decay__insight-info">
+                    <span className="synthetic-decay__insight-icon">📈</span>
+                    <span>
+                      <strong>Content strategy recommendation:</strong> Based on
+                      your content age distribution, focus on updating the{" "}
+                      {contentFreshnessAnalysis.over1Year} oldest pages first,
+                      then establish a regular update schedule for your most
+                      important content.
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Summary Statistics */}
           <div className="synthetic-decay__summary-stats">
             <h3>📈 Summary Statistics</h3>
@@ -549,8 +1330,7 @@ const SyntheticDecay = () => {
                 </span>
               </div>
             </div>
-          </div>
-
+          </div>{" "}
           {/* Analysis Summary */}
           <div className="synthetic-decay__summary">
             <h3>💡 Analysis Summary</h3>
@@ -558,7 +1338,14 @@ const SyntheticDecay = () => {
               <p>
                 <strong>Calculation Method:</strong> Uses four decay models
                 (Baseline, Cannibalization, DA/KD Mismatch, Content Plateau)
-                with a minimum retention floor of 15%.
+                adjusted by domain-specific factors with a minimum retention
+                floor of 15%.
+              </p>
+              <p>
+                <strong>Domain-Specific Adjustments:</strong> Decay rates are
+                customized based on your domain's TLD, content density, business
+                model, site scale, and competition level. Overall risk
+                multiplier: {results.factors?.overall.toFixed(2)}x
               </p>
               <p>
                 <strong>Start Value:</strong>{" "}
@@ -577,12 +1364,19 @@ const SyntheticDecay = () => {
                   (results.currentContentValue / results.startValue) *
                   100
                 ).toFixed(1)}
-                % of its original value.
+                % of its original value. This is{" "}
+                {results.factors?.overall > 1.1
+                  ? "worse than"
+                  : results.factors?.overall < 0.9
+                  ? "better than"
+                  : "similar to"}{" "}
+                average decay patterns.
               </p>
               <p>
                 <strong>Recommendation:</strong> Use the time slider above to
                 see how decay progresses over different periods and plan your
-                content refresh strategy accordingly.
+                content refresh strategy accordingly. Consider the risk factors
+                identified for your specific domain.
               </p>
             </div>
           </div>

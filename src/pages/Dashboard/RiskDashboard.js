@@ -431,7 +431,7 @@ const RiskDashboard = () => {
                   .filter((item) => item.dropRatio && item.dropRatio < -0.3)
                   .slice(0, 2)
                   .map((item) => ({
-                    url: item.url || "Unknown page",
+                    url: item?.url || "Unknown page",
                     drop: parseFloat((item.dropRatio * 100).toFixed(1)),
                   })),
               impact:
@@ -462,7 +462,7 @@ const RiskDashboard = () => {
                 .filter((item) => item.dropRatio && item.dropRatio < -0.3)
                 .slice(0, 2)
                 .map((item) => ({
-                  url: item.url || "Unknown page",
+                  url: item?.url || "Unknown page",
                   drop: parseFloat((item.dropRatio * 100).toFixed(1)),
                 })),
               impact: centralizedMetrics.contentRisk || 0,
@@ -697,7 +697,7 @@ const RiskDashboard = () => {
           contentCostWasteData.length > 0
             ? contentCostWasteData.reduce((max, item) =>
                 (item.wastedSpend || 0) > (max.wastedSpend || 0) ? item : max
-              ).url || "No data"
+              )?.url || "No data"
             : "No data available",
       },
       aiVsHuman: {
@@ -856,7 +856,7 @@ const RiskDashboard = () => {
                 <div className="drift-value">
                   {
                     riskMetricsData.filter(
-                      (item) => item.riskMetrics.positionDrift < -50
+                      (item) => item.riskMetrics?.positionDrift < -50
                     ).length
                   }
                 </div>
@@ -867,7 +867,7 @@ const RiskDashboard = () => {
                 <div className="drift-value">
                   {
                     riskMetricsData.filter(
-                      (item) => item.riskMetrics.positionDrift > 50
+                      (item) => item.riskMetrics?.positionDrift || 10 > 50
                     ).length
                   }
                 </div>
@@ -875,10 +875,10 @@ const RiskDashboard = () => {
             </div>
             <div className="sample-data">
               <p>
-                <strong>Sample:</strong> {sampleData.url}
+                <strong>Sample:</strong> {sampleData?.url}
               </p>
               <p>
-                Position Change: {sampleData.positionDrift?.toFixed(1)}{" "}
+                Position Change: {sampleData?.positionDrift?.toFixed(1)}{" "}
                 positions
               </p>
             </div>
@@ -1342,7 +1342,7 @@ const RiskDashboard = () => {
               <p>• Top Droppers:</p>
               {riskMetrics.contentDecay.topDroppers.map((dropper, index) => (
                 <p key={index} className="dropper-item">
-                  &nbsp;&nbsp;• {dropper.url} ↓ {Math.abs(dropper.drop)}%
+                  &nbsp;&nbsp;• {dropper?.url} ↓ {Math.abs(dropper.drop)}%
                 </p>
               ))}
             </div>
@@ -1417,7 +1417,7 @@ const RiskDashboard = () => {
               {riskMetrics.keywordEfficiency.topOverexertions.map(
                 (item, index) => (
                   <p key={index} className="overexertion-item">
-                    &nbsp;&nbsp;• {item.url} → KD {item.kd} | DA {item.da}
+                    &nbsp;&nbsp;• {item?.url} → KD {item.kd} | DA {item.da}
                   </p>
                 )
               )}

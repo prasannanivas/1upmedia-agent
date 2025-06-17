@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VerbEdge | Plug Every Hidden Revenue Leak</title>
+  <!-- TailwindCSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+
+  <!-- Custom Tailwind config for edgy vibe -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Inter', 'ui-sans-serif', 'system-ui'],
+            headline: ['"Space Grotesk"', 'sans-serif']
+          },
+          colors: {
+            // brand gradient stops
+            accent: {
+              50: '#fdf5ff',
+              100: '#f8e8ff',
+              200: '#eac2ff',
+              300: '#d49aff',
+              400: '#ba6fff',
+              500: '#9f46ff',
+              600: '#7d2be6',
+              700: '#5e19b4',
+              800: '#3e0984',
+              900: '#23024d'
+            }
+          },
+          backgroundImage: {
+            "radial-accent": "radial-gradient(ellipse at center,var(--tw-gradient-stops))"
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Space+Grotesk:wght@500;600;700&display=swap"
+    rel="stylesheet">
+
+  <style>
+    /* Glassy card backdrop */
+    .displayNone {
+      display: none !important;
+    }
+
+    /* Ensure results content is fully visible when needed */
+    #resultsContainer:not(.displayNone) #resultsContent {
+      display: block !important;
+    }
+
+    .glass {
+      backdrop-filter: blur(12px) saturate(150%);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* Gradient text */
+    .grad-text {
+      background: linear-gradient(90deg, #D49AFF 0%, #7d2be6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Soft shadow */
+    .shadow-soft {
+      box-shadow: 0 4px 30px rgba(0, 0, 0, .25);
+    }
+
+    /* Results blurring */
+    .results-container {
+      position: relative;
+    }
+
+    .results-blur {
+      filter: blur(8px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .results-overlay {
+      position: absolute;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.2);
+      z-index: 10;
+    }
+
+    /* Toast animations */
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+    }
+
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out forwards;
+    }
+
+    .animate-fade-out {
+      animation: fade-out 0.5s ease-in forwards;
+    }
+
+    /* Ensure results are scrollable after unlocked */
+    .results-unlocked {
+      overflow: visible !important;
+      max-height: none !important;
+    }
+
+    .results-container.results-unlocked #resultsContent {
+      overflow-y: visible;
+    }
+  </style>
+</head>
+
+<body class="bg-neutral-900 text-white font-display selection:bg-accent-500 selection:text-white">
+
+  <!-- ==============  NAV  ============== -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-neutral-900/80 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
+      <a href="#" class="text-xl font-headline font-bold grad-text">VerbEdge</a>
+      <ul class="hidden md:flex gap-8 font-semibold text-sm">
+        <li><a href="#overview" class="hover:text-accent-400">Overview</a></li>
+        <li><a href="#modules" class="hover:text-accent-400">Modules</a></li>
+        <li><a href="#contact" class="hover:text-accent-400">Contact</a></li>
+        <li><a href="#ai-mode" class="hover:text-accent-400">AI‑Mode</a></li>
+      </ul>
+      <a href="#calculator"
+        class="md:hidden px-4 py-2 rounded bg-accent-500 font-semibold shadow-soft text-sm">Audit</a>
+    </div>
+  </nav>
+
+  <!-- spacer to offset fixed nav -->
+  <div class="h-16"></div>
+
+  <!-- ==============  HERO  ============== -->
+  <header class="relative min-h-screen flex flex-col justify-center items-center text-center px-6" id="overview">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(100,0,255,.25)_0%,transparent_70%)]">
+    </div>
+    <p class="text-sm text-accent-400 tracking-wide mb-2">AI‑Mode Ready • Built for Deep Search</p>
+    <h1 class="text-4xl md:text-6xl font-headline font-bold leading-tight max-w-4xl grad-text">
+      Plug Every Hidden Revenue Leak Your URLs Leave Behind
+    </h1>
+    <p class="max-w-xl mt-6 text-lg text-neutral-300">VerbEdge’s multi‑vector <span
+        class="font-semibold text-accent-400">URL Decay Calculator</span> pinpoints the silent waste eating your
+      marketing ROI—then shows you exactly how to win it back in days, not months.</p>
+    <div class="mt-10 flex flex-col sm:flex-row gap-4">
+      <a href="#calculator"
+        class="px-8 py-4 rounded-full bg-accent-500 hover:bg-accent-600 active:scale-95 transition duration-200 font-semibold shadow-soft">Run
+        My Free URL Ledger Audit ⏱ 60s</a>
+      <a href="#works" class="px-8 py-4 rounded-full border border-accent-500 hover:bg-accent-500/10 font-semibold">See
+        How It Works ↓</a>
+    </div>
+  </header>
+
+  <!-- ==============  PROBLEM  ============== -->
+  <section class="py-24 px-6" id="problem">
+    <div class="max-w-5xl mx-auto space-y-10">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold grad-text">70 ¢ of every dollar you invest in content
+        evaporates before next quarter.</h2>
+      <p class="text-neutral-300 text-lg">Organic sessions look steady. Conversions don’t crater overnight. But behind
+        the scenes every article, landing page, and resource guide you publish is on a slow‑motion slide toward
+        irrelevance.</p>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">Topical Drift</h3>
+          <p class="text-neutral-400">Google rewires SERPs weekly; yesterday’s keywords are today’s ghosts.</p>
+        </div>
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">Cannibalization</h3>
+          <p class="text-neutral-400">New posts siphon clicks from older, higher‑intent URLs.</p>
+        </div>
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">DA ↔ KD Mismatch</h3>
+          <p class="text-neutral-400">Domain Authority stagnates while keyword difficulty climbs.</p>
+        </div>
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">UX Entropy</h3>
+          <p class="text-neutral-400">Rising bounce rates signal search engines that “this page no longer delights.”</p>
+        </div>
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">Waste Plateau</h3>
+          <p class="text-neutral-400">Past a certain age, even flagship content plateaus at &lt;15 % of its former
+            value.</p>
+        </div>
+        <div class="glass p-6 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-2">+ More Decay Vectors</h3>
+          <p class="text-neutral-400">VerbEdge models dozens of decay vectors out of the box.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============  AI MODE IMPACT  ============== -->
+  <section class="py-20 px-6 bg-neutral-800" id="ai-mode">
+    <div class="max-w-5xl mx-auto space-y-8 text-neutral-300">
+      <h2 class="text-2xl md:text-3xl font-headline font-bold grad-text">AI‑Mode & Deep Search: The New Decay
+        Accelerants</h2>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div><strong class="text-white">Summaries steal clicks:</strong><br> Zero‑click answers cannibalize up to 50 %
+          of future traffic.</div>
+        <div><strong class="text-white">Follow‑up intent expands risk:</strong><br> Pages must satisfy multi‑turn
+          queries or they’re skipped.</div>
+        <div><strong class="text-white">Citation‑grade structure wins:</strong><br> Google only features content it can
+          parse and cite.</div>
+      </div>
+      <p class="pt-6">VerbEdge’s decay engine bakes in these AI accelerants—so your forecast mirrors the search reality
+        of 2025‑2028.</p>
+    </div>
+  </section>
+
+  <!-- ==============  FEATURE OVERVIEW  ============== -->
+  <section class="py-24 px-6" id="works">
+    <div class="max-w-6xl mx-auto space-y-14">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold text-center grad-text">Meet the VerbEdge
+        URL Decay Calculator</h2>
+
+      <div class="grid md:grid-cols-3 gap-8 text-neutral-300">
+        <div class="md:col-span-1 space-y-4">
+          <h3 class="font-bold text-xl">Multi‑Vector Risk Model</h3>
+          <p>From baseline drift to algorithmic volatility coefficients—every variable is modeled.</p>
+        </div>
+
+        <div class="md:col-span-1 space-y-4">
+          <h3 class="font-bold text-xl">Zero Analytics Required</h3>
+          <p>Just drop your domain or URL count plus AOV. We’ll simulate decay curves automatically.</p>
+        </div>
+
+        <div class="md:col-span-1 space-y-4">
+          <h3 class="font-bold text-xl">Instant Dollar Impact</h3>
+          <p>Watch the dashboard translate “traffic loss” into <em>revenue at risk</em>—so finance signs off fast.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============  CLUSTER INTELLIGENCE  ============== -->
+  <section class="py-20 px-6" id="clusters">
+    <div class="max-w-5xl mx-auto space-y-8 text-neutral-300">
+      <h2 class="text-2xl md:text-3xl font-headline font-bold grad-text">Portfolio‑View: Cluster Risk & ROI</h2>
+      <p>Cannibalization and dilution don’t happen in isolation. Our <span class="text-white font-semibold">Cluster
+          Engine</span> rolls every related URL into a single P&L object—complete with half‑life, cannibalization
+        penalty, and Moody’s‑style risk score.</p>
+      <div class="grid md:grid-cols-3 gap-8">
+        <div><strong class="text-white">Cluster ID</strong><br>Hash‑based handle so variants roll up cleanly.</div>
+        <div><strong class="text-white">Half‑Life</strong><br>Decay parameter fitted on traffic history.</div>
+        <div><strong class="text-white">Risk Score</strong><br>Know when a cluster needs investment before rankings
+          slide.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============  CALCULATOR  ============== -->
+  <section id="calculator" class="py-24 px-6 bg-neutral-800">
+    <div class="max-w-6xl mx-auto bg-neutral-900/80 p-8 md:p-12 rounded-3xl shadow-soft">
+      <h2 class="font-headline text-2xl md:text-3xl font-bold mb-3 grad-text">Run Your Free URL Decay Audit</h2>
+      <p class="text-neutral-400 mb-8">Estimate hidden revenue waste from decaying URLs — no analytics required.</p>
+
+      <!-- DOMAIN & SITEMAP SECTION -->
+      <div class="grid md:grid-cols-3 gap-4 items-end">
+        <div class="md:col-span-2">
+          <label class="block font-semibold mb-1">Your Domain</label>
+          <input id="domainInput" type="text" placeholder="example.com"
+            class="border border-neutral-700 bg-neutral-800 placeholder-neutral-600 text-white p-3 rounded w-full focus:ring-2 focus:ring-accent-500" />
+        </div>
+        <button id="loadBtn"
+          class="bg-accent-500 hover:bg-accent-600 active:scale-95 transition text-white px-6 py-3 rounded font-semibold shadow-soft">Load
+          Sitemap</button>
+      </div>
+      <div id="urlStatus" class="text-sm text-neutral-400 hidden mt-2"></div>
+
+      <!-- FALLBACK URL COUNT -->
+      <div id="manualUrlsWrap" class="hidden mt-4">
+        <label class="block font-semibold mb-1">Enter URL Count (fallback)</label>
+        <input id="manualUrls" type="number"
+          class="border border-neutral-700 bg-neutral-800 text-white p-3 rounded w-full" />
+      </div>
+
+      <!-- FINANCIAL INPUTS -->
+      <div class="grid md:grid-cols-2 gap-6 mt-6"> <!-- AOV input removed and fixed at value 10 -->
+        <div style="display:none">
+          <input id="aovInput" type="hidden" value="10" />
+        </div>
+        <div>
+          <label class="block font-semibold mb-1">Total Website Investment ($)</label>
+          <input id="investmentInput" type="number" value=""
+            class="border border-neutral-700 bg-neutral-800 text-white p-3 rounded w-full" />
+        </div>
+      </div> <!-- AGE BUCKET SLIDER -->
+      <div class="pt-6">
+        <label class="block font-semibold mb-1">Select Age Bucket</label>
+        <input id="daySlider" type="range" min="0" max="5" step="1" value="0" class="w-full accent-accent-500" />
+        <div class="text-sm text-neutral-400">Selected: <span id="dayLabel"
+            class="font-semibold text-accent-400">7</span> days since publish</div>
+      </div> <!-- RESULTS CONTAINER - HIDDEN UNTIL FORM SUBMISSION -->
+      <div id="resultsContainer" class="relative results-container displayNone">
+        <!-- Optional overlay to prevent interactions -->
+        <div id="resultsOverlay" class="results-overlay hidden"></div>
+        <div id="resultsContent" class="w-full overflow-y-auto">
+          <!-- KEY METRICS OVERVIEW -->
+          <div class="grid md:grid-cols-3 gap-6 text-center pt-6" id="metricsBox"></div>
+
+          <!-- CONTENT FRESHNESS VISUALIZATION -->
+          <div id="freshnessVisualization" class="pt-6 hidden">
+            <div class="glass p-6 rounded-xl shadow-soft">
+              <h3 class="font-bold text-xl mb-3">Content Freshness Analysis</h3>
+              <div class="grid md:grid-cols-5 gap-4 text-center">
+                <div class="space-y-2">
+                  <div class="text-lg">Total URLs</div>
+                  <div class="text-2xl font-bold text-accent-400" id="freshTotal-display">0</div>
+                  <div class="text-xs text-neutral-400">Analyzed from sitemap</div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-center"><span class="text-xl mr-2">🟢</span> Recently Updated
+                  </div>
+                  <div class="text-xl font-bold text-accent-400" id="fresh30-display">0</div>
+                  <div class="text-xs text-neutral-400">Last 30 days (<span id="fresh30-percent">0%</span>)</div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-center"><span class="text-xl mr-2">🟡</span> Moderately Fresh
+                  </div>
+                  <div class="text-xl font-bold text-accent-400" id="fresh90-display">0</div>
+                  <div class="text-xs text-neutral-400">31-90 days (<span id="fresh90-percent">0%</span>)</div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-center"><span class="text-xl mr-2">🔴</span> Stale Content</div>
+                  <div class="text-xl font-bold text-accent-400" id="freshStale-display">0</div>
+                  <div class="text-xs text-neutral-400">Over 1 year (<span id="freshStale-percent">0%</span>)</div>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center justify-center"><span class="text-xl mr-2">❓</span> Missing Date</div>
+                  <div class="text-xl font-bold text-accent-400" id="freshMissing-display">0</div>
+                  <div class="text-xs text-neutral-400">No lastmod (<span id="freshMissing-percent">0%</span>)</div>
+                </div>
+              </div>
+              <div class="mt-4 text-sm text-neutral-300">
+                <div id="freshnessInsight" class="p-3 rounded bg-neutral-800">
+                  <p class="font-semibold mb-1">Content Maintenance Recommendation:</p>
+                  <p id="freshnessRecommendation">Load sitemap data to see content freshness analysis.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PER‑MODEL READOUT -->
+          <div id="valueReadout" class="text-sm space-y-1 text-neutral-300 pt-6"></div>
+
+          <!-- CONTENT FRESHNESS INPUTS -->
+          <div class="mt-8">
+            <details class="glass p-4 rounded-xl shadow-soft" open>
+              <summary class="font-semibold cursor-pointer text-accent-400">Content Freshness (optional)</summary>
+              <div class="grid md:grid-cols-5 gap-4 mt-4 text-sm">
+                <div>
+                  <label class="block mb-1">Total URLs</label>
+                  <input id="freshTotal" type="number" min="0"
+                    class="border border-neutral-700 bg-neutral-800 text-white p-2 rounded w-full" />
+                </div>
+                <div>
+                  <label class="block mb-1">Updated &lt;30d</label>
+                  <input id="fresh30" type="number" min="0"
+                    class="border border-neutral-700 bg-neutral-800 text-white p-2 rounded w-full" />
+                </div>
+                <div>
+                  <label class="block mb-1">Updated 31-90d</label>
+                  <input id="fresh90" type="number" min="0"
+                    class="border border-neutral-700 bg-neutral-800 text-white p-2 rounded w-full" />
+                </div>
+                <div>
+                  <label class="block mb-1">Stale (&gt;1yr)</label>
+                  <input id="freshStale" type="number" min="0"
+                    class="border border-neutral-700 bg-neutral-800 text-white p-2 rounded w-full" />
+                </div>
+                <div>
+                  <label class="block mb-1">Missing Date</label>
+                  <input id="freshMissing" type="number" min="0"
+                    class="border border-neutral-700 bg-neutral-800 text-white p-2 rounded w-full" />
+                </div>
+              </div>
+              <div class="text-xs text-neutral-400 mt-2">Leave blank for default decay. Enter values to adjust decay
+                based
+                on content freshness.</div>
+            </details>
+          </div>
+
+        </div> <!-- End of resultsContent -->
+      </div> <!-- End of resultsContainer -->
+
+
+    </div>
+  </section>
+
+  <!-- ==============  CASE STUDY  ============== -->
+  <section class="py-24 px-6">
+    <div class="max-w-4xl mx-auto text-center space-y-8">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold grad-text">Case Study: $2.1 M ARR Recovered in
+        45 Days—Post AI‑Launch</h2>
+      <blockquote class="relative p-8 md:p-12 glass rounded-2xl shadow-soft">
+        <span class="absolute -top-6 left-8 text-6xl text-accent-500">“</span>
+        <p class="text-lg md:text-xl leading-relaxed">VerbEdge found <span class="font-semibold text-accent-400">$2.1 M
+            in recoverable ARR</span> across 312 decaying URLs—before we even connected GA. Our board approved a refresh
+          budget in one meeting.</p>
+        <footer class="mt-4 text-neutral-400">— Sara Brinkman, VP Growth, FinTech Unicorn</footer>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ==============  PLATFORM BRIDGE  ============== -->
+  <section class="py-24 px-6 bg-neutral-800" id="modules">
+    <div class="max-w-5xl mx-auto space-y-12">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold text-center grad-text">Beyond the Calculator: The VerbEdge
+        URL Ledger Platform</h2>
+
+      <div class="grid md:grid-cols-2 gap-10">
+        <ul class="space-y-6 list-disc list-inside text-neutral-300">
+          <li><span class="text-white font-semibold">Track Live URL Decay</span> for every page in real time.</li>
+          <li><span class="text-white font-semibold">Simulate Fixes</span>—see before‑and‑after revenue curves.</li>
+          <li><span class="text-white font-semibold">Trigger Workflows</span>—auto‑create refresh briefs in Asana/Jira.
+          </li>
+          <li><span class="text-white font-semibold">Benchmark vs. Industry</span>—know if your decay velocity outpaces
+            peers.</li>
+          <li><span class="text-white font-semibold">Citation‑Ready Scoring</span>—see which URLs have the structure
+            Deep Search prefers.</li>
+          <li><span class="text-white font-semibold">Prove ROI</span>—built‑in attribution ties each refresh to
+            pipeline.</li>
+        </ul>
+        <div class="glass p-8 rounded-2xl shadow-soft">
+          <h3 class="font-bold text-xl mb-4">Double ROI Guarantee</h3>
+          <p class="text-neutral-300">Refresh the top 10 URL‑decay risks we identify. If you don’t win back at least 2×
+            your subscription in revenue within 90 days, we’ll refund every penny.</p>
+          <a href="#book"
+            class="mt-6 inline-block bg-accent-500 hover:bg-accent-600 px-6 py-3 rounded-full font-semibold shadow-soft">Book
+            15‑min Demo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============  FAQ  ============== -->
+  <section class="py-24 px-6" id="faq">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold mb-12 text-center grad-text">FAQ</h2>
+      <div class="space-y-4">
+        <details class="glass p-6 rounded-xl shadow-soft" open>
+          <summary class="font-semibold cursor-pointer">Do I need Google Analytics or Search Console connected?
+          </summary>
+          <p class="mt-3 text-neutral-300">No. Our decay model estimates loss even with zero analytics. Connect later
+            for live tracking.</p>
+        </details>
+        <details class="glass p-6 rounded-xl shadow-soft">
+          <summary class="font-semibold cursor-pointer">Does VerbEdge account for Google's AI Search & Deep Search?
+          </summary>
+          <p class="mt-3 text-neutral-300">Yes. Our engine includes three AI‑specific factors: zero‑click
+            cannibalization, citation‑eligibility, and multi‑turn intent fit. Forecasts update as Google’s models
+            evolve.</p>
+        </details>
+        <details class="glass p-6 rounded-xl shadow-soft">
+          <summary class="font-semibold cursor-pointer">Will I see AI‑Mode clicks in my dashboard?</summary>
+          <p class="mt-3 text-neutral-300">Google’s Search Console doesn’t separate them yet, so we approximate using
+            referrer patterns and on‑page engagement signals. You’ll see a “Likely AI‑Mode” flag next to affected URLs.
+          </p>
+        </details>
+        <details class="glass p-6 rounded-xl shadow-soft">
+          <summary class="font-semibold cursor-pointer">Why do you call it “URL Decay” instead of “Content Decay”?
+          </summary>
+          <p class="mt-3 text-neutral-300">Search engines rank URLs, not abstracts. Tracking at the page level—and then
+            rolling up to clusters—ties decay directly to revenue and risk.</p>
+        </details>
+        <details class="glass p-6 rounded-xl shadow-soft">
+          <summary class="font-semibold cursor-pointer">What’s a cluster and why should I care?</summary>
+          <p class="mt-3 text-neutral-300">We hash related pages into a “cluster object,” score its health, and predict
+            half‑life. That prevents cannibalization and shows when to merge, prune, or refresh URLs.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==============  FINAL CTA  ============== -->
+  <section
+    class="py-24 px-6 bg-[radial-gradient(ellipse_at_center,rgba(158,66,255,.25)_0%,transparent_70%)] text-center"
+    id="book">
+    <div class="max-w-3xl mx-auto">
+      <h2 class="text-3xl md:text-4xl font-headline font-bold grad-text">Ready to Stop Revenue Leaks?</h2>
+      <p class="text-neutral-300 mt-4 mb-8">Run a free audit in 60 seconds. It could uncover six figures of hidden
+        revenue.</p>
+
+      <a href="#calculator"
+        class="px-10 py-4 rounded-full bg-accent-500 hover:bg-accent-600 font-semibold shadow-soft">Run My Free
+        URL Ledger Audit</a>
+    </div>
+  </section>
+
+  <!-- ==============  FOOTER  ============== -->
+  <footer class="py-12 text-center text-neutral-500 text-sm" id="contact">
+    <div class="space-x-4 mb-4">
+      <span>GDPR &amp; CCPA Compliant</span>
+      <span>•</span>
+      <span>SOC 2 on Request</span>
+      <span>•</span>
+      <span>© 2025 VerbEdge</span>
+    </div>
+    <p>Built with ♥ for growth teams everywhere. Optimised for Google AI‑Mode & Deep Search.</p>
+  </footer>
+
+  <!-- ==============  LEAD CAPTURE MODAL  ============== -->
+  <div id="leadCaptureOverlay"
+    class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex items-center justify-center">
+    <div class="max-w-lg w-full mx-4 bg-neutral-800 border border-accent-500/50 rounded-2xl p-8 shadow-2xl relative">
+      <div class="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-accent-500 rounded-full p-4 shadow-xl">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24"
+          stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <h2 class="text-2xl font-headline font-bold text-center mt-4 mb-2 grad-text">Unlock Your Full URL Analysis</h2>
+      <p class="text-center text-neutral-300 mb-6">To continue viewing your results and save a copy of this analysis,
+        please enter your details below:</p>
+
+      <form id="leadCaptureForm" class="space-y-4">
+        <div>
+          <label class="block font-semibold mb-1 text-sm">Your Email Address*</label>
+          <input type="email" id="leadEmail" required placeholder="you@company.com"
+            class="border border-neutral-700 bg-neutral-900 placeholder-neutral-600 text-white p-3 rounded w-full focus:ring-2 focus:ring-accent-500" />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-sm">Your Phone Number*</label>
+          <input type="tel" id="leadPhone" required placeholder="(555) 123-4567"
+            class="border border-neutral-700 bg-neutral-900 placeholder-neutral-600 text-white p-3 rounded w-full focus:ring-2 focus:ring-accent-500" />
+        </div>
+
+        <div>
+          <label class="block font-semibold mb-1 text-sm">Company</label>
+          <input type="text" id="leadCompany" placeholder="Your Company Name"
+            class="border border-neutral-700 bg-neutral-900 placeholder-neutral-600 text-white p-3 rounded w-full focus:ring-2 focus:ring-accent-500" />
+        </div>
+        <div class="pt-2">
+          <button type="submit" id="leadSubmitBtn"
+            class="w-full bg-accent-500 hover:bg-accent-600 text-white py-3 px-6 rounded-lg font-semibold shadow-soft transition duration-200">
+            <span>Continue to My Results</span>
+            <span id="submitSpinner" class="hidden ml-2 animate-spin">⏳</span>
+          </button>
+        </div>
+
+        <p class="text-xs text-neutral-400 text-center pt-2">
+          By submitting this form, you agree to our <a href="#" class="text-accent-400 hover:underline">Privacy
+            Policy</a> and <a href="#" class="text-accent-400 hover:underline">Terms of Service</a>. Your data is
+          secured and will never be sold.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==============  SCRIPT: CALCULATOR LOGIC (UNCHANGED) ============== -->
+  <script>
+    /**************** CONFIG *****************/
+    const DAY_BUCKETS = [7, 30, 60, 180, 365, 547]; // 1.5y ~= 547
+    const MAX_DAYS = DAY_BUCKETS[DAY_BUCKETS.length - 1];
+
+    // Currency formatter (USD by default)
+    const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+    // --- BEGIN: SyntheticDecay.js logic injection ---
+    const MIN_RETAIN = 0.15;
+    function calculateDomainFactors(domainName, urlCount, avgOrderVal, totalInvest) {
+      const isNewTLD = /\.(io|co|app|dev|xyz|tech)$/.test(domainName);
+      const hasSubdomains = domainName.split(".").length > 2;
+      const domainAgeFactor = isNewTLD ? 1.2 : hasSubdomains ? 0.9 : 1.0;
+      const avgCostPerUrl = totalInvest / urlCount;
+      const contentDensityFactor = avgCostPerUrl > 500 ? 0.8 : avgCostPerUrl < 50 ? 1.3 : 1.0;
+      const isEcommerce = avgOrderVal > 0;
+      const businessModelFactor = isEcommerce ? 0.85 : 1.1;
+      const siteScaleFactor = urlCount > 10000 ? 0.9 : urlCount < 100 ? 1.2 : 1.0;
+      const isHighCompetition = /\b(shop|store|buy|sale|deal|discount|cheap)\b/.test(domainName);
+      const competitionFactor = isHighCompetition ? 1.3 : 1.0;
+      return {
+        domainAge: domainAgeFactor,
+        contentDensity: contentDensityFactor,
+        businessModel: businessModelFactor,
+        siteScale: siteScaleFactor,
+        competition: competitionFactor,
+        overall:
+          (domainAgeFactor +
+            contentDensityFactor +
+            businessModelFactor +
+            siteScaleFactor +
+            competitionFactor) / 5,
+      };
+    }
+
+    function calculateDecayModels(startValue, days, domainName, urlCount, avgOrderVal, totalInvest) {
+      const MIN_VAL = MIN_RETAIN * startValue;
+      const factors = calculateDomainFactors(domainName, urlCount, avgOrderVal, totalInvest);
+      const domainHash = domainName.split("").reduce((a, b) => a + b.charCodeAt(0), 0);
+      const randomSeed = (Math.abs(domainHash) % 100) / 1000;
+      const baselineDecayRate = (0.0035 + randomSeed) * factors.overall;
+      const baseline = Math.max(startValue * Math.exp(-baselineDecayRate * days), MIN_VAL);
+      const cannibalDecayRate = (0.0042 + randomSeed * 0.5) * factors.contentDensity * factors.siteScale;
+      const cannibal = Math.max(startValue * Math.exp(-cannibalDecayRate * days), MIN_VAL);
+      const dakdBaseRate = (0.003 + randomSeed * 0.3) * factors.competition * factors.domainAge;
+      const dakdAccelRate = (0.006 + randomSeed * 0.2) * factors.competition;
+      let dakd;
+      if (days <= 60) {
+        dakd = startValue * Math.exp(-dakdBaseRate * days);
+      } else {
+        dakd = startValue * Math.exp(-dakdBaseRate * 60) * Math.exp(-dakdAccelRate * (days - 60));
+      }
+      dakd = Math.max(dakd, MIN_VAL);
+      const plateauAdjustment = factors.businessModel * factors.contentDensity;
+      let plateauMultiplier;
+      if (days <= 7) plateauMultiplier = 1.0;
+      else if (days <= 30) plateauMultiplier = 0.85 * plateauAdjustment;
+      else if (days <= 60) plateauMultiplier = 0.65 * plateauAdjustment;
+      else if (days <= 180) plateauMultiplier = 0.4 * plateauAdjustment;
+      else if (days <= 365) plateauMultiplier = 0.22 * plateauAdjustment;
+      else plateauMultiplier = 0.15 * plateauAdjustment;
+      const plateau = Math.max(startValue * plateauMultiplier, MIN_VAL);
+      const weights = {
+        baseline: factors.businessModel > 1 ? 0.3 : 0.25,
+        cannibal: factors.siteScale < 1 ? 0.2 : 0.3,
+        dakd: factors.competition > 1 ? 0.3 : 0.2,
+        plateau: factors.contentDensity > 1 ? 0.3 : 0.25,
+      };
+      const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+      const currentContentValue =
+        (baseline * weights.baseline +
+          cannibal * weights.cannibal +
+          dakd * weights.dakd +
+          plateau * weights.plateau) /
+        totalWeight;
+      const contentDecayPercent = (1 - currentContentValue / startValue) * 100;
+      return {
+        models: {
+          baseline,
+          cannibal,
+          daKdMismatch: dakd,
+          plateau,
+        },
+        factors,
+        weights,
+        currentContentValue,
+        contentDecayPercent,
+        startValue,
+      };
+    }
+    // --- END: SyntheticDecay.js logic injection ---    /**************** DOM *****************/
+    const domainInput = document.getElementById('domainInput');
+    const loadBtn = document.getElementById('loadBtn');
+    const urlStatus = document.getElementById('urlStatus');
+    const manualUrlsWrap = document.getElementById('manualUrlsWrap');
+    const manualUrlsInput = document.getElementById('manualUrls');
+    const aovInput = document.getElementById('aovInput');
+    const investmentInput = document.getElementById('investmentInput');
+    const daySlider = document.getElementById('daySlider');
+    const dayLabel = document.getElementById('dayLabel');
+    const valueReadout = document.getElementById('valueReadout'); const metricsBox = document.getElementById('metricsBox'); const initValField = { get value() { return Number(investmentInput.value); } };
+
+    // Track when results are actually ready to show
+    let resultsAreReady = false;
+
+    // Lead capture related variables
+    let hasShownLeadCapture = false;
+    let hasSubmittedLead = false;
+    let hasDisabledLeadCapture = false;
+    let userEngagement = 0;
+
+    /*************** SITEMAP FETCH (1upmedia API) **************/
+    async function fetchSitemapApi(domain) {
+      // Fetch sitemap index and get XML sitemap URLs
+      const apiUrl = `https://ai.1upmedia.com:443/sitemap?site=${encodeURIComponent(domain)}&includeSites=true`;
+      const resp = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+      if (!resp.ok) throw new Error('Failed to fetch sitemap API');
+      const data = await resp.json();
+      const xmlList = [
+        ...(data.data.mainXML || []),
+        ...(data.data.blindXML || [])
+      ];
+      return { xmlList, sites: data.data.sites || [] };
+    }
+
+    async function fetchAllLinksFromXml(xmlUrl) {
+      // Fetch all links from a single XML sitemap
+      urlStatus.innerHTML = `<span class="animate-spin inline-block mr-2">⏳</span>Processing sitemap: ${xmlUrl.substring(0, 60)}...`;
+      const apiUrl = `https://ai.1upmedia.com:443/sitemap/all-links?xml=${encodeURIComponent(xmlUrl)}&includeMetadata=true`;
+      try {
+        const resp = await fetch(apiUrl, { headers: { Accept: 'application/json' } });
+        if (!resp.ok) throw new Error('Failed to fetch sitemap links');
+        const data = await resp.json();
+        console.log('API response for XML:', xmlUrl, data);
+        // Multiple ways this API might structure data
+        if (data.data && Array.isArray(data.data.links)) {
+          return data.data.links;
+        } else if (data.data && Array.isArray(data.data)) {
+          return data.data;
+        } else if (Array.isArray(data)) {
+          return data;
+        } else if (data.links && Array.isArray(data.links)) {
+          return data.links;
+        }
+        console.warn('No valid links array found in response', data);
+        return [];
+      } catch (error) {
+        console.error('Error fetching XML links:', error);
+        return [];
+      }
+    }
+
+    async function getUrlCountAndMetadata(domain) {
+      try {
+        const { xmlList, sites } = await fetchSitemapApi(domain);
+        let allLinks = [];
+
+        // First try to fetch from XML sitemaps
+        if (xmlList.length > 0) {
+          for (const xmlUrl of xmlList) {
+            urlStatus.innerHTML = `<span class="animate-spin inline-block mr-2">⏳</span>Processing ${xmlUrl.substring(0, 25)}...`;
+            const links = await fetchAllLinksFromXml(xmlUrl);
+            if (Array.isArray(links) && links.length > 0) {
+              allLinks.push(...links);
+              urlStatus.innerHTML = `<span class="animate-spin inline-block mr-2">⏳</span>Found ${allLinks.length} URLs so far...`;
+            }
+
+          }
+        }
+        // Fallback to sites list if no XML sitemaps or no links found
+        if (allLinks.length === 0 && sites.length > 0) {
+          urlStatus.innerHTML = `<span class="animate-spin inline-block mr-2">⏳</span>Using sites list as fallback...`;
+          allLinks = sites.map(url => ({ loc: url }));
+        }
+
+        // Remove duplicates by URL
+        const uniqueLinks = allLinks.filter((link, idx, arr) =>
+          idx === arr.findIndex(l => l.loc === link.loc)
+        );
+
+        // Process lastmod data for freshness analysis
+        if (uniqueLinks.length > 0) {
+          // Get current date for age calculations
+          const now = new Date();
+          let last30Days = 0, last90Days = 0, over1Year = 0, never = 0;
+          let totalWithDate = 0;
+          let totalAgeDays = 0;
+
+          uniqueLinks.forEach(link => {
+            if (!link.lastmod) {
+              never++;
+            } else {
+              const modDate = new Date(link.lastmod);
+              if (!isNaN(modDate.getTime())) { // Ensure valid date
+                const ageInDays = Math.floor((now - modDate) / (1000 * 60 * 60 * 24));
+                totalAgeDays += ageInDays;
+                totalWithDate++;
+
+                if (ageInDays <= 30) {
+                  last30Days++;
+                } else if (ageInDays <= 90) {
+                  last90Days++;
+                } else if (ageInDays > 365) {
+                  over1Year++;
+                }
+              } else {
+                never++; // Invalid date format treated as missing
+              }
+            }
+          });
+
+          // Calculate average content age
+          const averageAge = totalWithDate > 0 ? Math.round(totalAgeDays / totalWithDate) : 0;
+
+          // Store freshness data for use in the UI
+          window._freshnessAnalysis = {
+            total: uniqueLinks.length,
+            last30Days,
+            last90Days,
+            over1Year,
+            never,
+            averageAge
+          };
+
+          console.log("Content freshness analysis:", window._freshnessAnalysis);
+        }
+
+        return uniqueLinks;
+      } catch (e) {
+        console.error("Error in getUrlCountAndMetadata:", e);
+        return null;
+      }
+    } loadBtn.addEventListener('click', async () => {
+      const domain = domainInput.value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+      if (!domain) return alert('Enter a valid domain (example.com)');
+      urlStatus.classList.remove('hidden');
+      urlStatus.innerHTML = '<span class="animate-spin inline-block mr-2">⏳</span>Loading sitemap…';
+      manualUrlsWrap.classList.add('hidden');
+      loadBtn.disabled = true;
+
+      try {
+        const links = await getUrlCountAndMetadata(domain);
+        if (!links || links.length === 0) {
+          urlStatus.innerHTML = '<span class="text-red-500">No URLs found in sitemap or sitemap fetch failed.</span>';
+          manualUrlsWrap.classList.remove('hidden');
+        } else {
+          urlStatus.innerHTML = `<strong>${links.length}</strong> URLs found.`;
+
+
+          // Auto-fill manualUrls and freshness total
+          manualUrlsInput.value = links.length;
+          const freshTotal = document.getElementById('freshTotal');
+          if (freshTotal) freshTotal.value = links.length;
+
+          // If we have freshness analysis data, populate those fields
+          if (window._freshnessAnalysis) {
+            const fresh = window._freshnessAnalysis;
+            document.getElementById('fresh30').value = fresh.last30Days;
+            document.getElementById('fresh90').value = fresh.last90Days;
+            document.getElementById('freshStale').value = fresh.over1Year;
+            document.getElementById('freshMissing').value = fresh.never;
+
+            // Update freshness visualization
+            updateFreshnessVisualization(fresh);
+            document.getElementById('freshnessVisualization').classList.remove('hidden');
+          }          // Only set investment if it's currently empty
+          const aov = 10;
+          if (!investmentInput.value) {
+            investmentInput.value = links.length * aov;
+          }
+          // Always refresh outputs after sitemap load
+          refreshAll();          // Make sure results are shown after sitemap load completes
+          setTimeout(function () {
+            updateReadout();
+          }, 500);
+          // Optionally: store links/metadata for freshness analysis
+          window._sitemapLinks = links;
+        }
+      } catch (error) {
+        console.error('Sitemap fetch error:', error);
+        urlStatus.innerHTML = '<span class="text-red-500">Error fetching sitemap. Please try manual URL count.</span>';
+        manualUrlsWrap.classList.remove('hidden');
+      } finally {
+        loadBtn.disabled = false;
+      }
+    });
+    // --- REPLACE decayModels and buildDatasets with SyntheticDecay.js logic ---
+    function getDomain() {
+      return domainInput.value.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    } function getUrlCountVal() {
+      const count = Number(manualUrlsInput.value);
+      return count > 0 ? count : 0; // Only return positive values, no fallback default
+    } function getAOV() {
+      return 10; // Fixed AOV value
+    }
+    function getInvestment() {
+      return Number(investmentInput.value) || 0;
+    }
+    function buildDatasets(init) {
+      const domain = getDomain();
+      const urlCount = getUrlCountVal();
+      const aov = getAOV();
+      const invest = getInvestment();
+      const labels = Array.from({ length: MAX_DAYS + 1 }, (_, i) => i);
+      const palette = ['#9f46ff', '#d49aff', '#ba6fff', '#7d2be6'];
+      const modelNames = ['baseline', 'cannibal', 'daKdMismatch', 'plateau'];
+      return modelNames.map((name, idx) => ({
+        label: name.charAt(0).toUpperCase() + name.slice(1),
+        data: labels.map(d => {
+          const res = calculateDecayModels(init, d, domain, urlCount, aov, invest);
+          return Math.round(res.models[name]);
+        }),
+        fill: false,
+        tension: 0.3,
+        borderWidth: 2,
+        borderColor: palette[idx % palette.length]
+      }));
+    }
+
+    /***** FRESHNESS DECAY MODIFIER LOGIC *****/
+    function getFreshnessDecayModifier(freshness) {
+      if (!freshness || freshness.total === 0) return 1.0;
+      const freshPct = (freshness.last30Days + freshness.last90Days) / freshness.total;
+      const stalePct = (freshness.over1Year) / freshness.total;
+      const missingPct = (freshness.never) / freshness.total;
+      let modifier = 1.0;
+      modifier -= freshPct * 0.15;
+      modifier += stalePct * 0.15;
+      modifier += missingPct * 0.05;
+      modifier = Math.max(0.85, Math.min(1.2, modifier));
+      return modifier;
+    }
+
+    function getFreshnessInputs() {
+      const total = Number(document.getElementById('freshTotal').value) || 0;
+      const last30Days = Number(document.getElementById('fresh30').value) || 0;
+      const last90Days = Number(document.getElementById('fresh90').value) || 0;
+      const over1Year = Number(document.getElementById('freshStale').value) || 0;
+      const never = Number(document.getElementById('freshMissing').value) || 0;
+      return { total, last30Days, last90Days, over1Year, never };
+    }
+
+    function calcMetrics() {
+      const dIdx = Number(daySlider.value);
+      const day = DAY_BUCKETS[dIdx];
+      const init = initValField.value;
+      const domain = getDomain();
+      const urlCount = getUrlCountVal();
+      const aov = getAOV();
+      const invest = getInvestment();
+      const res = calculateDecayModels(init, day, domain, urlCount, aov, invest);
+      let avgRemaining = res.currentContentValue;
+      let decayPercent = res.contentDecayPercent;
+      // Apply freshness modifier if valid
+      const freshness = getFreshnessInputs();
+      let freshnessModifier = 1.0;
+      if (freshness.total > 0) {
+        freshnessModifier = getFreshnessDecayModifier(freshness);
+        avgRemaining = avgRemaining * (1 / freshnessModifier);
+        decayPercent = (1 - avgRemaining / init) * 100;
+      }
+      return { day, init, avgRemaining, decayPercent, freshnessModifier, res };
+    }
+
+    function updateMetricsBox() {
+      const { init, avgRemaining, decayPercent, freshnessModifier } = calcMetrics();
+      metricsBox.innerHTML = `
+    <div class="glass p-6 rounded-xl shadow-soft">
+      <div class="text-2xl">💰</div>
+      <div class="font-semibold">Total Invested</div>
+      <div class="text-xl font-bold text-accent-400">${fmt.format(init)}</div>
+      <div class="text-xs text-neutral-400">Content investment to date</div>
+    </div>
+    <div class="glass p-6 rounded-xl shadow-soft">
+      <div class="text-2xl">📈</div>
+      <div class="font-semibold">Current URL Value</div>
+      <div class="text-xl font-bold text-accent-400">${fmt.format(avgRemaining)}</div>
+      <div class="text-xs text-neutral-400">Total invested minus URL decay loss</div>
+    </div>
+    <div class="glass p-6 rounded-xl shadow-soft">
+      <div class="text-2xl">📉</div>
+      <div class="font-semibold">URL Decay</div>
+      <div class="text-xl font-bold text-accent-400">${decayPercent.toFixed(0)}%</div>
+      <div class="text-xs text-neutral-400">Weighted by domain/competition</div>
+    </div>
+    <div class="glass p-6 rounded-xl shadow-soft md:col-span-3 mt-4">
+      <div class="text-xs text-neutral-400">Freshness Modifier: <span class="text-accent-400 font-semibold">${freshnessModifier.toFixed(2)}x</span> (${freshnessModifier === 1 ? 'No adjustment' : freshnessModifier < 1 ? 'Decay reduced (fresher)' : 'Decay increased (stale)'})</div>
+    </div>`;
+    }
+
+    function updateReadout() {
+      const dIdx = Number(daySlider.value);
+      const day = DAY_BUCKETS[dIdx];
+      dayLabel.textContent = day;
+      const init = initValField.value;
+      const domain = getDomain();
+      const urlCount = getUrlCountVal();
+      const aov = getAOV();
+      const invest = getInvestment();
+      const res = calculateDecayModels(init, day, domain, urlCount, aov, invest); valueReadout.innerHTML = `<div><strong>Baseline:</strong> ${fmt.format(res.models.baseline)}</div>` +
+        `<div><strong>Cannibalization:</strong> ${fmt.format(res.models.cannibal)}</div>` +
+        `<div><strong>DA vs KD Penalty:</strong> ${fmt.format(res.models.daKdMismatch)}</div>` +
+        `<div><strong>Waste Plateau:</strong> ${fmt.format(res.models.plateau)}</div>`;
+
+      // Make sure results are visible
+      const resultsContainer = document.getElementById('resultsContainer');
+      const resultsContent = document.getElementById('resultsContent');
+
+      if (resultsContainer && urlCount > 0) { // AOV is always 10 now, so we only check urlCount
+        resultsContainer.classList.remove('displayNone');
+
+        if (resultsContent) {
+          resultsContent.style.display = 'block';
+          resultsContent.classList.remove('results-blur');
+        }
+
+        // Populate metrics with visible content
+        populateMetricsBox(urlCount, aov, invest);
+      }
+
+      updateMetricsBox();
+    }
+
+    // Helper function to ensure metrics box is populated with visible content
+    function populateMetricsBox(urlCount, aov, investment) {
+      const metricsBox = document.getElementById('metricsBox');
+
+      if (!metricsBox) return;
+
+      // Clear existing content
+      metricsBox.innerHTML = '';
+
+      // Create metrics cards
+      const metrics = [
+        {
+          label: 'Total URLs',
+          value: urlCount,
+          description: 'URLs being analyzed'
+        },
+        {
+          label: 'Average Order Value',
+          value: '$10', // Fixed AOV value
+          description: 'Fixed value per conversion'
+        },
+        {
+          label: 'Total Investment',
+          value: '$' + investment,
+          description: 'Content investment'
+        }
+      ];
+
+      // Add each metric card to the metrics box
+      metrics.forEach(metric => {
+        const card = document.createElement('div');
+        card.className = 'glass p-6 rounded-lg shadow-soft';
+
+        card.innerHTML = `
+          <div class="text-xl font-bold text-accent-400">${metric.value}</div>
+          <div class="font-semibold">${metric.label}</div>
+          <div class="text-xs text-neutral-400">${metric.description}</div>
+        `;
+
+        metricsBox.appendChild(card);
+      });
+    }
+
+    // Add click handlers to CTA buttons to show lead form when they click Calculate
+    document.querySelectorAll('a[href="#calculator"]').forEach(btn => {
+      btn.addEventListener('click', function (e) {
+        // Set a flag in localStorage to trigger lead form after they fill out calculator
+        localStorage.setItem('showLeadAfterCalc', 'true');
+      });
+    });    // Check if we should show lead form immediately after click
+    loadBtn.addEventListener('click', function () {
+      if (localStorage.getItem('showLeadAfterCalc') === 'true') {
+        // Remove the flag
+        localStorage.removeItem('showLeadAfterCalc');
+      }
+    });
+
+    // Add event listener for the unlock button
+    const unlockResultsBtn = document.getElementById('unlockResultsBtn');
+    if (unlockResultsBtn) {
+      unlockResultsBtn.addEventListener('click', function () {
+        showLeadCaptureModal();
+      });
+    }    // Automatically blur results only when showing lead capture
+    function blurResultsIfNeeded() {
+      if (!hasSubmittedLead && hasShownLeadCapture) {
+        const resultsContent = document.getElementById('resultsContent');
+        if (resultsContent) {
+          resultsContent.classList.add('results-blur');
+        }
+      }
+    }
+
+    // Helper function to ensure metrics box is populated with visible content
+    function populateMetricsBox(urlCount, aov, investment) {
+      const metricsBox = document.getElementById('metricsBox');
+
+      if (!metricsBox) return;
+
+      // Clear existing content
+      metricsBox.innerHTML = '';
+
+      // Create metrics cards
+      const metrics = [
+        {
+          label: 'Total URLs',
+          value: urlCount,
+          description: 'URLs being analyzed'
+        },
+        {
+          label: 'Average Order Value',
+          value: '$10', // Fixed AOV value
+          description: 'Fixed value per conversion'
+        },
+        {
+          label: 'Total Investment',
+          value: '$' + investment,
+          description: 'Content investment'
+        }
+      ];
+
+      // Add each metric card to the metrics box
+      metrics.forEach(metric => {
+        const card = document.createElement('div');
+        card.className = 'glass p-6 rounded-lg shadow-soft';
+
+        card.innerHTML = `
+          <div class="text-xl font-bold text-accent-400">${metric.value}</div>
+          <div class="font-semibold">${metric.label}</div>
+          <div class="text-xs text-neutral-400">${metric.description}</div>
+        `;
+
+        metricsBox.appendChild(card);
+      });
+    }
+
+    /*************** EVENTS **************/
+    daySlider.addEventListener('input', function () {
+      updateReadout();
+    });    // AOV input change listener removed as AOV is now fixed at 10
+    investmentInput.addEventListener('change', function () {
+      refreshAll();
+    }); manualUrlsInput.addEventListener('change', () => {
+      const count = Number(manualUrlsInput.value);
+      // Only set investment value if user hasn't manually entered one
+      if (count > 0 && !investmentInput.value) {
+        const aov = 10; // Fixed AOV value
+        investmentInput.value = count * aov;
+      }
+      refreshAll();
+    });// Add event listeners for freshness inputs
+    ['freshTotal', 'fresh30', 'fresh90', 'freshStale', 'freshMissing'].forEach(id => {
+      document.getElementById(id).addEventListener('input', function () {
+        updateReadout();        // Update interface with new values
+      });
+    });    // Delete any previous section from the page
+    let hasRemovedDuplicateSection = false;
+
+    function checkForDuplicateSection() {
+      if (hasRemovedDuplicateSection) return;
+
+      const sections = document.querySelectorAll('div#leadCaptureOverlay');
+      if (sections.length > 1) {
+        // Remove duplicates (keep only the first one)
+        for (let i = 1; i < sections.length; i++) {
+          sections[i].remove();
+        }
+        hasRemovedDuplicateSection = true;
+      }
+    }    // Function to refresh all components and check for lead capture opportunity
+    function refreshAll() {
+
+      updateReadout();
+      checkForDuplicateSection();
+
+      // Check if we have meaningful data to consider results ready
+      const urlCount = getUrlCountVal();
+      const aov = getAOV();
+      const investment = getInvestment();      // Set results as ready if we have both URLs and either AOV or investment amount
+      if (urlCount > 0 && (aov > 0 || investment > 0)) {
+        resultsAreReady = true;        // Show the results container immediately
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsContent = document.getElementById('resultsContent');
+
+        if (resultsContainer) {
+          resultsContainer.classList.remove('displayNone');
+        }
+        // Make sure the results content is visible and not blurred
+        if (resultsContent) {
+          resultsContent.classList.remove('displayNone');
+          resultsContent.classList.remove('results-blur');
+          resultsContent.style.display = 'block'; // Explicitly set display to block
+          console.log('Results content should now be visible');
+
+          // Populate metrics box to ensure there's visible content
+          if (document.getElementById('metricsBox')) {
+            populateMetricsBox(urlCount, aov, investment);
+          }
+        }
+
+        // Show lead capture modal after 2 seconds if flag is set
+        if (localStorage.getItem('showLeadAfterCalc') === 'true') {
+          // Remove the flag
+          localStorage.removeItem('showLeadAfterCalc');
+          // Set a timer to show lead form after calculation completes
+          setTimeout(function () {
+            if (!hasShownLeadCapture && !hasSubmittedLead) {
+              showLeadCaptureModal();
+            }
+          }, 2000); // 2 seconds delay
+        }
+      }
+
+
+    }
+    // initial draw
+    refreshAll();
+    // Function to update the freshness visualization
+    function updateFreshnessVisualization(fresh) {
+      if (!fresh || fresh.total === 0) return;
+
+      // Update the display values
+      document.getElementById('freshTotal-display').textContent = fresh.total;
+      document.getElementById('fresh30-display').textContent = fresh.last30Days;
+      document.getElementById('fresh90-display').textContent = fresh.last90Days;
+      document.getElementById('freshStale-display').textContent = fresh.over1Year;
+      document.getElementById('freshMissing-display').textContent = fresh.never;
+
+      // Calculate and update percentages
+      const calcPercent = (value) => ((value / fresh.total) * 100).toFixed(1) + '%';
+      document.getElementById('fresh30-percent').textContent = calcPercent(fresh.last30Days);
+      document.getElementById('fresh90-percent').textContent = calcPercent(fresh.last90Days);
+      document.getElementById('freshStale-percent').textContent = calcPercent(fresh.over1Year);
+      document.getElementById('freshMissing-percent').textContent = calcPercent(fresh.never);
+
+      // Generate content freshness recommendation
+      let recommendation = '';
+      const freshContentRate = ((fresh.last30Days + fresh.last90Days) / fresh.total) * 100;
+
+      if (freshContentRate > 50) {
+        recommendation = '✅ Great job! Over 50% of your content has been updated in the last 90 days. This helps maintain search rankings and user engagement.';
+      } else if (fresh.over1Year > fresh.total * 0.3) {
+        recommendation = '⚠️ Attention needed: ' + Math.round((fresh.over1Year / fresh.total) * 100) + '% of your content hasn\'t been updated in over a year. Consider prioritizing these pages for content refresh to improve SEO performance.';
+      } else if (fresh.never > fresh.total * 0.2) {
+        recommendation = 'ℹ️ Missing metadata: ' + Math.round((fresh.never / fresh.total) + 100) + '% of your pages lack last-modified dates. Adding these dates helps search engines understand content freshness.';
+      } else if (freshContentRate < 20) {
+        recommendation = '🚨 Low fresh content rate: Only ' + freshContentRate.toFixed(1) + '% of your content has been updated in the last 90 days. This may negatively impact search rankings and user engagement.';
+      } else {
+        recommendation = '📈 Based on your content age distribution, focus on updating the ' + fresh.over1Year + ' oldest pages first, then establish a regular update schedule for your most important content.';
+      }
+
+      document.getElementById('freshnessRecommendation').textContent = recommendation;
+    }
+
+    // Add event listeners for freshness inputs
+    ['freshTotal', 'fresh30', 'fresh90', 'freshStale', 'freshMissing'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        updateReadout();
+        // Update freshness visualization when inputs change manually
+        const total = Number(document.getElementById('freshTotal').value) || 0;
+        const last30Days = Number(document.getElementById('fresh30').value) || 0;
+        const last90Days = Number(document.getElementById('fresh90').value) || 0;
+        const over1Year = Number(document.getElementById('freshStale').value) || 0;
+        const never = Number(document.getElementById('freshMissing').value) || 0;
+
+        if (total > 0) {
+          updateFreshnessVisualization({
+            total,
+            last30Days,
+            last90Days,
+            over1Year,
+            never
+          });
+          document.getElementById('freshnessVisualization').classList.remove('hidden');
+        }
+      });
+    });
+
+    // Function to check and show freshness section when all inputs have values
+    function checkAndShowFreshnessSection() {
+      const freshTotal = Number(document.getElementById('freshTotal').value);
+      const fresh30 = Number(document.getElementById('fresh30').value);
+      const fresh90 = Number(document.getElementById('fresh90').value);
+      const freshStale = Number(document.getElementById('freshStale').value);
+      const freshMissing = Number(document.getElementById('freshMissing').value);
+
+      // Show visualization if we have a total and at least one other value
+      if (freshTotal > 0 && (fresh30 > 0 || fresh90 > 0 || freshStale > 0 || freshMissing > 0)) {
+        updateFreshnessVisualization({
+          total: freshTotal,
+          last30Days: fresh30,
+          last90Days: fresh90,
+          over1Year: freshStale,
+          never: freshMissing
+        });
+        document.getElementById('freshnessVisualization').classList.remove('hidden');
+      }
+    }
+
+    // Call this when page loads
+    window.addEventListener('load', checkAndShowFreshnessSection);
+
+    // Also call when form is submitted/manually entered
+    document.querySelector('details').addEventListener('toggle', function (e) {
+      if (this.open) {
+        checkAndShowFreshnessSection();
+      }
+    });    // ==== LEAD CAPTURE MODAL FUNCTIONALITY ====
+    const leadCaptureOverlay = document.getElementById('leadCaptureOverlay');
+    const leadCaptureForm = document.getElementById('leadCaptureForm');
+    const calculatorSection = document.getElementById('calculator');
+    // Use the existing metricsBox variable instead of redeclaring it
+    const bodyElement = document.body; function showLeadCaptureModal() {
+      // Don't blur the results immediately - this gives users time to see them
+      setTimeout(function () {
+        // Blur the results after a small delay
+        const resultsContent = document.getElementById('resultsContent');
+        if (resultsContent) {
+          resultsContent.classList.add('results-blur');
+        }
+
+        // Show the overlay to prevent interaction with blurred content
+        const resultsOverlay = document.getElementById('resultsOverlay');
+        if (resultsOverlay) {
+          resultsOverlay.classList.remove('hidden');
+        }
+      }, 500); // Half second delay for blur effect
+
+      // Show the modal
+      leadCaptureOverlay.classList.remove('hidden');
+      hasShownLeadCapture = true;
+      bodyElement.style.overflow = 'hidden';
+    } function hideLeadCaptureModal() {
+      leadCaptureOverlay.classList.add('hidden');
+      // Restore body scrolling
+      bodyElement.style.overflow = '';
+    } function unlockResults() {
+      // Unblur the results and ensure they're visible
+      const resultsContent = document.getElementById('resultsContent');
+      const resultsContainer = document.getElementById('resultsContainer');
+
+      if (resultsContent) {
+        resultsContent.classList.remove('results-blur');
+        resultsContent.style.display = 'block';
+        resultsContent.style.overflow = 'visible';
+      }
+      if (resultsContainer) {
+        resultsContainer.classList.remove('displayNone');
+        // Add our special unlocked class for proper scrolling
+        resultsContainer.classList.add('results-unlocked');
+      }
+
+      // Hide the overlay
+      const resultsOverlay = document.getElementById('resultsOverlay');
+      if (resultsOverlay) {
+        resultsOverlay.classList.add('hidden');
+      }
+
+      // Ensure main page is scrollable
+      document.body.style.overflow = ''; document.documentElement.style.overflow = '';
+    }
+
+    // Function to show toast message
+    function showToast(message, isError = false) {
+      const successToast = document.createElement('div');
+      successToast.className = `fixed bottom-4 right-4 ${isError ? 'bg-red-500' : 'bg-accent-500'} text-white px-6 py-3 rounded-lg shadow-xl z-50 animate-fade-in`;
+
+      const icon = isError
+        ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+           </svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+           </svg>`;
+
+      successToast.innerHTML = `
+        <div class="flex items-center">
+          ${icon}
+          <span>${message}</span>
+        </div>
+      `;
+
+      return successToast;
+    }
+
+    // Handle form submission
+    leadCaptureForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Show loading state
+      const submitBtn = document.getElementById('leadSubmitBtn');
+      const submitSpinner = document.getElementById('submitSpinner');
+      submitBtn.disabled = true;
+      submitSpinner.classList.remove('hidden');
+
+      const email = document.getElementById('leadEmail').value;
+      const phone = document.getElementById('leadPhone').value;
+      const company = document.getElementById('leadCompany').value;
+
+      // Store the lead data
+      const leadData = {
+        email,
+        phone,
+        company,
+        timestamp: new Date().toISOString(),
+        domain: getDomain(),
+        urlCount: getUrlCountVal(),
+        aov: getAOV(),
+        investment: getInvestment(),
+        // Add calculation results
+        results: {
+          decayPercent: calcMetrics().decayPercent.toFixed(0) + '%',
+          currentValue: fmt.format(calcMetrics().avgRemaining),
+          totalInvested: fmt.format(calcMetrics().init),
+          daysSincePublish: calcMetrics().day
+        }
+      };
+
+      window._leadData = leadData;
+      console.log('Lead captured:', leadData);
+
+      // Send data to the server
+      fetch('https://ai.1upmedia.com:443/sendEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leadData)
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Email sent successfully:', data);
+        })
+        .catch(error => {
+          console.error('Error sending email:', error);
+          // Continue with form submission even if email sending fails
+        })
+        .finally(() => {
+          // Reset button state
+          submitBtn.disabled = false;
+          submitSpinner.classList.add('hidden');
+
+          // Always perform these actions regardless of whether the request succeeded
+          hasSubmittedLead = true;
+          hideLeadCaptureModal();
+
+          // Unblur and show full results
+          unlockResults();
+
+          // Show success message
+          const successToast = showToast(`Thanks ${email.split('@')[0]}! Your analysis is now unlocked.`);
+          document.body.appendChild(successToast);
+
+          // Remove toast after 5 seconds
+          setTimeout(() => {
+            if (document.body.contains(successToast)) {
+              successToast.classList.add('animate-fade-out');
+              setTimeout(() => successToast.remove(), 500);
+            }
+          }, 5000);
+        });
+    });
+
+
+    // Allow closing the modal with ESC key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !hasSubmittedLead && leadCaptureOverlay && !leadCaptureOverlay.classList.contains('hidden')) {
+        hideLeadCaptureModal();
+      }
+    });
+
+    // Add a special 'Remind Me Later' option that delays the modal for another interaction
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'absolute top-2 right-2 text-neutral-400 hover:text-white';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.addEventListener('click', function () {
+      hideLeadCaptureModal();
+      // Set a cookie to not show for a short time
+      const inTenMinutes = new Date(new Date().getTime() + 10 * 60 * 1000);
+      document.cookie = `leadCaptureShown=true; expires=${inTenMinutes.toUTCString()}; path=/`;
+    });
+
+    // Add the close button to the modal
+    if (leadCaptureOverlay) {
+      const modalContent = leadCaptureOverlay.querySelector('div');
+      if (modalContent) {
+        modalContent.appendChild(closeBtn);
+      }
+    }
+
+
+    function refreshAll() {
+      updateReadout();
+    }    // Check for results readiness after page load, but don't auto-show results
+    window.addEventListener('load', function () {// Reset default values to ensure user must interact first
+      resultsAreReady = false;
+
+      // Ensure results container is hidden initially but ready to be shown
+      const resultsContainer = document.getElementById('resultsContainer');
+      if (resultsContainer) {
+        resultsContainer.classList.add('displayNone');
+      }
+
+      // Reset any overlay or blur effects
+      const resultsContent = document.getElementById('resultsContent');
+      if (resultsContent) {
+        resultsContent.classList.remove('results-blur');
+      }
+
+      const resultsOverlay = document.getElementById('resultsOverlay');
+      if (resultsOverlay) {
+        resultsOverlay.classList.add('hidden');
+      }
+
+      console.log('Page loaded - results will be shown after user interaction');
+    });
+  </script>
+
+  <!-- ==============  SCHEMA MARKUP  ============== -->
+  <script type="application/ld+json">
+
+</script>
+</body>
+
+</html>

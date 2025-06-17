@@ -2169,6 +2169,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       }),
     };
   };
+
   const getROIRecoveryPotential = () => {
     // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
@@ -2788,6 +2789,237 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
   const getRiskMetric = () => {
     return riskMetrics;
+  };
+
+  const calculateTotalLoss = () => {
+    try {
+      console.log(
+        "Calculating total loss by collecting unique URLs from each data source..."
+      );
+
+      // Create separate objects to track unique URLs from each data source
+      let keywordMismatchUniqueURLs = {};
+      let cannibalizationUniqueURLs = {};
+      let contentCostWasteUniqueURLs = {};
+      let linkDilutionUniqueURLs = {};
+      let contentDecayUniqueURLs = {};
+
+      let allUniqueURLs = {};
+
+      const revenueLeakData = getRevenueLeak();
+      const contentDecayData = getContentDecay();
+      const keywordMismatchData = getKeywordMismatch();
+      const linkDilutionData = getLinkDilution();
+      const psychoMismatchData = getPsychMismatch();
+      const cannibalizationData = getCannibalizationLoss();
+
+      let contentCostLoss = -1 * revenueLeakData.estimatedRevenueLoss;
+      let contentDecayLoss = contentDecayData.summary?.totalRevenueLoss;
+      let keywordMismatchLoss = keywordMismatchData.summary?.totalRevenueLoss;
+      let cannibalizationLoss = cannibalizationData.summary?.totalRevenueLoss;
+      let linkDilutionLoss = linkDilutionData.summary?.totalRevenueLoss;
+      let psychoMismatchLoss = psychoMismatchData.summary?.totalRevenueLoss;
+
+      keywordMismatch.forEach((item) => {
+        if (item.url) {
+          keywordMismatchUniqueURLs[item.url] =
+            keywordMismatchLoss / keywordMismatch.length;
+        }
+      });
+
+      contentCostWaste.forEach((item) => {
+        if (item.url) {
+          contentCostWasteUniqueURLs[item.url] =
+            contentCostLoss / contentCostWaste.length;
+        }
+      });
+
+      cannibalization.forEach((item) => {
+        if (item.primaryUrl?.url) {
+          cannibalizationUniqueURLs[item.primaryUrl.url] =
+            cannibalizationLoss / cannibalization.length;
+        }
+      });
+
+      linkDilution.forEach((item) => {
+        if (item.url) {
+          linkDilutionUniqueURLs[item.url] =
+            linkDilutionLoss / linkDilution.length;
+        }
+      });
+      decay30Days.forEach((item) => {
+        if (item.url) {
+          contentDecayUniqueURLs[item.url] =
+            contentDecayLoss / decay30Days.length;
+        }
+      });
+      decay60Days.forEach((item) => {
+        if (item.url) {
+          contentDecayUniqueURLs[item.url] =
+            contentDecayLoss / decay60Days.length;
+        }
+      });
+      decay90Days.forEach((item) => {
+        if (item.url) {
+          contentDecayUniqueURLs[item.url] =
+            contentDecayLoss / decay90Days.length;
+        }
+      });
+
+      let multipleLossUrls = {};
+      Object.entries(keywordMismatchUniqueURLs).forEach(([url, loss]) => {
+        if (allUniqueURLs[url]) {
+          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+          if (!multipleLossUrls[url]) {
+            multipleLossUrls[url] = [];
+          }
+          multipleLossUrls[url].push({
+            loss,
+            source: "Keyword Mismatch",
+          });
+        } else {
+          allUniqueURLs[url] = loss;
+        }
+      });
+      Object.entries(contentCostWasteUniqueURLs).forEach(([url, loss]) => {
+        if (allUniqueURLs[url]) {
+          if (!multipleLossUrls[url]) {
+            multipleLossUrls[url] = [];
+          }
+          multipleLossUrls[url].push({
+            loss,
+            source: "Content Cost Waste",
+          });
+          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+        } else {
+          allUniqueURLs[url] = loss;
+        }
+      });
+      Object.entries(cannibalizationUniqueURLs).forEach(([url, loss]) => {
+        if (allUniqueURLs[url]) {
+          if (!multipleLossUrls[url]) {
+            multipleLossUrls[url] = [];
+          }
+          multipleLossUrls[url].push({
+            loss,
+            source: "Cannibalization",
+          });
+          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+        } else {
+          allUniqueURLs[url] = loss;
+        }
+      });
+      Object.entries(linkDilutionUniqueURLs).forEach(([url, loss]) => {
+        if (allUniqueURLs[url]) {
+          if (!multipleLossUrls[url]) {
+            multipleLossUrls[url] = [];
+          }
+          multipleLossUrls[url].push({
+            loss,
+            source: "Link Dilution",
+          });
+          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+        } else {
+          allUniqueURLs[url] = loss;
+        }
+      });
+      Object.entries(contentDecayUniqueURLs).forEach(([url, loss]) => {
+        if (allUniqueURLs[url]) {
+          if (!multipleLossUrls[url]) {
+            multipleLossUrls[url] = [];
+          }
+          multipleLossUrls[url].push({
+            loss,
+            source: "Content Decay",
+          });
+          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+        } else {
+          allUniqueURLs[url] = loss;
+        }
+      });
+
+      const totalLoss = Object.values(allUniqueURLs).reduce(
+        (total, loss) => total + loss,
+        0
+      );
+
+      const estimatedLoss = (totalLoss * 5 + psychoMismatchLoss) / 6;
+
+      const averageLoss =
+        (contentCostLoss +
+          psychoMismatchLoss +
+          contentCostLoss +
+          contentDecayLoss +
+          cannibalizationLoss +
+          linkDilutionLoss) /
+        6;
+      console.log("Total Loss:", estimatedLoss, averageLoss);
+
+      // Get the totalInvested value
+      const totalInvested =
+        onboardingData?.domainCostDetails?.totalInvested || 0;
+
+      // Get individual metric losses for comparison
+      const individualMetricLosses = [
+        Math.abs(contentCostLoss || 0),
+        Math.abs(contentDecayLoss || 0),
+        Math.abs(keywordMismatchLoss || 0),
+        Math.abs(cannibalizationLoss || 0),
+        Math.abs(linkDilutionLoss || 0),
+        Math.abs(psychoMismatchLoss || 0),
+      ];
+
+      // Find the maximum individual metric loss
+      const maxIndividualLoss = Math.max(
+        ...individualMetricLosses.filter(
+          (loss) => !isNaN(loss) && isFinite(loss)
+        )
+      );
+
+      // Ensure totalRevenueLoss is above the maximum individual loss and less than totalInvested
+      let totalRevenueLoss = estimatedLoss || 0;
+
+      // If totalRevenueLoss is less than maxIndividualLoss, use maxIndividualLoss instead
+      if (totalRevenueLoss < maxIndividualLoss) {
+        console.log(
+          `Adjusting total loss to be at least the maximum individual loss: ${maxIndividualLoss}`
+        );
+        totalRevenueLoss = maxIndividualLoss;
+      }
+
+      // If totalRevenueLoss is greater than totalInvested, cap it at totalInvested
+      if (totalRevenueLoss > totalInvested && totalInvested > 0) {
+        console.log(`Capping total loss at totalInvested: ${totalInvested}`);
+        totalRevenueLoss = averageLoss || 0;
+      }
+
+      const formattedAvgLoss = averageLoss || 0;
+
+      // Calculate what percentage of the totalInvested the loss represents
+      const percentOfContentCost =
+        totalInvested > 0 ? (totalRevenueLoss / totalInvested) * 100 : 0;
+
+      return {
+        summary: {
+          totalRevenueLoss: totalRevenueLoss, // Return as a number, not string
+          averageLoss: formattedAvgLoss,
+          multipleLossUrls: Object.keys(multipleLossUrls).length,
+          urls: Object.keys(allUniqueURLs).length,
+          percentOfContentCost: percentOfContentCost,
+          tooltip: `Your total revenue loss Among all 5 metrics is $ ${totalRevenueLoss.toFixed(
+            2
+          )} and ${
+            Object.keys(multipleLossUrls).length
+          } URLs appear in multiple loss sources. This represents ${percentOfContentCost.toFixed(
+            1
+          )}% of your total investment.`,
+        },
+      };
+    } catch (error) {
+      console.error("Error calculating total loss:", error);
+    }
+
+    // Helper function to extract unique URLs and their losses from a data source
   };
   // Helper functions for the new analysis functions - Using unified A-D grading system
   const getQualityGrade = (score) => {
@@ -3579,6 +3811,7 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         getLinkDilution,
         getPsychMismatch,
         getCannibalizationLoss,
+        calculateTotalLoss,
         funnelGapIdentifier,
         getContentQualityDistribution,
         getMoodyCreditScore,
