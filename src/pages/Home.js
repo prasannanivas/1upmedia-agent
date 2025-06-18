@@ -25,6 +25,7 @@ const HomePage = () => {
     getLinkDilution,
     getPsychMismatch,
     getCannibalizationLoss,
+    calculateTotalLoss,
   } = useFinancialCalculations();
 
   const completionPercentage = getPercentageProfileCompletion();
@@ -102,51 +103,10 @@ const HomePage = () => {
                     }
                     try {
                       // Get comprehensive loss using FinancialCalculations context
-                      const revenueLeakResult = getRevenueLeak();
-                      const contentDecayResult = getContentDecay();
-                      const keywordMismatchResult = getKeywordMismatch();
-                      const linkDilutionResult = getLinkDilution();
-                      const psychMismatchResult = getPsychMismatch();
-                      const cannibalizationResult = getCannibalizationLoss(); // Calculate total revenue loss from all sources
-                      const totalRevenueLoss =
-                        Math.abs(revenueLeakResult?.estimatedRevenueLoss || 0) +
-                        (contentDecayResult?.summary?.totalRevenueLoss || 0) +
-                        (keywordMismatchResult?.summary?.totalRevenueLoss ||
-                          0) +
-                        (linkDilutionResult?.summary?.totalRevenueLoss || 0) +
-                        (psychMismatchResult?.summary?.totalRevenueLoss || 0) +
-                        (cannibalizationResult?.summary?.totalRevenueLoss || 0);
 
-                      // Calculate current content value (total invested minus average loss)
-                      const averageLoss = totalRevenueLoss / 6;
-                      const currentContentValue = Math.max(
-                        0,
+                      const currentContentValue =
                         totalInvested -
-                          contentDecayResult?.summary?.totalRevenueLoss
-                      );
-                      console.log("🔥 Comprehensive Loss Analysis:", {
-                        totalInvested,
-                        totalRevenueLoss,
-                        averageLoss,
-                        currentContentValue,
-                        breakdown: {
-                          revenueLeak: Math.abs(
-                            revenueLeakResult?.estimatedRevenueLoss || 0
-                          ),
-                          contentDecay:
-                            contentDecayResult?.summary?.totalRevenueLoss || 0,
-                          keywordMismatch:
-                            keywordMismatchResult?.summary?.totalRevenueLoss ||
-                            0,
-                          linkDilution:
-                            linkDilutionResult?.summary?.totalRevenueLoss || 0,
-                          psychMismatch:
-                            psychMismatchResult?.summary?.totalRevenueLoss || 0,
-                          cannibalization:
-                            cannibalizationResult?.summary?.totalRevenueLoss ||
-                            0,
-                        },
-                      });
+                        calculateTotalLoss()?.summary.totalRevenueLoss;
 
                       return currentContentValue.toLocaleString();
                     } catch (error) {
@@ -160,7 +120,7 @@ const HomePage = () => {
                 </div>
               )}{" "}
               <div className="metric-subtitle">
-                Total invested minus average loss across 6 categories
+                Total loss across 6 categories
               </div>
             </div>
           </motion.div>{" "}
@@ -192,92 +152,19 @@ const HomePage = () => {
                     }
                     try {
                       // Get comprehensive loss using FinancialCalculations context
-                      const revenueLeakResult = getRevenueLeak();
-                      const contentDecayResult = getContentDecay();
-                      const keywordMismatchResult = getKeywordMismatch();
-                      const linkDilutionResult = getLinkDilution();
-                      const psychMismatchResult = getPsychMismatch();
-                      const cannibalizationResult = getCannibalizationLoss();
+                      const totalRevenueLoss =
+                        calculateTotalLoss()?.summary.totalRevenueLoss;
 
                       // Calculate total revenue loss from all sources
-                      const totalRevenueLoss =
-                        Math.abs(revenueLeakResult?.estimatedRevenueLoss || 0) +
-                        (contentDecayResult?.summary?.totalRevenueLoss || 0) +
-                        (keywordMismatchResult?.summary?.totalRevenueLoss ||
-                          0) +
-                        (linkDilutionResult?.summary?.totalRevenueLoss || 0) +
-                        (psychMismatchResult?.summary?.totalRevenueLoss || 0) +
-                        (cannibalizationResult?.summary?.totalRevenueLoss || 0); // Calculate average loss percentage based on total invested (divide by 6 loss types)
-                      const averageLossAmount =
-                        contentDecayResult?.summary?.totalRevenueLoss;
+
+                      // Calculate average loss percentage based on total invested (divide by 6 loss types)
+
                       const averageLossPercentage =
                         totalInvested > 0
-                          ? Math.round(
-                              (averageLossAmount / totalInvested) * 100
-                            )
+                          ? Math.round((totalRevenueLoss / totalInvested) * 100)
                           : 0;
 
                       // Debug: Show comprehensive loss breakdown
-                      if (onboardingData.GSCAnalysisData) {
-                        console.log("💰 All Loss Types Analysis:", {
-                          totalInvested,
-                          totalRevenueLoss,
-                          averageLossAmount,
-                          averageLossPercentage,
-                          breakdown: {
-                            revenueLeak: Math.abs(
-                              revenueLeakResult?.estimatedRevenueLoss || 0
-                            ),
-                            contentDecay:
-                              contentDecayResult?.summary?.totalRevenueLoss ||
-                              0,
-                            keywordMismatch:
-                              keywordMismatchResult?.summary
-                                ?.totalRevenueLoss || 0,
-                            linkDilution:
-                              linkDilutionResult?.summary?.totalRevenueLoss ||
-                              0,
-                            psychMismatch:
-                              psychMismatchResult?.summary?.totalRevenueLoss ||
-                              0,
-                            cannibalization:
-                              cannibalizationResult?.summary
-                                ?.totalRevenueLoss || 0,
-                          },
-                        });
-                        console.log("📊 Individual Loss Breakdown:");
-                        const breakdown = {
-                          revenueLeak: Math.abs(
-                            revenueLeakResult?.estimatedRevenueLoss || 0
-                          ),
-                          contentDecay:
-                            contentDecayResult?.summary?.totalRevenueLoss || 0,
-                          keywordMismatch:
-                            keywordMismatchResult?.summary?.totalRevenueLoss ||
-                            0,
-                          linkDilution:
-                            linkDilutionResult?.summary?.totalRevenueLoss || 0,
-                          psychMismatch:
-                            psychMismatchResult?.summary?.totalRevenueLoss || 0,
-                          cannibalization:
-                            cannibalizationResult?.summary?.totalRevenueLoss ||
-                            0,
-                        };
-
-                        Object.entries(breakdown).forEach(([type, value]) => {
-                          if (value > 0) {
-                            const percentage =
-                              totalInvested > 0
-                                ? (value / totalInvested) * 100
-                                : 0;
-                            console.log(
-                              `  ${type}: ${Math.round(
-                                percentage
-                              )}% ($${Math.round(value).toLocaleString()})`
-                            );
-                          }
-                        });
-                      }
 
                       return `${averageLossPercentage}%`;
                     } catch (error) {

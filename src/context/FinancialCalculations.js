@@ -146,13 +146,20 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
     const totalUrls = uniqueUrls.length || 1; // Prevent division by zero
 
-    // Calculate cost per URL (this is the key fix!)
+    // Constants for new formula
+    const CVR = conversionRate;
+    const AOV = averageOrderValue;
+    const RR_RECOVERY = 0.8; // Recovery Rate (80%)
+    const DISCOUNT_RATE = 0.1; // Discount Rate (10%)
+    const HORIZON_YEARS = 700 / 365;
+    const PV_FACTOR =
+      (1 - Math.exp(-DISCOUNT_RATE * HORIZON_YEARS)) / DISCOUNT_RATE;
+
+    // Calculate cost per URL (COST_PER_URL in new formula)
     const costPerUrl = totalContentCost / totalUrls;
 
     // Calculate threshold clicks needed for break-even PER URL
-    // clicks * conversionRate * aov = costPerUrl
-    // clicks = costPerUrl / (conversionRate * aov)
-    const threshold = costPerUrl / (conversionRate * averageOrderValue);
+    const threshold = costPerUrl / (CVR * AOV); // Same as threshold_clicks in new formula
 
     let zeroClicksCount = 0;
     let urlsBelowThreshold = 0;
@@ -168,21 +175,16 @@ export const FinancialCalculationsProvider = ({ children }) => {
       if (clicks < threshold) {
         urlsBelowThreshold++;
 
-        // Calculate ROI factor
-        let roiFactor;
-        if (clicks < threshold) {
-          // Negative ROI calculation
-          roiFactor = Math.max(-1, (clicks - threshold) / threshold);
-        } else {
-          // Positive ROI calculation (no limit)
-          roiFactor = (clicks - threshold) / threshold;
-        }
+        // Calculate ROI gap using new formula
+        const roi_gap = Math.max(0, (threshold - clicks) / threshold);
 
-        // Calculate revenue loss for this URL
-        const urlRevenueLoss = roiFactor * costPerUrl;
+        // Calculate revenue loss for this URL using new formula
+        const urlRevenueLoss =
+          roi_gap * costPerUrl * (1 - RR_RECOVERY) * PV_FACTOR;
         totalEstimatedRevenueLoss += urlRevenueLoss;
       }
     });
+
     return {
       totalUrls,
       zeroClicksCount,
@@ -208,11 +210,16 @@ export const FinancialCalculationsProvider = ({ children }) => {
           threshold
         )} clicks needed for break-even per URL`,
         roiCalculation:
-          "ROI Factor: (actual_clicks - threshold_clicks) / threshold_clicks",
-        revenueLossFormula: "ROI Factor * Cost Per URL",
+          "ROI Gap: (threshold_clicks - actual_clicks) / threshold_clicks",
+        revenueLossFormula:
+          "ROI Gap * Cost Per URL * (1 - Recovery Rate) * Present Value Factor",
+        discountRate: DISCOUNT_RATE,
+        recoveryRate: RR_RECOVERY,
+        presentValueFactor: PV_FACTOR,
       },
     };
   };
+
   const getContentDecay = () => {
     console.log(onboardingData?.domainCostDetails);
     // Use contentCostWaste.length for total unique URLs
@@ -240,7 +247,14 @@ export const FinancialCalculationsProvider = ({ children }) => {
       );
     }
 
-    const conversionRate = 0.02; // 2% conversion rate (more realistic)
+    // Constants for new formula
+    const CVR = 0.02; // Conversion Rate (2%)
+    const AOV = averageOrderValue;
+    const RR_RECOVERY = 0.7; // Recovery Rate (80%)
+    const DISCOUNT_RATE = 0.1; // Discount Rate (10%)
+    const HORIZON_YEARS = 700 / 365;
+    const PV_FACTOR =
+      (1 - Math.exp(-DISCOUNT_RATE * HORIZON_YEARS)) / DISCOUNT_RATE;
 
     // Combine all decay timeframes
     const allDecayData = [
@@ -290,18 +304,27 @@ export const FinancialCalculationsProvider = ({ children }) => {
         decayCategories[category] = [];
       }
 
-      // Calculate revenue loss for this URL based on decay severity
+      // Calculate revenue loss using new formula
       let urlRevenueLoss = 0;
       if (item.hasDecay) {
-        const clicksLost =
-          (item.metrics?.peakClicks || 0) - (item.metrics?.currentClicks || 0);
-        const potentialRevenue =
-          clicksLost * conversionRate * averageOrderValue;
+        const traffic_day_0 = item.metrics?.peakClicks || 1;
+        const traffic_day_700 = item.metrics?.currentClicks;
+        const safeClicks = traffic_day_700 > 0 ? traffic_day_700 : 0.5; // avoids div by zero and gives conservative decay
+        const decay_rate = Math.log(traffic_day_0 / safeClicks) / 700;
 
-        // Apply severity multiplier
-        const severityMultiplier = getSeverityMultiplier(item.decayStatus);
-        urlRevenueLoss = potentialRevenue * severityMultiplier; // Add base content cost waste for pages with decay
-        urlRevenueLoss += costPerUrl * 0.1; // 10% of content cost is wasted for decaying pages
+        const baseline_cashflow = traffic_day_0 * CVR * AOV;
+
+        // Calculate decay rate using new formula
+        //  const decay_rate = Math.log(traffic_day_0 / traffic_day_700) / 700;
+
+        // Calculate amortization loss using new formula
+        const amortization_loss =
+          baseline_cashflow *
+          (1 - Math.exp(-decay_rate * 700)) *
+          (1 - RR_RECOVERY) *
+          PV_FACTOR;
+
+        urlRevenueLoss = amortization_loss;
       }
 
       decayCategories[category].push({
@@ -321,6 +344,12 @@ export const FinancialCalculationsProvider = ({ children }) => {
           totalClicks: item.metrics?.totalClicks || 0,
           totalImpressions: item.metrics?.totalImpressions || 0,
           timeframeDays: item.metrics?.timeframeDays || 0,
+          decay_rate: item.hasDecay
+            ? Math.log(
+                (item.metrics?.peakClicks || 1) /
+                  (item.metrics?.currentClicks || 1)
+              ) / 700
+            : 0,
         },
         calculatedRevenueLoss: Math.round(urlRevenueLoss),
         topKeywords: item.topKeywords || [],
@@ -377,6 +406,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         decayStatus: item.decayStatus,
         peakDrop: item.metrics?.peakDrop || 0,
       }));
+
     return {
       summary: {
         totalUrlsAnalyzed,
@@ -387,9 +417,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
             : 0,
         totalClicksLost,
         totalImpressionsLost,
-        totalRevenueLoss: Math.round(
-          Math.min(calculatedRevenueLoss, totalContentCost * 0.8)
-        ), // Cap at 80% of total investment
+        totalRevenueLoss: Math.round(calculatedRevenueLoss),
         totalUniqueUrls,
         costPerUrl: Math.round(costPerUrl),
         tooltip: {
@@ -401,11 +429,16 @@ export const FinancialCalculationsProvider = ({ children }) => {
           ).toLocaleString()} in estimated revenue loss.`,
         },
         calculationDetails: {
-          averageOrderValue,
+          averageOrderValue: AOV,
           totalContentCost,
-          conversionRate,
+          conversionRate: CVR,
+          recoveryRate: RR_RECOVERY,
+          discountRate: DISCOUNT_RATE,
+          presentValueFactor: PV_FACTOR,
           formula:
-            "Revenue Loss = (Clicks Lost * Conversion Rate * AOV * Severity Multiplier) + (Cost Per URL * 0.1 for decaying pages)",
+            "Amortization Loss = Baseline Cashflow × (1 - exp(-decay_rate × 700)) × (1 - Recovery Rate) × Present Value Factor",
+          decayRateFormula:
+            "decay_rate = ln(traffic_day_0 / traffic_day_700) / 700",
         },
       },
       decayCategories,
@@ -421,10 +454,17 @@ export const FinancialCalculationsProvider = ({ children }) => {
   };
 
   const getKeywordMismatch = () => {
-    // Use contentCostWaste.length for total unique URLs
-    const totalUniqueUrls = contentCostWaste.length || 1; // Prevent division by zero
+    // Get unique URLs from contentCostWaste
+    const uniqueUrlsSet = new Set();
+    if (contentCostWaste && contentCostWaste.length > 0) {
+      contentCostWaste.forEach((item) => {
+        if (item.url) {
+          uniqueUrlsSet.add(item.url);
+        }
+      });
+    }
+    const totalUniqueUrls = uniqueUrlsSet.size || 1; // Prevent division by zero
 
-    // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
       calculations.averageOrderValue ||
       onboardingData?.domainCostDetails?.averageOrderValue;
@@ -435,18 +475,19 @@ export const FinancialCalculationsProvider = ({ children }) => {
       onboardingData?.domainCostDetails?.totalInvested;
 
     if (!averageOrderValue || averageOrderValue === 0) {
-      throw new Error(
-        "Average Order Value (AOV) is required but not available. Please ensure onboardingData.domainCostDetails.averageOrderValue is set."
-      );
+      throw new Error("Missing Average Order Value (AOV)");
     }
 
     if (!totalContentCost || totalContentCost === 0) {
-      throw new Error(
-        "Total Content Cost is required but not available. Please ensure onboardingData.domainCostDetails.totalInvested is set."
-      );
+      throw new Error("Missing Total Content Cost");
     }
 
-    const conversionRate = 0.02; // 2% conversion rate
+    const conversionRate = 0.02; // 2%
+    const discountRate = 0.1; // 10% WACC
+    const recoveryRate = 0.9; // 80% recoverable
+    const timeHorizon = 0.5; // ~1.92 years
+
+    const pvFactor = (1 - Math.exp(-discountRate * timeHorizon)) / discountRate;
     const costPerUrl = totalContentCost / totalUniqueUrls;
 
     let totalUrlsAnalyzed = 0;
@@ -455,7 +496,6 @@ export const FinancialCalculationsProvider = ({ children }) => {
     let totalImpressionsLost = 0;
     let calculatedRevenueLoss = 0;
 
-    // Categorize by mismatch severity
     const mismatchCategories = {
       "High-Mismatch": [],
       "Medium-Mismatch": [],
@@ -465,59 +505,56 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
     keywordMismatch.forEach((item) => {
       totalUrlsAnalyzed++;
+      const severity = item.severity || item.mismatchLevel || "Medium-Mismatch";
 
-      // Determine mismatch severity based on data structure
-      const mismatchSeverity =
-        item.severity || item.mismatchLevel || "Medium-Mismatch";
-      const category = mismatchSeverity;
+      if (!mismatchCategories[severity]) mismatchCategories[severity] = [];
 
-      if (!mismatchCategories[category]) {
-        mismatchCategories[category] = [];
-      }
-
-      // Calculate revenue loss for this URL based on mismatch severity
       let urlRevenueLoss = 0;
-      const hasMismatch = category !== "No-Mismatch";
+      const hasMismatch = severity !== "No-Mismatch";
 
       if (hasMismatch) {
-        urlsWithMismatch++; // Estimate clicks lost due to poor keyword targeting (very conservative)
+        urlsWithMismatch++;
         const currentClicks = item.clicks || 0;
         const currentImpressions = item.impressions || 0;
+
         const estimatedClicksLost =
-          Math.min(
-            currentImpressions * 0.003, // 0.3% of impressions (very conservative)
-            currentClicks * 0.1, // or 10% of current clicks
-            15 // maximum 15 clicks lost per URL
-          ) || 2; // minimum 2 clicks lost
-        const potentialRevenue =
-          estimatedClicksLost * conversionRate * averageOrderValue; // Apply mismatch severity multiplier (much more conservative)
+          Math.min(currentImpressions * 0.003, currentClicks * 0.1, 15) || 2;
+
+        const grossPotentialRevenue =
+          estimatedClicksLost * conversionRate * averageOrderValue;
+
         const severityMultiplier =
-          getMismatchSeverityMultiplier(category) * 0.3; // Reduce impact by 70%
-        urlRevenueLoss = potentialRevenue * severityMultiplier;
+          getMismatchSeverityMultiplier(severity) * 0.3;
 
-        // Add base content cost waste for pages with keyword mismatch (reduced)
-        urlRevenueLoss += costPerUrl * 0.05; // 5% of content cost (reduced from 10%)
+        const intentGapLoss =
+          grossPotentialRevenue *
+          (1 - recoveryRate) *
+          pvFactor *
+          severityMultiplier;
 
+        // Add 5% of content cost as penalty
+        const strandedCapexLoss = costPerUrl * 0.05;
+
+        urlRevenueLoss = intentGapLoss + strandedCapexLoss;
         totalClicksLost += estimatedClicksLost;
-        totalImpressionsLost += item.impressions || 0;
+        totalImpressionsLost += currentImpressions;
         calculatedRevenueLoss += urlRevenueLoss;
       }
 
-      mismatchCategories[category].push({
+      mismatchCategories[severity].push({
         url: item.url,
-        mismatchSeverity: category,
+        mismatchSeverity: severity,
         hasMismatch,
         targetKeywords: item.targetKeywords || [],
         actualKeywords: item.actualKeywords || [],
-        mismatchScore: item.mismatchScore || 0,
         impressions: item.impressions || 0,
         clicks: item.clicks || 0,
+        mismatchScore: item.mismatchScore || 0,
         calculatedRevenueLoss: Math.round(urlRevenueLoss),
         recommendations: item.recommendations || [],
       });
     });
 
-    // Calculate mismatch distribution percentages
     const mismatchDistribution = {};
     Object.keys(mismatchCategories).forEach((category) => {
       mismatchDistribution[category] = {
@@ -531,11 +568,10 @@ export const FinancialCalculationsProvider = ({ children }) => {
       };
     });
 
-    // Get top and worst performing URLs
     const sortedByMismatch = keywordMismatch.sort((a, b) => {
       const aScore = a.mismatchScore || 0;
       const bScore = b.mismatchScore || 0;
-      return bScore - aScore; // Higher mismatch score = worse
+      return bScore - aScore;
     });
 
     const worstMismatches = sortedByMismatch.slice(0, 5).map((item) => ({
@@ -544,6 +580,10 @@ export const FinancialCalculationsProvider = ({ children }) => {
       targetKeywords: item.targetKeywords || [],
       actualKeywords: item.actualKeywords || [],
     }));
+
+    calculatedRevenueLoss =
+      calculatedRevenueLoss * (totalUniqueUrls / totalUrlsAnalyzed);
+
     return {
       summary: {
         totalUrlsAnalyzed,
@@ -555,26 +595,28 @@ export const FinancialCalculationsProvider = ({ children }) => {
         totalClicksLost,
         totalImpressionsLost,
         totalRevenueLoss: Math.round(
-          Math.min(calculatedRevenueLoss, totalContentCost * 0.6) // Cap at 60% of total investment
+          Math.min(calculatedRevenueLoss, totalContentCost * 0.6)
         ),
         totalUniqueUrls,
         costPerUrl: Math.round(costPerUrl),
         tooltip: {
-          title: "Keyword Mismatch Analysis",
-          content: `Keyword mismatch occurs when your content doesn't align with the search terms you're ranking for, leading to poor user experience and lost conversions. We analyzed ${totalUrlsAnalyzed} URLs and found ${urlsWithMismatch} (${Math.round(
+          title: "Intent Gap (Keyword Mismatch) Loss",
+          content: `We analyzed ${totalUrlsAnalyzed} URLs and identified ${urlsWithMismatch} (${Math.round(
             (urlsWithMismatch / totalUrlsAnalyzed) * 100
-          )}%) with keyword alignment issues. This results in ${Math.round(
+          )}%) with significant keyword misalignment. This contributed to a projected loss of ${Math.round(
             totalClicksLost
-          )} clicks lost and $${Math.round(
+          )} clicks and $${Math.round(
             calculatedRevenueLoss
-          ).toLocaleString()} in revenue loss due to reduced relevance and conversion rates.`,
+          ).toLocaleString()} in unrealized revenue.`,
         },
         calculationDetails: {
           averageOrderValue,
           totalContentCost,
           conversionRate,
+          discountRate,
+          recoveryRate,
           formula:
-            "Revenue Loss = (Estimated Clicks Lost * Conversion Rate * AOV * Severity Multiplier) + (Cost Per URL * 0.05 for mismatch pages)",
+            "Loss = (Estimated Clicks Lost × CVR × AOV × Severity Multiplier × (1 - Recovery Rate) × PV Factor) + (5% Content CapEx)",
         },
       },
       mismatchCategories,
@@ -584,10 +626,16 @@ export const FinancialCalculationsProvider = ({ children }) => {
   };
 
   const getLinkDilution = () => {
-    // Use contentCostWaste.length for total unique URLs
-    const totalUniqueUrls = contentCostWaste.length || 1; // Prevent division by zero
+    const uniqueUrlsSet = new Set();
+    if (contentCostWaste && contentCostWaste.length > 0) {
+      contentCostWaste.forEach((item) => {
+        if (item.url) {
+          uniqueUrlsSet.add(item.url);
+        }
+      });
+    }
+    const totalUniqueUrls = uniqueUrlsSet.size || 1;
 
-    // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
       calculations.averageOrderValue ||
       onboardingData?.domainCostDetails?.averageOrderValue;
@@ -598,18 +646,18 @@ export const FinancialCalculationsProvider = ({ children }) => {
       onboardingData?.domainCostDetails?.totalInvested;
 
     if (!averageOrderValue || averageOrderValue === 0) {
-      throw new Error(
-        "Average Order Value (AOV) is required but not available. Please ensure onboardingData.domainCostDetails.averageOrderValue is set."
-      );
+      throw new Error("Missing Average Order Value (AOV)");
     }
 
     if (!totalContentCost || totalContentCost === 0) {
-      throw new Error(
-        "Total Content Cost is required but not available. Please ensure onboardingData.domainCostDetails.totalInvested is set."
-      );
+      throw new Error("Missing Total Content Cost");
     }
 
-    const conversionRate = 0.02; // 2% conversion rate
+    const conversionRate = 0.02; // 2%
+    const discountRate = 0.1; // WACC
+    const recoveryRate = 0.8; // 80% recoverable
+    const timeHorizon = 700 / 365.0; // 1.92 years
+    const pvFactor = (1 - Math.exp(-discountRate * timeHorizon)) / discountRate;
     const costPerUrl = totalContentCost / totalUniqueUrls;
 
     let totalUrlsAnalyzed = 0;
@@ -617,7 +665,6 @@ export const FinancialCalculationsProvider = ({ children }) => {
     let totalLinkValueLost = 0;
     let calculatedRevenueLoss = 0;
 
-    // Categorize by dilution severity
     const dilutionCategories = {
       "Severe-Dilution": [],
       "Moderate-Dilution": [],
@@ -625,34 +672,43 @@ export const FinancialCalculationsProvider = ({ children }) => {
       "No-Dilution": [],
     };
 
+    let dilutionFactor = 0.2;
+
     linkDilution.forEach((item) => {
       totalUrlsAnalyzed++;
-
-      // Determine dilution severity based on data structure
-      const dilutionSeverity =
+      const severity =
         item.severity || item.dilutionLevel || "Moderate-Dilution";
-      const category = dilutionSeverity;
+      const category = severity;
 
-      if (!dilutionCategories[category]) {
-        dilutionCategories[category] = [];
-      }
+      if (!dilutionCategories[category]) dilutionCategories[category] = [];
 
-      // Calculate revenue loss for this URL based on link dilution
       let urlRevenueLoss = 0;
       const hasDilution = category !== "No-Dilution";
 
       if (hasDilution) {
-        urlsWithDilution++; // Estimate SEO value lost due to link dilution (more conservative)
-        const linkValue = item.linkValue || item.pageAuthority || 50; // Default link value
-        const dilutionFactor = Math.min(item.dilutionFactor || 0.2, 0.4); // Cap at 40% dilution, default 20%
-        const linkValueLost = linkValue * dilutionFactor; // Convert link value loss to traffic loss (much more conservative)
-        const estimatedTrafficLoss = Math.min(linkValueLost * 0.3, 8); // 0.3 clicks per point, max 8 clicks lost
-        const potentialRevenue =
-          estimatedTrafficLoss * conversionRate * averageOrderValue; // Apply dilution severity multiplier (much more conservative)
+        urlsWithDilution++;
+
+        const linkValue = item.pageAuthority || item.linkValue || 50;
+        dilutionFactor = Math.min(
+          item.dilutionFactor || item.dilutionScore || 0.2,
+          0.4
+        );
+        const linkValueLost = linkValue * dilutionFactor;
+
+        const estimatedTrafficLoss = Math.min(linkValueLost * 0.3, 8);
         const severityMultiplier =
-          getDilutionSeverityMultiplier(category) * 0.5; // Reduce by 50%
-        urlRevenueLoss = potentialRevenue * severityMultiplier; // Add base content cost waste for pages with link dilution (reduced)
-        urlRevenueLoss += costPerUrl * 0.05; // 5% of content cost (reduced from 15%)
+          getDilutionSeverityMultiplier(category) * 0.5;
+
+        const decayLoss =
+          estimatedTrafficLoss *
+          conversionRate *
+          averageOrderValue *
+          severityMultiplier *
+          (1 - recoveryRate) *
+          pvFactor;
+
+        const strandedCapexLoss = costPerUrl * 0.05;
+        urlRevenueLoss = decayLoss + strandedCapexLoss;
 
         totalLinkValueLost += linkValueLost;
         calculatedRevenueLoss += urlRevenueLoss;
@@ -664,15 +720,29 @@ export const FinancialCalculationsProvider = ({ children }) => {
         hasDilution,
         internalLinks: item.internalLinks || 0,
         externalLinks: item.externalLinks || 0,
-        linkValue: item.linkValue || 0,
-        dilutionFactor: item.dilutionFactor || 0,
+        linkValue: item.linkValue || item.pageAuthority || 0,
+        dilutionFactor: dilutionFactor || 0,
         pageAuthority: item.pageAuthority || 0,
         calculatedRevenueLoss: Math.round(urlRevenueLoss),
         recommendations: item.recommendations || [],
       });
     });
 
-    // Calculate dilution distribution percentages
+    // Optional: Extrapolate to entire content base
+    const totalContentUrls =
+      onboardingData?.domainCostDetails?.totalUrlCount || totalUniqueUrls;
+    const samplingRatio = totalUniqueUrls / totalContentUrls;
+
+    calculatedRevenueLoss =
+      calculatedRevenueLoss * (totalContentUrls / totalUrlsAnalyzed);
+
+    const sampleBasedLoss = Math.round(
+      Math.min(calculatedRevenueLoss, totalContentCost * 0.5)
+    );
+
+    const extrapolatedLoss = Math.round(sampleBasedLoss / samplingRatio);
+
+    // Distribution
     const dilutionDistribution = {};
     Object.keys(dilutionCategories).forEach((category) => {
       dilutionDistribution[category] = {
@@ -686,20 +756,18 @@ export const FinancialCalculationsProvider = ({ children }) => {
       };
     });
 
-    // Get worst diluted URLs
-    const sortedByDilution = linkDilution.sort((a, b) => {
-      const aDilution = a.dilutionFactor || 0;
-      const bDilution = b.dilutionFactor || 0;
-      return bDilution - aDilution; // Higher dilution = worse
-    });
+    // Top offenders
+    const worstDiluted = linkDilution
+      .sort((a, b) => (b.dilutionFactor || 0) - (a.dilutionFactor || 0))
+      .slice(0, 5)
+      .map((item) => ({
+        url: item.url,
+        dilutionFactor: item.dilutionFactor || 0,
+        internalLinks: item.internalLinks || 0,
+        externalLinks: item.externalLinks || 0,
+        linkValue: item.linkValue || item.pageAuthority || 0,
+      }));
 
-    const worstDiluted = sortedByDilution.slice(0, 5).map((item) => ({
-      url: item.url,
-      dilutionFactor: item.dilutionFactor || 0,
-      internalLinks: item.internalLinks || 0,
-      externalLinks: item.externalLinks || 0,
-      linkValue: item.linkValue || 0,
-    }));
     return {
       summary: {
         totalUrlsAnalyzed,
@@ -709,27 +777,27 @@ export const FinancialCalculationsProvider = ({ children }) => {
             ? Math.round((urlsWithDilution / totalUrlsAnalyzed) * 100)
             : 0,
         totalLinkValueLost,
-        totalRevenueLoss: Math.round(
-          Math.min(calculatedRevenueLoss, totalContentCost * 0.5) // Cap at 50% of total investment
-        ),
+        totalRevenueLoss: sampleBasedLoss,
+        extrapolatedRevenueLoss: extrapolatedLoss,
+        samplingRatio: (samplingRatio * 100).toFixed(1) + "%",
         totalUniqueUrls,
         costPerUrl: Math.round(costPerUrl),
         tooltip: {
-          title: "Link Dilution Analysis",
-          content: `Link dilution happens when your pages have too many internal/external links, weakening the SEO value passed to important pages. We analyzed ${totalUrlsAnalyzed} URLs and found ${urlsWithDilution} (${Math.round(
-            (urlsWithDilution / totalUrlsAnalyzed) * 100
-          )}%) with link dilution issues. This results in ${Math.round(
-            totalLinkValueLost
-          )} total link value points lost and $${Math.round(
-            calculatedRevenueLoss
-          ).toLocaleString()} in revenue loss due to reduced search rankings and organic traffic.`,
+          title: "Equity Link Decay Loss",
+          content: `Link dilution reduces authority transfer due to suboptimal internal link structure. Based on a ${(
+            samplingRatio * 100
+          ).toFixed(
+            1
+          )}% sample, estimated loss is $${sampleBasedLoss.toLocaleString()}, with a projected total impact of $${extrapolatedLoss.toLocaleString()} across the content inventory.`,
         },
         calculationDetails: {
           averageOrderValue,
           totalContentCost,
           conversionRate,
+          discountRate,
+          recoveryRate,
           formula:
-            "Revenue Loss = (Link Value Lost * 0.3 clicks/point * Conversion Rate * AOV * Severity Multiplier) + (Cost Per URL * 0.05 for diluted pages)",
+            "Loss = (Link Value × Dilution × 0.3 clicks/point × CVR × AOV × Severity Multiplier × (1 - RR) × PV Factor) + (5% CapEx for diluted pages)",
         },
       },
       dilutionCategories,
@@ -974,10 +1042,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
     };
   };
   const getCannibalizationLoss = () => {
-    // Use contentCostWaste.length for total unique URLs
-    const totalUniqueUrls = contentCostWaste.length || 1; // Prevent division by zero
+    const totalUniqueUrls = contentCostWaste.length || 1;
 
-    // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
       calculations.averageOrderValue ||
       onboardingData?.domainCostDetails?.averageOrderValue;
@@ -988,29 +1054,31 @@ export const FinancialCalculationsProvider = ({ children }) => {
       onboardingData?.domainCostDetails?.totalInvested;
 
     if (!averageOrderValue || averageOrderValue === 0) {
-      throw new Error(
-        "Average Order Value (AOV) is required but not available. Please ensure onboardingData.domainCostDetails.averageOrderValue is set."
-      );
+      throw new Error("Missing Average Order Value (AOV)");
     }
 
     if (!totalContentCost || totalContentCost === 0) {
-      throw new Error(
-        "Total Content Cost is required but not available. Please ensure onboardingData.domainCostDetails.totalInvested is set."
-      );
+      throw new Error("Missing Total Content Cost");
     }
 
-    const conversionRate = 0.02; // 2% conversion rate
+    const conversionRate = 0.02;
     const costPerUrl = totalContentCost / totalUniqueUrls;
 
+    const discountRate = 0.1;
+    const recoveryRate = 0.8;
+    const timeHorizon = 700 / 365.0;
+    const pvFactor = (1 - Math.exp(-discountRate * timeHorizon)) / discountRate;
+
     let totalKeywordsAnalyzed = 0;
-    let keywordsWithCannibalization = 0; // Only count moderate and severe
+    let keywordsWithCannibalization = 0;
     let totalCompetingUrls = 0;
     let totalClicksLost = 0;
-    let totalImpressionsAffected = 0; // Categorize by cannibalization severity (ignore light cannibalization)
+    let totalImpressionsAffected = 0;
+
     const cannibalizationCategories = {
       "Severe-Cannibalization": [],
       "Moderate-Cannibalization": [],
-      "Light-Cannibalization": [], // Will populate but ignore in calculations
+      "Light-Cannibalization": [],
       "No-Cannibalization": [],
     };
 
@@ -1020,56 +1088,43 @@ export const FinancialCalculationsProvider = ({ children }) => {
       const keyword = item.keyword;
       const primaryUrl = item.primaryUrl || {};
       const competingUrls = item.competingUrls || [];
-
-      // Calculate cannibalization severity based on number of competing URLs
       const competingUrlCount = competingUrls.length;
-      let severity;
 
-      if (competingUrlCount >= 4) {
-        severity = "Severe-Cannibalization";
-      } else if (competingUrlCount >= 2) {
-        severity = "Moderate-Cannibalization";
-      } else if (competingUrlCount >= 1) {
-        severity = "Light-Cannibalization"; // Will be ignored in loss calculation
-      } else {
-        severity = "No-Cannibalization";
-      }
+      let severity = "No-Cannibalization";
+      if (competingUrlCount >= 4) severity = "Severe-Cannibalization";
+      else if (competingUrlCount >= 2) severity = "Moderate-Cannibalization";
+      else if (competingUrlCount >= 1) severity = "Light-Cannibalization";
 
-      if (!cannibalizationCategories[severity]) {
-        cannibalizationCategories[severity] = [];
-      }
+      cannibalizationCategories[severity] ||= [];
 
-      // Only count moderate and severe cannibalization for loss calculation
-      const hasCannibalization =
-        severity === "Severe-Cannibalization" ||
-        severity === "Moderate-Cannibalization";
-
+      const hasCannibalization = [
+        "Severe-Cannibalization",
+        "Moderate-Cannibalization",
+      ].includes(severity);
       if (hasCannibalization) {
         keywordsWithCannibalization++;
         totalCompetingUrls += competingUrlCount;
 
-        // Calculate total impressions and clicks affected (simplified)
-        const primaryImpressions = primaryUrl.impressions || 0;
         const primaryClicks = primaryUrl.clicks || 0;
+        const primaryImpressions = primaryUrl.impressions || 0;
 
-        let totalCompetingImpressions = 0;
         let totalCompetingClicks = 0;
+        let totalCompetingImpressions = 0;
 
         competingUrls.forEach((url) => {
-          totalCompetingImpressions += url.impressions || 0;
           totalCompetingClicks += url.clicks || 0;
+          totalCompetingImpressions += url.impressions || 0;
         });
 
-        const totalImpressions = primaryImpressions + totalCompetingImpressions;
         const totalClicks = primaryClicks + totalCompetingClicks;
+        const totalImpressions = primaryImpressions + totalCompetingImpressions;
 
-        // Conservative estimate of clicks lost (much reduced)
         const cannibalImpact = getCannibalImpactFactor(severity);
-        const potentialClicks = totalClicks * (1 + cannibalImpact * 0.3); // Reduce impact by 70%
+        const potentialClicks = totalClicks * (1 + cannibalImpact * 0.3);
         const clicksLost = Math.min(
           potentialClicks - totalClicks,
           totalClicks * 0.2
-        ); // Max 20% of current clicks
+        );
 
         totalClicksLost += clicksLost;
         totalImpressionsAffected += totalImpressions;
@@ -1098,60 +1153,49 @@ export const FinancialCalculationsProvider = ({ children }) => {
             )}% performance gain`
           : "N/A",
       });
-    }); // Calculate weighted cannibalization loss based on severity levels
-    const severityDistributionCalc = {};
-    let weightedLossPercentage = 0;
-
-    // Define loss factors for each severity level
-    const lossFactor = {
-      "Light-Cannibalization": 0.08, // 8% loss factor for light cannibalization
-      "Moderate-Cannibalization": 0.15, // 15% loss factor for moderate cannibalization
-      "Severe-Cannibalization": 0.25, // 25% loss factor for severe cannibalization
-    };
-
-    // Calculate percentage of keywords in each severity category
-    Object.keys(lossFactor).forEach((severity) => {
-      const keywordsInCategory =
-        cannibalizationCategories[severity]?.length || 0;
-      const percentageInCategory =
-        totalKeywordsAnalyzed > 0
-          ? (keywordsInCategory / totalKeywordsAnalyzed) * 100
-          : 0;
-
-      severityDistributionCalc[severity] = {
-        percentage: percentageInCategory,
-        lossFactor: lossFactor[severity],
-        weightedLoss: percentageInCategory * lossFactor[severity],
-      };
-
-      // Add to weighted loss percentage
-      weightedLossPercentage += percentageInCategory * lossFactor[severity];
     });
 
-    // Average the weighted loss to get final loss percentage
-    const finalLossPercentage = weightedLossPercentage / 100; // Convert to decimal
+    const lossFactor = {
+      "Light-Cannibalization": 0.08,
+      "Moderate-Cannibalization": 0.15,
+      "Severe-Cannibalization": 0.25,
+    };
 
-    // Calculate revenue loss: TotalInvested * FinalLossPercentage
-    const calculatedRevenueLoss = totalContentCost * finalLossPercentage;
+    let weightedLossPercentage = 0;
+    const severityDistributionCalc = {};
 
-    // Calculate overall cannibalization percentage (for display)
-    const overallCannibalizationPercentage =
-      (cannibalizationCategories["Light-Cannibalization"]?.length || 0) +
-      (cannibalizationCategories["Moderate-Cannibalization"]?.length || 0) +
-      (cannibalizationCategories["Severe-Cannibalization"]?.length || 0);
+    Object.keys(lossFactor).forEach((severity) => {
+      const count = cannibalizationCategories[severity]?.length || 0;
+      const percent =
+        totalKeywordsAnalyzed > 0 ? (count / totalKeywordsAnalyzed) * 100 : 0;
 
-    const cannibalizationPercentage =
-      totalKeywordsAnalyzed > 0
-        ? (overallCannibalizationPercentage / totalKeywordsAnalyzed) * 100
-        : 0; // Calculate cannibalization distribution percentages
+      severityDistributionCalc[severity] = {
+        percentage: percent,
+        lossFactor: lossFactor[severity],
+        weightedLoss: percent * lossFactor[severity],
+      };
+
+      weightedLossPercentage += percent * lossFactor[severity];
+    });
+
+    const finalLossPercentage = weightedLossPercentage / 100;
+    const discountedLoss = finalLossPercentage * (1 - recoveryRate) * pvFactor;
+    const sampleBasedLoss = totalContentCost * discountedLoss;
+
+    const totalKeywordUniverse =
+      onboardingData?.domainCostDetails?.totalKeywordCount ||
+      totalKeywordsAnalyzed;
+    const samplingRatio = totalKeywordsAnalyzed / totalKeywordUniverse;
+    const extrapolatedLoss = Math.round(sampleBasedLoss / samplingRatio);
+
     const cannibalizationDistribution = {};
-    Object.keys(cannibalizationCategories).forEach((category) => {
-      cannibalizationDistribution[category] = {
-        count: cannibalizationCategories[category].length,
+    Object.keys(cannibalizationCategories).forEach((cat) => {
+      cannibalizationDistribution[cat] = {
+        count: cannibalizationCategories[cat].length,
         percentage:
           totalKeywordsAnalyzed > 0
             ? Math.round(
-                (cannibalizationCategories[category].length /
+                (cannibalizationCategories[cat].length /
                   totalKeywordsAnalyzed) *
                   100
               )
@@ -1159,110 +1203,70 @@ export const FinancialCalculationsProvider = ({ children }) => {
       };
     });
 
-    // Get worst cannibalized keywords (only moderate and severe)
-    const significantCannibalization = cannibalization.filter((item) => {
-      const competingUrlCount = (item.competingUrls || []).length;
-      return competingUrlCount >= 2; // Moderate or severe only
-    });
-
-    const sortedByCannibalization = significantCannibalization.sort((a, b) => {
-      const aCount = (a.competingUrls || []).length;
-      const bCount = (b.competingUrls || []).length;
-      return bCount - aCount; // Higher competing URL count = worse
-    });
-
-    const worstCannibalized = sortedByCannibalization
+    const significantCannibalization = cannibalization.filter(
+      (item) => (item.competingUrls || []).length >= 2
+    );
+    const worstCannibalized = significantCannibalization
+      .sort((a, b) => b.competingUrls.length - a.competingUrls.length)
       .slice(0, 5)
       .map((item) => ({
         keyword: item.keyword,
-        competingUrlCount: (item.competingUrls || []).length,
+        competingUrlCount: item.competingUrls.length,
         primaryUrl: item.primaryUrl?.url || "N/A",
         totalImpressions:
           (item.primaryUrl?.impressions || 0) +
-          (item.competingUrls || []).reduce(
+          item.competingUrls.reduce(
             (sum, url) => sum + (url.impressions || 0),
             0
           ),
       }));
 
-    // Calculate average cannibalization impact (excluding light cannibalization)
     const avgCompetingUrls =
       keywordsWithCannibalization > 0
         ? Math.round(totalCompetingUrls / keywordsWithCannibalization)
         : 0;
+
     return {
       summary: {
         totalKeywordsAnalyzed,
-        keywordsWithCannibalization: overallCannibalizationPercentage, // Total with any cannibalization
-        cannibalizationPercentage: Math.round(cannibalizationPercentage),
+        keywordsWithCannibalization,
+        cannibalizationPercentage: Math.round(
+          (((cannibalizationCategories["Light-Cannibalization"]?.length || 0) +
+            (cannibalizationCategories["Moderate-Cannibalization"]?.length ||
+              0) +
+            (cannibalizationCategories["Severe-Cannibalization"]?.length ||
+              0)) /
+            totalKeywordsAnalyzed) *
+            100
+        ),
         totalCompetingUrls,
         avgCompetingUrls,
         totalClicksLost,
         totalImpressionsAffected,
-        totalRevenueLoss: Math.round(calculatedRevenueLoss),
+        totalRevenueLoss: Math.round(sampleBasedLoss),
+        extrapolatedRevenueLoss: extrapolatedLoss,
+        samplingRatio: (samplingRatio * 100).toFixed(1) + "%",
         totalUniqueUrls,
         costPerUrl: Math.round(costPerUrl),
-        weightedLossPercentage: Math.round(weightedLossPercentage * 100) / 100, // Round to 2 decimal places
+        weightedLossPercentage: Math.round(weightedLossPercentage * 100) / 100,
         severityBreakdown: severityDistributionCalc,
         tooltip: {
-          title: "Keyword Cannibalization Analysis",
-          content: `Keyword cannibalization occurs when multiple pages on your site compete for the same keywords, diluting their individual ranking power and confusing search engines. We analyzed ${totalKeywordsAnalyzed} keywords and found ${Math.round(
-            cannibalizationPercentage
-          )}% with cannibalization issues across different severity levels. Using our weighted loss model (Light: 8%, Moderate: 15%, Severe: 25%), this results in $${Math.round(
-            calculatedRevenueLoss
-          ).toLocaleString()} in revenue loss from reduced rankings and split traffic.`,
+          title: "Internal Cannibalization Attrition",
+          content: `Based on a ${Math.round(
+            samplingRatio * 100
+          )}% sample of keywords, we estimated $${Math.round(
+            sampleBasedLoss
+          ).toLocaleString()} in loss due to cannibalization. The projected loss across your content corpus is $${extrapolatedLoss.toLocaleString()}.`,
         },
         calculationDetails: {
           averageOrderValue,
           totalContentCost,
           conversionRate,
-          formula: "Revenue Loss = Total Invested × Weighted Loss Percentage",
-          calculation: `Light: ${Math.round(
-            severityDistributionCalc["Light-Cannibalization"]?.percentage || 0
-          )}% × 8% + Moderate: ${Math.round(
-            severityDistributionCalc["Moderate-Cannibalization"]?.percentage ||
-              0
-          )}% × 15% + Severe: ${Math.round(
-            severityDistributionCalc["Severe-Cannibalization"]?.percentage || 0
-          )}% × 25% = ${Math.round(finalLossPercentage * 100)}% loss`,
-          breakdown: {
-            light: {
-              percentage: Math.round(
-                severityDistributionCalc["Light-Cannibalization"]?.percentage ||
-                  0
-              ),
-              lossFactor: "8%",
-              impact:
-                Math.round(
-                  (severityDistributionCalc["Light-Cannibalization"]
-                    ?.weightedLoss || 0) * 100
-                ) / 100,
-            },
-            moderate: {
-              percentage: Math.round(
-                severityDistributionCalc["Moderate-Cannibalization"]
-                  ?.percentage || 0
-              ),
-              lossFactor: "15%",
-              impact:
-                Math.round(
-                  (severityDistributionCalc["Moderate-Cannibalization"]
-                    ?.weightedLoss || 0) * 100
-                ) / 100,
-            },
-            severe: {
-              percentage: Math.round(
-                severityDistributionCalc["Severe-Cannibalization"]
-                  ?.percentage || 0
-              ),
-              lossFactor: "25%",
-              impact:
-                Math.round(
-                  (severityDistributionCalc["Severe-Cannibalization"]
-                    ?.weightedLoss || 0) * 100
-                ) / 100,
-            },
-          },
+          discountRate,
+          recoveryRate,
+          formula: "Loss = Invested × Weighted Severity × (1 - RR) × PV Factor",
+          discountedLossPercentage:
+            Math.round(discountedLoss * 10000) / 100 + "%",
         },
       },
       cannibalizationCategories,
@@ -1270,6 +1274,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       worstCannibalized,
     };
   };
+
   // Helper function to get cannibalization impact factor
   const getCannibalImpactFactor = (severity) => {
     const impactMap = {
@@ -2793,18 +2798,8 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
 
   const calculateTotalLoss = () => {
     try {
-      console.log(
-        "Calculating total loss by collecting unique URLs from each data source..."
-      );
-
-      // Create separate objects to track unique URLs from each data source
-      let keywordMismatchUniqueURLs = {};
-      let cannibalizationUniqueURLs = {};
-      let contentCostWasteUniqueURLs = {};
-      let linkDilutionUniqueURLs = {};
-      let contentDecayUniqueURLs = {};
-
-      let allUniqueURLs = {};
+      const getSafePerUrlLoss = (totalLoss, list) =>
+        totalLoss / (list.length || 1);
 
       const revenueLeakData = getRevenueLeak();
       const contentDecayData = getContentDecay();
@@ -2813,136 +2808,96 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
       const psychoMismatchData = getPsychMismatch();
       const cannibalizationData = getCannibalizationLoss();
 
-      let contentCostLoss = -1 * revenueLeakData.estimatedRevenueLoss;
-      let contentDecayLoss = contentDecayData.summary?.totalRevenueLoss;
-      let keywordMismatchLoss = keywordMismatchData.summary?.totalRevenueLoss;
-      let cannibalizationLoss = cannibalizationData.summary?.totalRevenueLoss;
-      let linkDilutionLoss = linkDilutionData.summary?.totalRevenueLoss;
-      let psychoMismatchLoss = psychoMismatchData.summary?.totalRevenueLoss;
+      const totalInvested =
+        onboardingData?.domainCostDetails?.totalInvested || 0;
 
+      const contentCostLoss = revenueLeakData.summary?.totalRevenueLoss || 0;
+      const contentDecayLoss = contentDecayData.summary?.totalRevenueLoss || 0;
+      const keywordMismatchLoss =
+        keywordMismatchData.summary?.totalRevenueLoss || 0;
+      const cannibalizationLoss =
+        cannibalizationData.summary?.totalRevenueLoss || 0;
+      const linkDilutionLoss = linkDilutionData.summary?.totalRevenueLoss || 0;
+      const psychoMismatchLoss =
+        psychoMismatchData.summary?.totalRevenueLoss || 0;
+
+      const keywordMismatchUniqueURLs = {};
       keywordMismatch.forEach((item) => {
         if (item.url) {
-          keywordMismatchUniqueURLs[item.url] =
-            keywordMismatchLoss / keywordMismatch.length;
+          keywordMismatchUniqueURLs[item.url] = getSafePerUrlLoss(
+            keywordMismatchLoss,
+            keywordMismatch
+          );
         }
       });
 
+      const contentCostWasteUniqueURLs = {};
       contentCostWaste.forEach((item) => {
         if (item.url) {
-          contentCostWasteUniqueURLs[item.url] =
-            contentCostLoss / contentCostWaste.length;
+          contentCostWasteUniqueURLs[item.url] = getSafePerUrlLoss(
+            contentCostLoss,
+            contentCostWaste
+          );
         }
       });
 
+      const cannibalizationUniqueURLs = {};
       cannibalization.forEach((item) => {
         if (item.primaryUrl?.url) {
-          cannibalizationUniqueURLs[item.primaryUrl.url] =
-            cannibalizationLoss / cannibalization.length;
+          cannibalizationUniqueURLs[item.primaryUrl.url] = getSafePerUrlLoss(
+            cannibalizationLoss,
+            cannibalization
+          );
         }
       });
 
+      const linkDilutionUniqueURLs = {};
       linkDilution.forEach((item) => {
         if (item.url) {
-          linkDilutionUniqueURLs[item.url] =
-            linkDilutionLoss / linkDilution.length;
-        }
-      });
-      decay30Days.forEach((item) => {
-        if (item.url) {
-          contentDecayUniqueURLs[item.url] =
-            contentDecayLoss / decay30Days.length;
-        }
-      });
-      decay60Days.forEach((item) => {
-        if (item.url) {
-          contentDecayUniqueURLs[item.url] =
-            contentDecayLoss / decay60Days.length;
-        }
-      });
-      decay90Days.forEach((item) => {
-        if (item.url) {
-          contentDecayUniqueURLs[item.url] =
-            contentDecayLoss / decay90Days.length;
+          linkDilutionUniqueURLs[item.url] = getSafePerUrlLoss(
+            linkDilutionLoss,
+            linkDilution
+          );
         }
       });
 
-      let multipleLossUrls = {};
-      Object.entries(keywordMismatchUniqueURLs).forEach(([url, loss]) => {
-        if (allUniqueURLs[url]) {
-          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
-          if (!multipleLossUrls[url]) {
-            multipleLossUrls[url] = [];
-          }
-          multipleLossUrls[url].push({
-            loss,
-            source: "Keyword Mismatch",
-          });
-        } else {
-          allUniqueURLs[url] = loss;
+      const contentDecayUniqueURLs = {};
+      const seenDecayUrls = new Set();
+      [...decay30Days, ...decay60Days, ...decay90Days].forEach((item) => {
+        if (item.url && !seenDecayUrls.has(item.url)) {
+          contentDecayUniqueURLs[item.url] = getSafePerUrlLoss(
+            contentDecayLoss,
+            decay30Days
+          );
+          seenDecayUrls.add(item.url);
         }
       });
-      Object.entries(contentCostWasteUniqueURLs).forEach(([url, loss]) => {
-        if (allUniqueURLs[url]) {
-          if (!multipleLossUrls[url]) {
-            multipleLossUrls[url] = [];
+
+      const allUniqueURLs = {};
+      const multipleLossUrls = {};
+
+      const mergeLosses = (sourceMap, label) => {
+        Object.entries(sourceMap).forEach(([url, loss]) => {
+          if (allUniqueURLs[url]) {
+            if (!multipleLossUrls[url]) multipleLossUrls[url] = [];
+            multipleLossUrls[url].push({ loss, source: label });
+            allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
+          } else {
+            allUniqueURLs[url] = loss;
           }
-          multipleLossUrls[url].push({
-            loss,
-            source: "Content Cost Waste",
-          });
-          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
-        } else {
-          allUniqueURLs[url] = loss;
-        }
-      });
-      Object.entries(cannibalizationUniqueURLs).forEach(([url, loss]) => {
-        if (allUniqueURLs[url]) {
-          if (!multipleLossUrls[url]) {
-            multipleLossUrls[url] = [];
-          }
-          multipleLossUrls[url].push({
-            loss,
-            source: "Cannibalization",
-          });
-          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
-        } else {
-          allUniqueURLs[url] = loss;
-        }
-      });
-      Object.entries(linkDilutionUniqueURLs).forEach(([url, loss]) => {
-        if (allUniqueURLs[url]) {
-          if (!multipleLossUrls[url]) {
-            multipleLossUrls[url] = [];
-          }
-          multipleLossUrls[url].push({
-            loss,
-            source: "Link Dilution",
-          });
-          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
-        } else {
-          allUniqueURLs[url] = loss;
-        }
-      });
-      Object.entries(contentDecayUniqueURLs).forEach(([url, loss]) => {
-        if (allUniqueURLs[url]) {
-          if (!multipleLossUrls[url]) {
-            multipleLossUrls[url] = [];
-          }
-          multipleLossUrls[url].push({
-            loss,
-            source: "Content Decay",
-          });
-          allUniqueURLs[url] = Math.max(loss, allUniqueURLs[url]);
-        } else {
-          allUniqueURLs[url] = loss;
-        }
-      });
+        });
+      };
+
+      mergeLosses(keywordMismatchUniqueURLs, "Keyword Mismatch");
+      mergeLosses(contentCostWasteUniqueURLs, "Content Cost Waste");
+      mergeLosses(cannibalizationUniqueURLs, "Cannibalization");
+      mergeLosses(linkDilutionUniqueURLs, "Link Dilution");
+      mergeLosses(contentDecayUniqueURLs, "Content Decay");
 
       const totalLoss = Object.values(allUniqueURLs).reduce(
-        (total, loss) => total + loss,
+        (sum, val) => sum + val,
         0
       );
-
       const estimatedLoss = (totalLoss * 5 + psychoMismatchLoss) / 6;
 
       const averageLoss =
@@ -2953,60 +2908,35 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
           cannibalizationLoss +
           linkDilutionLoss) /
         6;
-      console.log("Total Loss:", estimatedLoss, averageLoss);
 
-      // Get the totalInvested value
-      const totalInvested =
-        onboardingData?.domainCostDetails?.totalInvested || 0;
-
-      // Get individual metric losses for comparison
       const individualMetricLosses = [
-        Math.abs(contentCostLoss || 0),
-        Math.abs(contentDecayLoss || 0),
-        Math.abs(keywordMismatchLoss || 0),
-        Math.abs(cannibalizationLoss || 0),
-        Math.abs(linkDilutionLoss || 0),
-        Math.abs(psychoMismatchLoss || 0),
-      ];
+        contentCostLoss,
+        contentDecayLoss,
+        keywordMismatchLoss,
+        cannibalizationLoss,
+        linkDilutionLoss,
+        psychoMismatchLoss,
+      ].map((val) => Math.abs(val || 0));
 
-      // Find the maximum individual metric loss
-      const maxIndividualLoss = Math.max(
-        ...individualMetricLosses.filter(
-          (loss) => !isNaN(loss) && isFinite(loss)
-        )
-      );
+      const maxIndividualLoss = Math.max(...individualMetricLosses);
 
-      // Ensure totalRevenueLoss is above the maximum individual loss and less than totalInvested
-      let totalRevenueLoss = estimatedLoss || 0;
+      let totalRevenueLoss = Math.max(estimatedLoss || 0, maxIndividualLoss);
 
-      // If totalRevenueLoss is less than maxIndividualLoss, use maxIndividualLoss instead
-      if (totalRevenueLoss < maxIndividualLoss) {
-        console.log(
-          `Adjusting total loss to be at least the maximum individual loss: ${maxIndividualLoss}`
-        );
-        totalRevenueLoss = maxIndividualLoss;
-      }
-
-      // If totalRevenueLoss is greater than totalInvested, cap it at totalInvested
       if (totalRevenueLoss > totalInvested && totalInvested > 0) {
-        console.log(`Capping total loss at totalInvested: ${totalInvested}`);
         totalRevenueLoss = averageLoss || 0;
       }
 
-      const formattedAvgLoss = averageLoss || 0;
-
-      // Calculate what percentage of the totalInvested the loss represents
       const percentOfContentCost =
         totalInvested > 0 ? (totalRevenueLoss / totalInvested) * 100 : 0;
 
       return {
         summary: {
-          totalRevenueLoss: totalRevenueLoss, // Return as a number, not string
-          averageLoss: formattedAvgLoss,
+          totalRevenueLoss,
+          averageLoss,
           multipleLossUrls: Object.keys(multipleLossUrls).length,
           urls: Object.keys(allUniqueURLs).length,
-          percentOfContentCost: percentOfContentCost,
-          tooltip: `Your total revenue loss Among all 5 metrics is $ ${totalRevenueLoss.toFixed(
+          percentOfContentCost,
+          tooltip: `Your total revenue loss across all 5 metrics is $${totalRevenueLoss.toFixed(
             2
           )} and ${
             Object.keys(multipleLossUrls).length
@@ -3018,9 +2948,8 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     } catch (error) {
       console.error("Error calculating total loss:", error);
     }
-
-    // Helper function to extract unique URLs and their losses from a data source
   };
+
   // Helper functions for the new analysis functions - Using unified A-D grading system
   const getQualityGrade = (score) => {
     if (score >= 90) return "A";

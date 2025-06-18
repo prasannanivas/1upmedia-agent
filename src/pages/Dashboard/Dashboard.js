@@ -86,9 +86,7 @@ const Dashboard = () => {
           },
         },
         revenueLeak: {
-          value: Math.abs(
-            Math.min(0, revenueLeakData?.estimatedRevenueLoss || 0)
-          ),
+          value: Math.abs(Math.min(revenueLeakData?.estimatedRevenueLoss)),
           urls: revenueLeakData?.urlsBelowThreshold || 0,
           percentage: (
             ((revenueLeakData?.urlsBelowThreshold || 0) /
