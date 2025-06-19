@@ -35,6 +35,9 @@ const Dashboard = () => {
     contentCreationCost: { value: 0, urls: 0, tooltip: null },
   });
 
+  const [rollUpData, setRollUpData] = useState({});
+  const [showRollupData, setShowRollupData] = useState(false);
+
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
     if (!onboardingData?.GSCAnalysisData) return;
@@ -65,6 +68,9 @@ const Dashboard = () => {
         "Total Loss Data:",
         totalLossData
       );
+
+      setRollUpData(totalLossData.RollingUpTotal);
+
       // Update stats with calculated values from FinancialCalculations
       console.log("Total Loss Data Detailed:", {
         totalRevenueLoss: totalLossData?.summary?.totalRevenueLoss,
@@ -72,6 +78,8 @@ const Dashboard = () => {
         urls: totalLossData?.summary?.urls,
         tooltip: totalLossData?.summary?.tooltip,
       });
+
+      console.log("RollUp Data:", rollUpData);
 
       setStats({
         totalLoss: {
@@ -159,6 +167,7 @@ const Dashboard = () => {
     getPsychMismatch,
     getCannibalizationLoss,
     calculateTotalLoss,
+    rollUpData,
   ]);
 
   return (
@@ -172,11 +181,160 @@ const Dashboard = () => {
 
       <section className="dashboard-main">
         <div className="dashboard-revenue-leaks">
-          <h2 className="section-title">
-            <span className="title-icon">💸</span>
-            Revenue Leak Detection
-          </h2>{" "}
+          <div className="section-header">
+            <h2 className="section-title">
+              <span className="title-icon">💸</span>
+              Revenue Leak Detection
+            </h2>
+            <div className="toggle-container">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={showRollupData}
+                  onChange={(e) => setShowRollupData(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="toggle-label">Show rollup data</span>
+            </div>
+          </div>
           <div className="dashboard-cards">
+            {showRollupData &&
+              rollUpData &&
+              Object.keys(rollUpData).length > 0 && (
+                <div className="rollup-data-container">
+                  <div className="rollup-data-header">
+                    <h3>
+                      Total Revenue Loss: $
+                      {formatNumber(rollUpData.totalLoss || 0)}
+                    </h3>
+                    <p>Breakdown of revenue loss by category</p>
+                  </div>
+                  <div className="rollup-chart">
+                    {Object.entries(rollUpData)
+                      .filter(([key]) => key !== "totalLoss")
+                      .map(([key, value]) => (
+                        <div key={key} className="rollup-bar-container">
+                          <div className="rollup-bar-label">
+                            <span className="rollup-category">
+                              {formatRollupCategory(key)}
+                            </span>
+                            <span className="rollup-value">
+                              ${formatNumber(value)}
+                            </span>
+                          </div>
+                          <div className="rollup-bar-wrapper">
+                            <div
+                              className={`rollup-bar rollup-bar-${key}`}
+                              style={{
+                                width: `${
+                                  (value / rollUpData.totalLoss) * 100
+                                }%`,
+                              }}
+                            ></div>
+                          </div>
+                          <div className="rollup-percentage">
+                            {Math.round((value / rollUpData.totalLoss) * 100)}%
+                          </div>
+                        </div>
+                      ))}
+                  </div>{" "}
+                  <div className="rollup-pie-chart">
+                    <div className="rollup-pie-segments">
+                      <svg width="220" height="220" viewBox="0 0 220 220">
+                        {Object.entries(rollUpData)
+                          .filter(([key]) => key !== "totalLoss")
+                          .reduce((acc, [key, value], index, arr) => {
+                            const percentage =
+                              (value / rollUpData.totalLoss) * 100;
+                            let previousPercentages = 0;
+
+                            for (let i = 0; i < index; i++) {
+                              const [, prevValue] = arr[i];
+                              previousPercentages +=
+                                (prevValue / rollUpData.totalLoss) * 100;
+                            }
+
+                            const startAngle = previousPercentages * 3.6;
+                            const endAngle = startAngle + percentage * 3.6;
+
+                            // Calculate start and end points
+                            const startX =
+                              110 +
+                              100 *
+                                Math.cos((startAngle - 90) * (Math.PI / 180));
+                            const startY =
+                              110 +
+                              100 *
+                                Math.sin((startAngle - 90) * (Math.PI / 180));
+                            const endX =
+                              110 +
+                              100 * Math.cos((endAngle - 90) * (Math.PI / 180));
+                            const endY =
+                              110 +
+                              100 * Math.sin((endAngle - 90) * (Math.PI / 180));
+
+                            // Create path
+                            const largeArcFlag = percentage > 50 ? 1 : 0;
+                            const pathData = [
+                              "M",
+                              110,
+                              110,
+                              "L",
+                              startX,
+                              startY,
+                              "A",
+                              100,
+                              100,
+                              0,
+                              largeArcFlag,
+                              1,
+                              endX,
+                              endY,
+                              "Z",
+                            ].join(" ");
+
+                            acc.push(
+                              <path
+                                key={key}
+                                d={pathData}
+                                fill={getColorForCategory(key)}
+                                stroke="#fff"
+                                strokeWidth="0.5"
+                                title={`${formatRollupCategory(
+                                  key
+                                )}: $${formatNumber(value)} (${Math.round(
+                                  percentage
+                                )}%)`}
+                              />
+                            );
+
+                            return acc;
+                          }, [])}
+                      </svg>
+                    </div>
+                    <div className="rollup-legend">
+                      {Object.entries(rollUpData)
+                        .filter(([key]) => key !== "totalLoss")
+                        .map(([key, value]) => (
+                          <div key={key} className="rollup-legend-item">
+                            <div
+                              className="rollup-legend-color"
+                              style={{
+                                backgroundColor: getColorForCategory(key),
+                              }}
+                            ></div>
+                            <span className="rollup-legend-label">
+                              {formatRollupCategory(key)}: $
+                              {formatNumber(value)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
             {Object.entries(stats).map(([key, data], index) => {
               // Add a special class for the totalLoss card
               const isHighlighted = key === "totalLoss";
@@ -329,6 +487,40 @@ function formatLeakTitle(key) {
     default:
       return key;
   }
+}
+
+function formatRollupCategory(key) {
+  switch (key) {
+    case "revenueLeak":
+      return "Revenue Leak";
+    case "contentDecay":
+      return "Content Decay";
+    case "keywordMismatch":
+      return "Keyword Mismatch";
+    case "cannibalization":
+      return "Cannibalization";
+    case "linkDilution":
+      return "Link Dilution";
+    case "psychoMismatch":
+      return "Psycho Mismatch";
+    default:
+      return key
+        .replace(/([A-Z])/g, " $1")
+        .replace(/^./, (str) => str.toUpperCase());
+  }
+}
+
+function getColorForCategory(key) {
+  const colorMap = {
+    revenueLeak: "#FF6384",
+    contentDecay: "#36A2EB",
+    keywordMismatch: "#FFCE56",
+    cannibalization: "#4BC0C0",
+    linkDilution: "#9966FF",
+    psychoMismatch: "#FF9F40",
+  };
+
+  return colorMap[key] || "#CCCCCC";
 }
 
 function formatNumber(num) {
