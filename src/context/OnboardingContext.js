@@ -36,6 +36,7 @@ export const OnboardingProvider = ({ children }) => {
     suggestionsFromAi: {},
     authors: [],
     searchConsoleData: [],
+    allSitemapUrls: [],
   });
 
   useEffect(() => {
@@ -76,6 +77,7 @@ export const OnboardingProvider = ({ children }) => {
               AverageContentCost: "",
               totalCost: "",
             },
+            allSitemapUrls: firstSite.dynamic_fields?.allSitemapUrls || [],
             sitemaps: firstSite.dynamic_fields?.sitemaps || [],
             selectedSitemaps: firstSite.dynamic_fields?.selectedSitemaps || [],
             searchConsoleData: firstSite.search_analytics || [],

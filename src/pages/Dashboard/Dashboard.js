@@ -23,6 +23,7 @@ const Dashboard = () => {
     getPsychMismatch,
     getCannibalizationLoss,
     calculateTotalLoss,
+    processGSCDataForCalculations,
   } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
@@ -37,6 +38,8 @@ const Dashboard = () => {
 
   const [rollUpData, setRollUpData] = useState({});
   const [showRollupData, setShowRollupData] = useState(false);
+  const [showSitemapOnlyData, setShowSitemapOnlyData] = useState(false);
+  const [CFOMode, setCFOMode] = useState(false);
 
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
@@ -167,8 +170,14 @@ const Dashboard = () => {
     getPsychMismatch,
     getCannibalizationLoss,
     calculateTotalLoss,
-    rollUpData,
   ]);
+
+  useEffect(() => {
+    processGSCDataForCalculations(
+      onboardingData?.GSCAnalysisData,
+      showSitemapOnlyData
+    );
+  }, [onboardingData?.GSCAnalysisData, showSitemapOnlyData]);
 
   return (
     <div className="dashboard-container">
@@ -196,6 +205,29 @@ const Dashboard = () => {
                 <span className="toggle-slider"></span>
               </label>
               <span className="toggle-label">Show rollup data</span>
+            </div>
+            <div className="toggle-container">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={showSitemapOnlyData}
+                  onChange={(e) => setShowSitemapOnlyData(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="toggle-label">Show Sitemap only data</span>
+            </div>
+
+            <div className="toggle-container">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={CFOMode}
+                  onChange={(e) => setCFOMode(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="toggle-label">Show CFO Mode</span>
             </div>
           </div>
           <div className="dashboard-cards">
@@ -347,7 +379,7 @@ const Dashboard = () => {
                 >
                   <div className="card-header">
                     <h3>
-                      {formatLeakTitle(key)}
+                      {formatLeakTitle(key, CFOMode ? "CFO" : "default")}
                       {data.tooltip && (
                         <FinancialTooltip
                           title={data.tooltip.title}
@@ -470,7 +502,26 @@ const Dashboard = () => {
 };
 
 // Helper functions
-function formatLeakTitle(key) {
+function formatLeakTitle(key, mode = "CFO") {
+  if (mode === "CFO") {
+    switch (key) {
+      case "revenueLeak":
+        return "Recoverable Revenue Opportunity";
+      case "contentDecay":
+        return "Recoverable Engagement Value";
+      case "kwMismatch":
+        return "Recoverable Intent value";
+      case "linkDilution":
+        return "Recoverable Authority value";
+      case "psychoMismatch":
+        return "Recoverable Cannibalization Value";
+      case "contentCreationCost":
+        return "Recoverable Relevance Value";
+      default:
+        return key;
+    }
+  }
+
   switch (key) {
     case "revenueLeak":
       return "Revenue Leak Detected";
@@ -481,9 +532,9 @@ function formatLeakTitle(key) {
     case "linkDilution":
       return "Link Dilution";
     case "psychoMismatch":
-      return "Psycho Mismatch";
+      return "Cannibalization Loss";
     case "contentCreationCost":
-      return "Wasted Content Investment";
+      return "Psycho Mismatch";
     default:
       return key;
   }

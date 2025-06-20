@@ -20,6 +20,7 @@ const StepMainDomain = () => {
   const [analysisData, setAnalysisData] = useState(
     onboardingData.initialAnalysisState
   );
+  const [allSitemapUrls, setAllSitemapUrls] = useState([]);
   const [sitemaps, setSitemaps] = useState([]);
   const [sitemapError, setSitemapError] = useState("");
   const [isFetchingSitemaps, setIsFetchingSitemaps] = useState(false);
@@ -121,6 +122,8 @@ const StepMainDomain = () => {
       }
     );
     setSitemaps(onboardingData.sitemaps || []);
+
+    setAllSitemapUrls(onboardingData.allSitemapUrls);
     setSelectedSitemaps(onboardingData.selectedSitemaps || []);
     setIsSitemapValidated(onboardingData.isSitemapValidated || false);
     setDomainCostDetails(
@@ -516,6 +519,8 @@ const StepMainDomain = () => {
         });
       }
 
+      setAllSitemapUrls(sitemapData.data.sites || []);
+
       console.log("Unique URLs from API:", uniqueUrls);
 
       // If we don't have URLs from the API response, fetch XML sitemaps and parse them
@@ -669,6 +674,7 @@ const StepMainDomain = () => {
         dynamic_fields: {
           ...(analysisData && { analysisData }),
           ...(sitemaps && { sitemaps }),
+          ...(allSitemapUrls && { allSitemapUrls }),
           ...(selectedSitemaps && { selectedSitemaps }),
           ...(funnelAnalysis && { funnelAnalysis }),
           ...(domainCostDetails && { domainCostDetails }),
@@ -696,6 +702,7 @@ const StepMainDomain = () => {
         isSitemapValidated,
         funnelAnalysis,
         uniqueUrlCount,
+        allSitemapUrls,
         lastUpdated: new Date().toISOString(),
       };
       setOnboardingData(updatedData);

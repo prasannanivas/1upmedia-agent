@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  use,
+} from "react";
 import { useOnboarding } from "./OnboardingContext";
 
 const FinancialCalculationsContext = createContext();
@@ -13,6 +19,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
   const [decay90Days, setDecay90Days] = useState([]);
   const [decaySummary, setDecaySummary] = useState({});
   const [psychMismatchData, setPsychMismatchdata] = useState([]);
+  const [allSitemapUrls, setAllSitemapUrls] = useState([]);
 
   // Analysis States
   const [keywordMismatch, setKeywordMismatch] = useState([]);
@@ -56,6 +63,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
         // Set the GSC analysis data
         setGscAnalysisData(onboardingData.GSCAnalysisData);
 
+        setAllSitemapUrls(onboardingData.allSitemapUrls || []);
+
         setPsychMismatchdata(onboardingData.funnelAnalysis);
         // Process the GSC data for financial calculations
         processGSCDataForCalculations(onboardingData.GSCAnalysisData);
@@ -69,22 +78,129 @@ export const FinancialCalculationsProvider = ({ children }) => {
     onboardingData?.domainCostDetails?.averageOrderValue,
     onboardingData?.domainCostDetails?.contentCost,
     onboardingData?.funnelAnalysis,
+    onboardingData?.allSitemapUrls,
   ]);
 
-  const processGSCDataForCalculations = (gscData) => {
+  const processGSCDataForCalculations = (
+    gscData = onboardingData?.GSCAnalysisData || {},
+    useSitemapOnlyUrls = false
+  ) => {
     // This function will process the GSC data for financial calculations
 
     // Segregate Content Decay Data
-    setDecay30Days(gscData?.contentDecay?.decay30Days || []);
-    setDecay60Days(gscData?.contentDecay?.decay60Days || []);
-    setDecay90Days(gscData?.contentDecay?.decay90Days || []);
+
+    if (useSitemapOnlyUrls && allSitemapUrls.length > 0) {
+      const sitemapUrlsSet = new Set(allSitemapUrls.map((url) => url));
+
+      console.log(
+        "Filtering GSC data by sitemap URLs...",
+        sitemapUrlsSet.length
+      );
+      const filterBySitemapUrls = (data) =>
+        data.filter((item) => sitemapUrlsSet.has(item.url));
+
+      const filterForCannibalisation = (data) => {
+        return data.filter((item) => {
+          // Check if primary URL is in the sitemapUrlsSet
+          if (
+            item?.primaryUrl?.url &&
+            sitemapUrlsSet.has(item.primaryUrl.url)
+          ) {
+            return true;
+          }
+
+          // Check if any competing URL is in the sitemapUrlsSet
+          if (item?.competingUrls && Array.isArray(item.competingUrls)) {
+            for (const competingUrl of item.competingUrls) {
+              if (competingUrl?.url && sitemapUrlsSet.has(competingUrl.url)) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        });
+      };
+
+      setDecay30Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay30Days || [])
+      );
+      setDecay60Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay60Days || [])
+      );
+      setDecay90Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay90Days || [])
+      );
+      setKeywordMismatch(filterBySitemapUrls(gscData?.keywordMismatch || []));
+      setContentCostWaste(filterBySitemapUrls(gscData?.contentCostWaste || []));
+      setLinkDilution(filterBySitemapUrls(gscData?.linkDilution || []));
+      setCannibalization(
+        filterForCannibalisation(gscData?.cannibalization) || []
+      );
+
+      console.log("Old length v/s New length");
+      console.log(
+        "Decay30Days:",
+        gscData?.contentDecay?.decay30Days?.length,
+        "->",
+        decay30Days.length
+      );
+      console.log(
+        "Decay60Days:",
+        gscData?.contentDecay?.decay60Days?.length,
+        "->",
+        decay60Days.length
+      );
+      console.log(
+        "Decay90Days:",
+        gscData?.contentDecay?.decay90Days?.length,
+        "->",
+        decay90Days.length
+      );
+      console.log(
+        "Keyword Mismatch:",
+        gscData?.keywordMismatch?.length,
+        "->",
+        keywordMismatch.length
+      );
+      console.log(
+        "Content Cost Waste:",
+        gscData?.contentCostWaste?.length,
+        "->",
+        contentCostWaste.length
+      );
+      console.log(
+        "Link Dilution:",
+        gscData?.linkDilution?.length,
+        "->",
+        linkDilution.length
+      );
+      console.log(
+        "Not Found Pages:",
+        gscData?.notFoundPages?.length,
+        "->",
+        notFoundPages.length
+      );
+
+      console.log(
+        "Cannibalization:",
+        gscData?.cannibalization?.length,
+        "->",
+        cannibalization.length
+      );
+    } else {
+      setDecay30Days(gscData?.contentDecay?.decay30Days || []);
+      setDecay60Days(gscData?.contentDecay?.decay60Days || []);
+      setDecay90Days(gscData?.contentDecay?.decay90Days || []);
+      setKeywordMismatch(gscData?.keywordMismatch || []);
+      setContentCostWaste(gscData?.contentCostWaste || []);
+      setLinkDilution(gscData?.linkDilution || []);
+      setCannibalization(gscData?.cannibalization || []);
+    }
+
     setDecaySummary(gscData?.contentDecay?.summary || {});
 
     // Segregate Analysis Data
-    setKeywordMismatch(gscData?.keywordMismatch || []);
-    setCannibalization(gscData?.cannibalization || []);
-    setContentCostWaste(gscData?.contentCostWaste || []);
-    setLinkDilution(gscData?.linkDilution || []);
     setNotFoundPages(gscData?.notFoundPages || []);
 
     setRiskMetrics(gscData?.riskMetric || []);
@@ -114,6 +230,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       costPerAcquisition: 0,
     });
   };
+
   const getRevenueLeak = (aov = null, conversionRate = 0.02) => {
     const averageOrderValue =
       aov ||
@@ -997,11 +1114,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       });
     });
 
-    // Sample expansion logic
-    const keywordUniverse =
-      onboardingData?.domainCostDetails?.totalKeywordCount ||
-      totalKeywordsAnalyzed;
-    const samplingRatio = totalKeywordsAnalyzed / keywordUniverse;
+    const samplingRatio = 1;
     const extrapolatedLoss = Math.round(calculatedRevenueLoss / samplingRatio);
     const sampleBasedLoss = Math.round(
       Math.min(calculatedRevenueLoss, totalContentCost * 0.5)
@@ -3555,6 +3668,7 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         getCrawlErrorPercentage,
         getTotalWastedSpend,
         getContentWastePages,
+        processGSCDataForCalculations,
       }}
     >
       {children}

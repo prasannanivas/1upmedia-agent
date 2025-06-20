@@ -493,12 +493,13 @@ const SEOAnalysisDashboard = ({ analysisData, onboardingData = {} }) => {
 
   console.log("ld", linkDilution, analysisData.linkDilutionSummary);
 
-  const dilutedPages = Array.isArray(linkDilution)
-    ? (linkDilution.filter((item) => item && item.dilutionScore > 0.005)
-        .length /
-        linkDilution.length) *
-      100
-    : 0; // --- Enhanced Helper Functions ---
+  console.log(
+    "ldld",
+    linkDilution.filter((item) => item.dilutionScore > 0.001)
+  );
+  const dilutedPages =
+    (linkDilution.filter((item) => item.dilutionScore > 0.001).length * 100) /
+    linkDilution.length;
 
   /**
    * Handles sorting configuration for table columns

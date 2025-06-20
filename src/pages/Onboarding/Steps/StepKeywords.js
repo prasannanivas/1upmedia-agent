@@ -44,6 +44,8 @@ const StepKeywords = () => {
   const [analysisData, setAnalysisData] = useState(
     onboardingData.GSCAnalysisData || {}
   );
+
+  const [allSitemapUrls, setAllSitemapUrls] = useState([]);
   const [GSCdata, setGSCdata] = useState(
     onboardingData.searchConsoleData || {}
   );
@@ -59,60 +61,6 @@ const StepKeywords = () => {
     averageOrderValue: "",
     AverageContentCost: "",
     totalInvested: "",
-  });
-
-  const [decay30Days, setDecay30Days] = useState(
-    analysisData?.contentDecay?.decay30Days || []
-  );
-  const [decay60Days, setDecay60Days] = useState(
-    analysisData?.contentDecay?.decay60Days || []
-  );
-  const [decay90Days, setDecay90Days] = useState(
-    analysisData?.contentDecay?.decay90Days || []
-  );
-
-  const [decaySummary, setDecaySummary] = useState(
-    analysisData?.contentDecay?.summary || []
-  );
-
-  const [keywordMismatch, setKeywordMismatch] = useState(
-    analysisData?.keywordMismatch || []
-  );
-  const [cannibalization, setCannibalization] = useState(
-    analysisData?.cannibalization || []
-  );
-
-  const [contentCostWaste, setContentCostWaste] = useState(
-    analysisData?.contentCostWaste || []
-  );
-
-  const [linkDilution, setLinkDilution] = useState(
-    analysisData?.linkDilution || []
-  );
-
-  const [notFoundPages, setNotFoundPages] = useState(
-    analysisData?.notFoundPages || []
-  );
-
-  const [gaDataInsightsSummary, setGaDataInsightsSummary] = useState(
-    {
-      summary: analysisData?.gaData?.insights?.summary || "",
-      insights: analysisData?.gaData?.insights?.insights || [],
-      recommendations: analysisData?.gaData?.insights?.recommendations || [],
-    } || { summary: {}, insights: [], recommendations: [] }
-  );
-
-  const [gaDataTopPerformers, setGaDataTopPerformers] = useState({
-    byTraffic: analysisData?.gaData?.insights?.topPerformers?.byTraffic || [],
-    byEngagement:
-      analysisData?.gaData?.insights?.topPerformers?.byEngagement || [],
-  });
-
-  const [gaDataProblemAreas, setGaDataProblemAreas] = useState({
-    highBounceRate:
-      analysisData?.gaData?.insights?.problemAreas?.highBounceRate || [],
-    lowEngagement:
-      analysisData?.gaData?.insights?.problemAreas?.lowEngagement || [],
   });
 
   const inputRef = useRef(null);
@@ -132,34 +80,6 @@ const StepKeywords = () => {
 
     setProgress(Math.min(100, progressValue));
   }, [siteURL, keywordList, GSCdata, connectedSites]);
-
-  useEffect(() => {
-    setDecay30Days(analysisData?.contentDecay?.decay30Days || []);
-    setDecay60Days(analysisData?.contentDecay?.decay60Days || []);
-    setDecay90Days(analysisData?.contentDecay?.decay90Days || []);
-    setDecaySummary(analysisData?.contentDecay?.summary || {});
-    setKeywordMismatch(analysisData?.keywordMismatch || []);
-    setCannibalization(analysisData?.cannibalization || []);
-    setContentCostWaste(analysisData?.contentCostWaste || []);
-    setLinkDilution(analysisData?.linkDilution || []);
-    setNotFoundPages(analysisData?.notFoundPages || []);
-    setGaDataInsightsSummary({
-      summary: analysisData?.gaData?.insights?.summary || "",
-      insights: analysisData?.gaData?.insights?.insights || [],
-      recommendations: analysisData?.gaData?.insights?.recommendations || [],
-    });
-    setGaDataTopPerformers({
-      byTraffic: analysisData?.gaData?.insights?.topPerformers?.byTraffic || [],
-      byEngagement:
-        analysisData?.gaData?.insights?.topPerformers?.byEngagement || [],
-    });
-    setGaDataProblemAreas({
-      highBounceRate:
-        analysisData?.gaData?.insights?.problemAreas?.highBounceRate || [],
-      lowEngagement:
-        analysisData?.gaData?.insights?.problemAreas?.lowEngagement || [],
-    });
-  }, [analysisData]);
 
   const handleAddKeyword = () => {
     const trimmed = keyword.trim();
@@ -251,6 +171,7 @@ const StepKeywords = () => {
   useEffect(() => {
     setSiteURL(onboardingData.domain || "");
     setLocation(onboardingData.location || "");
+
     setAnalysisData(onboardingData.GSCAnalysisData || {});
     setKeywordList(onboardingData.keywords || []);
     setGSCdata(onboardingData.searchConsoleData || {});
@@ -262,6 +183,8 @@ const StepKeywords = () => {
         onboardingData.domainCostDetails?.AverageContentCost || 0,
       totalInvested: onboardingData.domainCostDetails?.totalInvested || 0,
     });
+
+    setAllSitemapUrls(onboardingData.allSitemapUrls);
 
     if (!analysisData) {
       handleAnalyzeSite();
@@ -460,6 +383,7 @@ const StepKeywords = () => {
 
       // API call with retry logic for token refresh
       for (let attempt = 0; attempt < 2; attempt++) {
+        setAnalysisData({});
         try {
           const response = await fetch(
             "https://ai.1upmedia.com:443/google/seo-analysis",
@@ -479,6 +403,7 @@ const StepKeywords = () => {
                 averageOrderValue: domainCostDetails.averageOrderValue,
                 averageContentCost: domainCostDetails.AverageContentCost || 50,
                 totalInvested: domainCostDetails.totalInvested,
+                allSitemapUrls: allSitemapUrls,
                 domainAuthority:
                   onboardingData.initialAnalysisState?.domainAuthority || 26,
                 conversionRate: 0.03,
@@ -496,7 +421,14 @@ const StepKeywords = () => {
           if (response.ok) {
             const data = await response.json();
             // Store analysis data in context
+            console.log("setting new analysis data..");
             setAnalysisData(data);
+
+            setOnboardingData((prev) => ({
+              ...prev,
+              GSCAnalysisData: data,
+            }));
+
             setAnalysisComplete(true);
 
             break; // Exit retry loop on success
