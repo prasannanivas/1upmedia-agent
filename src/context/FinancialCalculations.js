@@ -20,6 +20,9 @@ export const FinancialCalculationsProvider = ({ children }) => {
   const [decaySummary, setDecaySummary] = useState({});
   const [psychMismatchData, setPsychMismatchdata] = useState([]);
   const [allSitemapUrls, setAllSitemapUrls] = useState([]);
+  const [allGSCUrls, setAllGSCUrls] = useState([]);
+  const [allGAUrls, setAllGAUrls] = useState([]);
+  const [urlAnalysis, setUrlAnalysis] = useState([]);
 
   // Analysis States
   const [keywordMismatch, setKeywordMismatch] = useState([]);
@@ -65,6 +68,18 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
         setAllSitemapUrls(onboardingData.allSitemapUrls || []);
 
+        setAllGSCUrls(
+          onboardingData.gscAnalysisData?.contentCostWaste.map(
+            (item) => item.url
+          ) || []
+        );
+
+        setAllGAUrls(
+          onboardingData.gscAnalysisData?.gaData?.insights?.urlAnalysis?.map(
+            (item) => item.url
+          ) || []
+        );
+
         setPsychMismatchdata(onboardingData.funnelAnalysis);
         // Process the GSC data for financial calculations
         processGSCDataForCalculations(onboardingData.GSCAnalysisData);
@@ -83,11 +98,34 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
   const processGSCDataForCalculations = (
     gscData = onboardingData?.GSCAnalysisData || {},
-    useSitemapOnlyUrls = false
+    useSitemapOnlyUrls = false,
+    useOnlyGoogleAnalyticsUrls = false
   ) => {
     // This function will process the GSC data for financial calculations
 
     // Segregate Content Decay Data
+
+    const base_url =
+      gscData?.contentCostWaste?.[0]?.url?.replace(
+        /^(https?:\/\/[^\/]+).*$/,
+        "$1"
+      ) || "";
+
+    console.log("bu", base_url);
+
+    setUrlAnalysis(gscData?.gaData?.insights?.urlAnalysis || []);
+    setAllGAUrls(
+      gscData?.gaData?.insights?.urlAnalysis?.map(
+        (item) => base_url + item.url
+      ) || []
+    );
+    setAllGSCUrls(gscData.contentCostWaste.map((item) => item.url) || []);
+
+    console.log(
+      "Processing GSC Data for Financial Calculations...",
+      allGAUrls.length,
+      allSitemapUrls.length
+    );
 
     if (useSitemapOnlyUrls && allSitemapUrls.length > 0) {
       const sitemapUrlsSet = new Set(allSitemapUrls.map((url) => url));
@@ -188,6 +226,99 @@ export const FinancialCalculationsProvider = ({ children }) => {
         "->",
         cannibalization.length
       );
+    } else if (useOnlyGoogleAnalyticsUrls) {
+      console.log(
+        "Filtering GSC data by Google Analytics URLs...",
+        allGAUrls.length
+      );
+      const gaUrlsSet = new Set(allGAUrls.map((url) => url));
+
+      console.log(
+        "Filtering GSC data by Google Analytics URLs...",
+        gaUrlsSet.size
+      );
+      const filterByGAUrls = (data) =>
+        data.filter((item) => gaUrlsSet.has(item.url));
+
+      const filterForCannibalisation = (data) => {
+        return data.filter((item) => {
+          // Check if primary URL is in the gaUrlsSet
+          if (item?.primaryUrl?.url && gaUrlsSet.has(item.primaryUrl.url)) {
+            return true;
+          }
+
+          // Check if any competing URL is in the gaUrlsSet
+          if (item?.competingUrls && Array.isArray(item.competingUrls)) {
+            for (const competingUrl of item.competingUrls) {
+              if (competingUrl?.url && gaUrlsSet.has(competingUrl.url)) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        });
+      };
+
+      setDecay30Days(filterByGAUrls(gscData?.contentDecay?.decay30Days || []));
+      setDecay60Days(filterByGAUrls(gscData?.contentDecay?.decay60Days || []));
+      setDecay90Days(filterByGAUrls(gscData?.contentDecay?.decay90Days || []));
+      setKeywordMismatch(filterByGAUrls(gscData?.keywordMismatch || []));
+      setContentCostWaste(filterByGAUrls(gscData?.contentCostWaste || []));
+      setLinkDilution(filterByGAUrls(gscData?.linkDilution || []));
+      setCannibalization(
+        filterForCannibalisation(gscData?.cannibalization) || []
+      );
+
+      console.log("Old length v/s New length");
+      console.log(
+        "Decay30Days:",
+        gscData?.contentDecay?.decay30Days?.length,
+        "->",
+        decay30Days.length
+      );
+      console.log(
+        "Decay60Days:",
+        gscData?.contentDecay?.decay60Days?.length,
+        "->",
+        decay60Days.length
+      );
+      console.log(
+        "Decay90Days:",
+        gscData?.contentDecay?.decay90Days?.length,
+        "->",
+        decay90Days.length
+      );
+      console.log(
+        "Keyword Mismatch:",
+        gscData?.keywordMismatch?.length,
+        "->",
+        keywordMismatch.length
+      );
+      console.log(
+        "Content Cost Waste:",
+        gscData?.contentCostWaste?.length,
+        "->",
+        contentCostWaste.length
+      );
+      console.log(
+        "Link Dilution:",
+        gscData?.linkDilution?.length,
+        "->",
+        linkDilution.length
+      );
+      console.log(
+        "Not Found Pages:",
+        gscData?.notFoundPages?.length,
+        "->",
+        notFoundPages.length
+      );
+      console.log(
+        "Cannibalization:",
+        gscData?.cannibalization?.length,
+        "->",
+        cannibalization.length
+      );
     } else {
       setDecay30Days(gscData?.contentDecay?.decay30Days || []);
       setDecay60Days(gscData?.contentDecay?.decay60Days || []);
@@ -229,6 +360,17 @@ export const FinancialCalculationsProvider = ({ children }) => {
       conversionRate: 0,
       costPerAcquisition: 0,
     });
+
+    const uniqueGAUrls = new Set(allGAUrls);
+    const uniqueGSCUrls = new Set(allGSCUrls);
+    const uniqueSitemapUrls = new Set(allSitemapUrls);
+
+    console.log(
+      "Unique GA, GSC, SM",
+      uniqueGAUrls.size,
+      uniqueGSCUrls.size,
+      uniqueSitemapUrls.size
+    );
   };
 
   const getRevenueLeak = (aov = null, conversionRate = 0.02) => {
@@ -2868,6 +3010,185 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     }
   };
 
+  /**********************************************************************
+   *  Full-feed URL bucketing for Recoverable-Value dashboard
+   *  ---------------------------------------------------------------
+   *  INPUT ARRAYS (all plain JS data):
+   *    - allGSCUrls               : string[]
+   *    - gscAnalysisData          : { [url]: { clicks:number } }
+   *    - urlAnalysis              : [{ url, sessions, ... }]          // GA4 detail
+   *    - allSitemapUrls           : string[]
+   *    - decay30Days / 60Days / 90Days : [{ url, decayStatus, metrics }]
+   *    - keywordMismatch          : [{ url, expectedCTR, actualClicks, impressions }]
+   *    - linkDilution             : [{ url, dilutionScore }]          // 0-1 small
+   *    - cannibalization          : [{ primaryUrl:{url}, competingUrls:[{url}] }]
+   *    - contentCostWaste         : [{ url }]
+   *    - psychMismatchData        : big object with compositeSummary
+   *
+   *  OUTPUT:
+   *    buckets = { REV_OPP, ENGAGE_OPP, CANNIBAL, INTENT_OPP,
+   *                AUTH_OPP, RELEV_OPP, STRANDED, HEALTHY }
+   *********************************************************************/
+  /**********************************************************************
+   *  categoriseIntoBuckets() – final, normalised version
+   *********************************************************************/
+  const categoriseIntoBuckets = () => {
+    /* ───────────────────────── 0. helper: URL normaliser ───────────── */
+    const ORIGIN =
+      onboardingData?.GSCAnalysisData?.contentCostWaste?.[0]?.url?.replace(
+        /^(https?:\/\/[^\/]+).*$/,
+        "$1"
+      ) || "";
+
+    const norm = (url) => {
+      if (!url) return "";
+      let full = url.startsWith("http")
+        ? url
+        : ORIGIN + (url.startsWith("/") ? "" : "/") + url;
+      // collapse "//", strip trailing "/" except for origin
+      full = full.replace(/([^:]\/)\/+/g, "$1");
+      return full !== ORIGIN ? full.replace(/\/$/, "") : full;
+    };
+
+    /* ─────────────── 1. thresholds (tweak here) ─────────────────────── */
+    const KW_MISMATCH_BAR = 0.4; // ≥40 % CTR gap ⇒ INTENT_OPP
+    const AUTH_GAP_BAR = 0.35; // ≥35 % dilution ⇒ AUTH_OPP
+    const REV_SESSION_BAR = 5; // <5 sessions counts as zero
+    const PSYCH_GAP_BAR = 0.3; // ≥30 % site-wide gap ⇒ RELEV_OPP
+
+    /* ─────────────── 2. bucket skeleton ─────────────────────────────── */
+    const buckets = {
+      REV_OPP: [],
+      ENGAGE_OPP: [],
+      CANNIBAL: [],
+      INTENT_OPP: [],
+      AUTH_OPP: [],
+      RELEV_OPP: [],
+      STRANDED: [],
+      HEALTHY: [],
+    };
+
+    /* ─────────────── 3. look-ups (all URLs normalised) ──────────────── */
+    // GA sessions
+    const gaSessionMap = new Map(
+      urlAnalysis.map((x) => [norm(x.url), x.sessions])
+    );
+
+    // Decay
+    const decayFeed = [...decay30Days, ...decay60Days, ...decay90Days];
+    const decayMap = new Map(
+      decayFeed.map((x) => [norm(x.url), x.decayStatus])
+    );
+
+    // Keyword gap (0-1, 1 = worst)
+    const kwGapMap = new Map(
+      keywordMismatch.map((x) => {
+        const act = x.actualClicks / Math.max(1, x.impressions);
+        const exp = x.expectedCTR > 0 ? x.expectedCTR : 0.05;
+        return [norm(x.url), 1 - Math.min(act / exp, 1)];
+      })
+    );
+
+    // Authority gap
+    const authMap = new Map(
+      linkDilution.map((x) => [norm(x.url), Math.min(x.dilutionScore * 500, 1)])
+    );
+
+    // Cannibalisation set
+    const canniSet = new Set(
+      cannibalization.flatMap((c) => [
+        norm(c.primaryUrl?.url),
+        ...(c.competingUrls ?? []).map((u) => norm(u.url)),
+      ])
+    );
+
+    // Wasted set
+    const wasteSet = new Set(contentCostWaste.map((x) => norm(x.url)));
+
+    // Site-wide psych gap
+    const o = psychMismatchData?.psychCompositeSummary?.overall ?? {};
+    const psychGapGlobal =
+      (100 -
+        ((o.emotionalResonance ?? 50) +
+          (o.cognitiveClarity ?? 50) +
+          (o.persuasionLeverage ?? 50) +
+          (o.behavioralMomentum ?? 50)) /
+          4) /
+      100;
+
+    // Union of _normalised_ URLs
+    const allUrls = new Set([
+      ...keywordMismatch.map((x) => norm(x.url)),
+      ...linkDilution.map((x) => norm(x.url)),
+      ...urlAnalysis.map((x) => norm(x.url)),
+      ...allSitemapUrls.map(norm),
+      ...decayFeed.map((x) => norm(x.url)),
+      ...contentCostWaste.map((x) => norm(x.url)),
+    ]);
+
+    // Full GSC clicks map
+    const gscClicksMap = new Map(
+      allGSCUrls.map((u) => [norm(u), gscAnalysisData[u]?.clicks ?? 0])
+    );
+
+    /* ─────────────── 4. bucket decision helper ──────────────────────── */
+    const decideBucket = ({
+      clicks,
+      sessions,
+      kwGap,
+      authGap,
+      cannibalised,
+      decayed,
+      wasted,
+    }) => {
+      if (cannibalised) return "CANNIBAL";
+      if (authGap >= AUTH_GAP_BAR) return "AUTH_OPP";
+      if (kwGap >= KW_MISMATCH_BAR) return "INTENT_OPP";
+      if (clicks > 0 && sessions < REV_SESSION_BAR) return "REV_OPP";
+      if (decayed) return "ENGAGE_OPP";
+      if (wasted) return "STRANDED";
+      if (clicks === 0 && sessions === 0) return "STRANDED";
+      return "HEALTHY";
+    };
+
+    /* ─────────────── 5. iterate & assign ─────────────────────────────── */
+    allUrls.forEach((url) => {
+      const clicks = gscClicksMap.get(url) ?? 0;
+      const sessions = gaSessionMap.get(url) ?? 0;
+      const kwGap = kwGapMap.get(url) ?? 0;
+      const authGap = authMap.get(url) ?? 0;
+      const decayed = decayMap.has(url);
+      const cannib = canniSet.has(url);
+      const wasted = wasteSet.has(url);
+
+      const bucket = decideBucket({
+        clicks,
+        sessions,
+        kwGap,
+        authGap,
+        cannibalised: cannib,
+        decayed,
+        wasted,
+      });
+
+      buckets[bucket].push({
+        url,
+        metrics: {
+          gscClicks: clicks,
+          gaSessions: sessions,
+          kwGap,
+          authGap,
+          psychGap: psychGapGlobal,
+          decayedStatus: decayed ? decayMap.get(url) : null,
+          cannibalised: cannib,
+          wasted,
+        },
+      });
+    });
+
+    return buckets;
+  };
+
   // Helper functions for the new analysis functions - Using unified A-D grading system
   const getQualityGrade = (score) => {
     if (score >= 90) return "A";
@@ -3537,11 +3858,9 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         wastePages: 0,
         totalUrls,
       };
-    }
-
-    // Constants for CFO modeling
+    } // Constants for CFO modeling
     const discountRate = 0.1; // 10% WACC
-    const recoveryRate = 0.0; // Assume no recovery for stranded CAPEX
+    // const recoveryRate = 0.0; // Assume no recovery for stranded CAPEX (reserved for future use)
     const timeHorizon = 700 / 365.0; // ~1.92 years
     const pvFactor = (1 - Math.exp(-discountRate * timeHorizon)) / discountRate;
 
@@ -3627,7 +3946,6 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
       },
     };
   };
-
   return (
     <FinancialCalculationsContext.Provider
       value={{
@@ -3648,6 +3966,7 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
         gaDataInsightsSummary,
         gaDataTopPerformers,
         gaDataProblemAreas,
+        categoriseIntoBuckets,
         getRiskMetric,
         getRevenueLeak,
         getContentDecay,

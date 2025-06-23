@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import "./Dashboard.css";
 import FinancialTooltip from "../../components/FinancialTooltip";
+import BucketDataVisualization from "../../components/BucketDataVisualization";
+
+// BucketDataVisualization component
 
 const Dashboard = () => {
   const { onboardingData } = useOnboarding();
@@ -24,6 +27,7 @@ const Dashboard = () => {
     getCannibalizationLoss,
     calculateTotalLoss,
     processGSCDataForCalculations,
+    categoriseIntoBuckets,
   } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
@@ -39,7 +43,9 @@ const Dashboard = () => {
   const [rollUpData, setRollUpData] = useState({});
   const [showRollupData, setShowRollupData] = useState(false);
   const [showSitemapOnlyData, setShowSitemapOnlyData] = useState(false);
+  const [showGAUrlsOnly, setShowGAUrlsOnly] = useState(false);
   const [CFOMode, setCFOMode] = useState(false);
+  const [bucketData, setBucketData] = useState({});
 
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
@@ -55,6 +61,8 @@ const Dashboard = () => {
       const cannibalizationData = getCannibalizationLoss();
       const totalLossData = calculateTotalLoss();
 
+      setBucketData(categoriseIntoBuckets());
+
       console.log(
         "Revenue Leak Data:",
         revenueLeakData,
@@ -68,6 +76,8 @@ const Dashboard = () => {
         psychoMismatchData,
         "Cannibalization Data:",
         cannibalizationData,
+        "Bucket Data:",
+        bucketData,
         "Total Loss Data:",
         totalLossData
       );
@@ -179,6 +189,16 @@ const Dashboard = () => {
     );
   }, [onboardingData?.GSCAnalysisData, showSitemapOnlyData]);
 
+  useEffect(() => {
+    if (onboardingData?.GSCAnalysisData) {
+      processGSCDataForCalculations(
+        onboardingData.GSCAnalysisData,
+        false,
+        showGAUrlsOnly
+      );
+    }
+  }, [onboardingData?.GSCAnalysisData, showGAUrlsOnly]);
+
   return (
     <div className="dashboard-container">
       {/* <h1>Content Ledger Dashboard</h1> */}
@@ -216,6 +236,18 @@ const Dashboard = () => {
                 <span className="toggle-slider"></span>
               </label>
               <span className="toggle-label">Show Sitemap only data</span>
+            </div>
+
+            <div className="toggle-container">
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={showGAUrlsOnly}
+                  onChange={(e) => setShowGAUrlsOnly(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+              <span className="toggle-label">Show GA only data</span>
             </div>
 
             <div className="toggle-container">
@@ -406,6 +438,15 @@ const Dashboard = () => {
               );
             })}
           </div>
+        </div>
+
+        <div className="dashboard-bucket-analysis">
+          <h2 className="section-title">
+            <span className="title-icon">📊</span>
+            Content Bucket Analysis
+          </h2>
+
+          <BucketDataVisualization bucketData={bucketData} />
         </div>
 
         {/* <div className="dashboard-funnel-analysis">
