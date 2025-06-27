@@ -41,6 +41,7 @@ const CommandCenterDashboard = () => {
     getCannibalizationLoss,
     funnelGapIdentifier,
     getContentQualityDistribution,
+    calculateTotalLoss,
     getMoodyCreditScore,
     getROIRecoveryPotential,
   } = useFinancialCalculations();
@@ -246,7 +247,11 @@ const CommandCenterDashboard = () => {
         // KPI Grid using context data
 
         kpiMetrics: {
-          wastedSpend: Math.round(revenueLeakData?.estimatedRevenueLoss || 0),
+          wastedSpend: Math.round(
+            calculateTotalLoss()?.summary?.totalRevenueLoss ||
+              revenueLeakData?.estimatedRevenueLoss ||
+              0
+          ),
           deepDecayPages: contentDecayData?.summary?.urlsWithDecay || 0,
           highDilutionPages: linkDilutionData?.summary?.urlsWithDilution || 0,
           lowKDHighDAUrls: searchConsoleData.filter(
@@ -429,7 +434,9 @@ const CommandCenterDashboard = () => {
           <h3>Moody Credit Score</h3>
           <div className="credit-score-display">
             <div className="credit-score-value">
-              <span className="grade">{commandCenterData.creditGrade}</span>
+              <span className="grade-moody">
+                {commandCenterData.creditGrade}
+              </span>
               <span className="score">{commandCenterData.creditScore}/100</span>
               <span className="health">{commandCenterData.creditHealth}</span>
             </div>

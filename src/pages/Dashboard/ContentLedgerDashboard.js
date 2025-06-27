@@ -35,6 +35,7 @@ const ContentLedgerDashboard = () => {
     getROIRecoveryPotential,
     getRevenueLeak,
     getMoodyCreditScore,
+    calculateTotalLoss,
   } = useFinancialCalculations();
   const navigate = useNavigate(); // State for filters and sorting
   const [activeFilters, setActiveFilters] = useState(new Set(["all"]));
@@ -789,7 +790,9 @@ const ContentLedgerDashboard = () => {
           <div className="kpi-icon">💸</div>
           <div className="kpi-content">
             <div className="kpi-value">
-              {formatCurrency(ledgerData.summary.totalWastedSpend)}
+              {formatCurrency(
+                calculateTotalLoss()?.summary?.totalRevenueLoss || 0
+              )}
             </div>{" "}
             <div className="kpi-label">
               Wasted Spend

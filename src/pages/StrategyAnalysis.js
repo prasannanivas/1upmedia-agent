@@ -46,6 +46,7 @@ const StrategyAnalysis = () => {
     getCannibalizationLoss,
     getLinkDilution,
     funnelGapIdentifier,
+    calculateTotalLoss,
   } = useFinancialCalculations();
   const navigate = useNavigate();
   // Calculate strategy engine metrics
@@ -157,8 +158,7 @@ const StrategyAnalysis = () => {
       const cannibalizationData = getCannibalizationLoss();
       cannibalizationValue =
         cannibalizationData?.summary?.totalRevenueLoss || 0;
-      cannibalizationUrls =
-        cannibalizationData?.summary?.keywordsWithCannibalization || 0;
+      cannibalizationUrls = cannibalizationData?.summary?.affectedKeywords || 0;
     } catch (error) {
       console.error("Error getting cannibalization data:", error);
       // Fallback to manual calculation
@@ -189,11 +189,9 @@ const StrategyAnalysis = () => {
         onboardingData.domainCostDetails?.totalInvested || 10000;
 
       const cannibalizationImpactPercentage =
-        searchConsoleData.length > 0
-          ? (cannibalizationPages.length / searchConsoleData.length) * 0.12 // 12% impact for cannibalization
-          : 0;
-      cannibalizationValue = totalInvestment * cannibalizationImpactPercentage;
-      cannibalizationUrls = cannibalizationPages.length;
+        getCannibalizationLoss().summary.cannibalizationPercentage;
+      cannibalizationValue = getCannibalizationLoss().summary.totalRevenueLoss;
+      cannibalizationUrls = getCannibalizationLoss().summary.totalUniqueUrls;
     }
 
     try {
@@ -674,7 +672,9 @@ const StrategyAnalysis = () => {
           </div>
           <div className="kpi-content">
             <div className="kpi-value">
-              ${panels.equityLeaks.lostEquityValue.toLocaleString()}
+              $
+              {calculateTotalLoss().summary?.totalRevenueLoss?.toFixed(2) ||
+                panels.equityLeaks.lostEquityValue.toLocaleString()}
             </div>
             <div className="kpi-label">Lost Equity Value</div>
           </div>

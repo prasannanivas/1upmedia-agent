@@ -713,7 +713,6 @@
       rgba(255, 255, 255, 0) 0%,
       rgba(255, 255, 255, 0.3) 50%,
       rgba(255, 255, 255, 0) 100%);
-  animation: shimmer 2s infinite;
   transform: translateX(-100%);
 }
 

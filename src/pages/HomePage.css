@@ -1151,7 +1151,7 @@
 
 .quick-action-button:hover::after {
   opacity: 1;
-  animation: shimmer 1.5s infinite;
+  /* animation: shimmer 1.5s infinite; */
 }
 
 /* Button icon styling */

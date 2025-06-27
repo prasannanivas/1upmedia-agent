@@ -862,7 +862,7 @@
   z-index: 0;
   border-radius: 1px;
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
-  animation: shimmer 3s infinite linear;
+  /* animation: shimmer 3s infinite linear; */
 }
 
 .huta-step {

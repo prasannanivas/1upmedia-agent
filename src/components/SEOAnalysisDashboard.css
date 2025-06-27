@@ -453,7 +453,7 @@
       transparent 0%,
       rgba(255, 255, 255, 0.4) 50%,
       transparent 100%);
-  animation: shimmer 2.5s infinite;
+
 }
 
 @keyframes shimmer {
@@ -930,7 +930,6 @@
   width: 200%;
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-  animation: loading-shimmer 2s infinite;
 }
 
 @keyframes loading-shimmer {
@@ -1139,7 +1138,6 @@
       transparent 0%,
       rgba(255, 255, 255, 0.3) 50%,
       transparent 100%);
-  animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {

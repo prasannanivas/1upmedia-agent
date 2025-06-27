@@ -252,28 +252,28 @@
 }
 
 .grade-a {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, #10b981, #059669) !important;
   color: white !important;
   border-left: 3px solid #047857;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .grade-b {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
   color: white !important;
   border-left: 3px solid #1d4ed8;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .grade-c {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
   color: white !important;
   border-left: 3px solid #b45309;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .grade-d {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
   color: white !important;
   border-left: 3px solid #b91c1c;
   text-shadow: 0 1px 2px rgba(246, 244, 244, 0.4);
