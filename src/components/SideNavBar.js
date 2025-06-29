@@ -77,6 +77,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
     { path: "/dashboard", label: "Posts", icon: FiFileText },
     { path: "/onboarding", label: "Setup", icon: FiBox },
     { path: "/analytics", label: "Analytics", icon: FiActivity },
+    { path: "/create-dashboard", label: "Create Dashboard", icon: FiLayout },
   ];
 
   const isActive = (path) => location.pathname === path;
