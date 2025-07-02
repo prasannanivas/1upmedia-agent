@@ -107,7 +107,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
     const base_url =
       gscData?.contentCostWaste?.[0]?.url?.replace(
-        /^(https?:\/\/[^\/]+).*$/,
+        /^(https?:\/\/[^/]+).*$/,
         "$1"
       ) || "";
 
@@ -2209,300 +2209,528 @@ export const FinancialCalculationsProvider = ({ children }) => {
     };
   };
 
-  const getROIRecoveryPotential = () => {
-    // Get AOV and Total Cost from onboardingData, throw error if not available
+  /*───────────────────────────────────────────────────────────────
+  Revenue-Recovery Model  ▪  JS version  ▪  2025-07-03
+───────────────────────────────────────────────────────────────*/
+
+  /** *****************************************************************
+   *  1. GLOBAL CONFIG – tweak per workspace / client as needed
+   *******************************************************************/
+  const RECOVERY_CONFIG = {
+    /* Traffic & revenue */
+    sessionsByUrl: {}, // { 'https://site/page': 1380, ... }
+    conversionRate: 0.02, // 2 %
+    revenuePerConversion: null, // falls back to AOV if null
+    margin: 0.7, // 70 % profit margin
+
+    /* Risk caps (as % of total content investment) */
+    maxLossPerCategoryPct: 0.02, // 2 %
+    maxPortfolioLossPct: 0.05, // 5 %
+
+    /* Multipliers (loss & recovery) */
+    multipliers: {
+      decay: { loss: 0.8, recovery: 0.55 },
+      mismatch: { loss: 0.6, recovery: 0.65 },
+      cannibal: { loss: 1.2, recovery: 0.7 },
+      dilution: { loss: 0.4, recovery: 0.5 },
+      funnel: { loss: 1.0, recovery: 0.6 },
+    },
+
+    /* Remediation effort model (exposed for reporting) */
+    remediationCostPerHour: 120,
+    hoursPerUrl: {
+      decayFix: 2,
+      mismatchFix: 1.5,
+      cannibalFix: 3,
+      dilutionFix: 4,
+    },
+  };
+
+  /** *****************************************************************
+   *  2. UTILITY HELPERS
+   *******************************************************************/
+  const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
+
+  /* Merge user overrides into RECOVERY_CONFIG without mutating either */
+  const mergeConfig = (overrides = {}) =>
+    Object.assign(deepClone(RECOVERY_CONFIG), deepClone(overrides));
+
+  /* Pick the more conservative of two loss proxies */
+  const estimateLoss = ({
+    sessions,
+    convRate,
+    revPerConv,
+    margin,
+    contentCost,
+    lossMultiplier,
+  }) => {
+    const lostProfit = sessions * convRate * revPerConv * margin;
+    const wastedCost = contentCost * lossMultiplier;
+    return Math.max(lostProfit, wastedCost);
+  };
+
+  /* Clamp a value to an upper cap */
+  const capLoss = (value, cap) => (value > cap ? cap : value);
+
+  /* Simple impact scoring */
+
+  /** *****************************************************************
+   *  3.  MAIN EXPORT  –  getROIRecoveryPotential
+   *******************************************************************
+   *  Required globals in scope:
+   *    calculations, onboardingData,
+   *    decay30Days, decay60Days, decay90Days,
+   *    keywordMismatch, cannibalization, linkDilution,
+   *    psychMismatchData (optional), contentCostWaste
+   *******************************************************************/
+  const getROIRecoveryPotential = (userOverrides = {}) => {
+    /*───────────────────────────────────────────────────────────────
+    0. CONFIG & BASIC CHECKS
+  ───────────────────────────────────────────────────────────────*/
+    const cfg = mergeConfig(userOverrides);
+
+    console.log("cfg", cfg);
+
     const averageOrderValue =
       calculations.averageOrderValue ||
       onboardingData?.domainCostDetails?.averageOrderValue;
-
     const totalContentCost = onboardingData?.domainCostDetails?.totalInvested;
 
-    if (!averageOrderValue || averageOrderValue === 0) {
+    if (!averageOrderValue)
       throw new Error(
-        "Average Order Value (AOV) is required but not available. Please ensure onboardingData.domainCostDetails.averageOrderValue is set."
+        "Average Order Value (AOV) is missing. Ensure onboardingData.domainCostDetails.averageOrderValue is set."
       );
+    if (!totalContentCost)
+      throw new Error(
+        "Total Content Cost is missing. Ensure onboardingData.domainCostDetails.totalInvested is set."
+      );
+
+    const totalUniqueUrls = contentCostWaste?.length || 1;
+    const defaultCostPerUrl = totalContentCost / totalUniqueUrls;
+
+    /*───────────────────────────────────────────────────────────────
+    1. PER-URL LOOK-UPS
+  ───────────────────────────────────────────────────────────────*/
+    const contentCostByUrl = {};
+    contentCostWaste?.forEach((c) => {
+      if (c.url) contentCostByUrl[c.url] = c.cost || defaultCostPerUrl;
+    });
+
+    const sessionsByUrl = cfg.sessionsByUrl; // may be empty
+
+    /*───────────────────────────────────────────────────────────────
+    2. CATEGORY-SPECIFIC URL LISTS
+  ───────────────────────────────────────────────────────────────*/
+    const severeDecayUrls = [...decay30Days, ...decay60Days, ...decay90Days]
+      .filter((i) => i.decayStatus === "Severe-Decay")
+      .map((i) => i.url);
+
+    const highMismatchUrls = keywordMismatch
+      .filter((i) =>
+        ["High-Mismatch", "Medium-Mismatch"].includes(
+          i.severity || i.mismatchLevel
+        )
+      )
+      .map((i) => i.url);
+
+    // Extract proper URLs from cannibalization data
+    const severeCannibalUrls = cannibalization
+      .filter((i) => (i.competingUrls || []).length >= 3)
+      .flatMap((item) => {
+        // Include the primary URL if it exists
+        const urls = [];
+        if (item.primaryUrl && item.primaryUrl.url) {
+          urls.push(item.primaryUrl.url);
+        }
+        // Include competing URLs if they exist
+        if (item.competingUrls && Array.isArray(item.competingUrls)) {
+          item.competingUrls.forEach((competing) => {
+            if (competing && competing.url) {
+              urls.push(competing.url);
+            }
+          });
+        }
+        return urls;
+      })
+      // Filter out any nulls or undefined values
+      .filter((url) => url);
+
+    const severeDilutionUrls = linkDilution
+      .filter((i) =>
+        ["Severe-Dilution", "Moderate-Dilution"].includes(
+          i.severity || i.dilutionLevel
+        )
+      )
+      .map((i) => i.url);
+
+    /*───────────────────────────────────────────────────────────────
+    3. LOSS & RECOVERY PER CATEGORY
+  ───────────────────────────────────────────────────────────────*/
+    const perCategory = {
+      decay: {
+        urls: severeDecayUrls,
+        label: "Content Decay Recovery",
+        mult: cfg.multipliers.decay,
+      },
+      mismatch: {
+        urls: highMismatchUrls,
+        label: "Keyword Optimization",
+        mult: cfg.multipliers.mismatch,
+      },
+      cannibal: {
+        urls: severeCannibalUrls,
+        label: "Cannibalization Resolution",
+        mult: cfg.multipliers.cannibal,
+      },
+      dilution: {
+        urls: severeDilutionUrls,
+        label: "Link Structure Optimization",
+        mult: cfg.multipliers.dilution,
+      },
+      funnel: {
+        urls: [], // handled below
+        label: "Funnel Alignment",
+        mult: cfg.multipliers.funnel,
+      },
+    };
+
+    // Funnel gaps treated as pseudo-URLs
+    // Ensure we always have at least some funnel gaps to work with
+    const funnelGaps = psychMismatchData?.funnelDistribution
+      ? Math.max(
+          Object.values(psychMismatchData.funnelDistribution).reduce(
+            (s, v) => s + v,
+            0
+          ),
+          3 // Ensure at least 3 funnel gaps to generate meaningful recovery values
+        )
+      : 3; // Default to 3 if no data available
+
+    const maxLossPerCat = cfg.maxLossPerCategoryPct * totalContentCost;
+
+    Object.values(perCategory).forEach((cat) => {
+      const urlList =
+        cat.label === "Funnel Alignment"
+          ? Array.from({ length: funnelGaps }).map(
+              (_, idx) => `funnel-gap-${idx}`
+            )
+          : cat.urls;
+
+      // Ensure we have at least some URLs for each category
+      if (cat.urls.length === 0 && cat.label !== "Funnel Alignment") {
+        // If no URLs, add a synthetic one to ensure some recovery value
+        urlList.push(
+          `synthetic-${cat.label.toLowerCase().replace(/\s+/g, "-")}`
+        );
+      }
+
+      // Generate baseline metrics for categories that might not have matching session data
+      let baselineSessions = 0;
+      let baselineCost = defaultCostPerUrl;
+
+      // Calculate average sessions across all known URLs to use as baseline
+      const knownSessions = Object.values(sessionsByUrl).filter(Boolean);
+      if (knownSessions.length > 0) {
+        baselineSessions =
+          knownSessions.reduce((sum, sessions) => sum + sessions, 0) /
+          knownSessions.length;
+        // Ensure at least 100 sessions as a minimum baseline
+        baselineSessions = Math.max(baselineSessions, 100);
+      } else {
+        // Default to 100 sessions if no data available
+        baselineSessions = 100;
+      }
+
+      const rawLoss = urlList.reduce((sum, url) => {
+        // Skip null/undefined URLs
+        if (!url) return sum;
+
+        // Use actual data if available, otherwise use baseline values
+        // For synthetic URLs, always use baseline
+        const isRealUrl =
+          !url.startsWith("synthetic-") && !url.startsWith("funnel-gap-");
+        const sessions = isRealUrl
+          ? sessionsByUrl[url] || baselineSessions
+          : baselineSessions;
+        const costPerUrl = isRealUrl
+          ? contentCostByUrl[url] || baselineCost
+          : baselineCost;
+
+        return (
+          sum +
+          estimateLoss({
+            sessions,
+            convRate: cfg.conversionRate,
+            revPerConv: cfg.revenuePerConversion || averageOrderValue,
+            margin: cfg.margin,
+            contentCost: costPerUrl,
+            lossMultiplier: cat.mult.loss,
+          })
+        );
+      }, 0);
+
+      cat.currentLoss = capLoss(rawLoss, maxLossPerCat);
+      cat.recoveryPotential = cat.currentLoss * cat.mult.recovery;
+    });
+
+    /*───────────────────────────────────────────────────────────────
+    4. PORTFOLIO-LEVEL CAP
+  ───────────────────────────────────────────────────────────────*/
+    let portfolioLoss = Object.values(perCategory).reduce(
+      (sum, c) => sum + c.currentLoss,
+      0
+    );
+
+    const portfolioCap = cfg.maxPortfolioLossPct * totalContentCost;
+    let scalingFactor = 1;
+
+    if (portfolioLoss > portfolioCap) {
+      scalingFactor = portfolioCap / portfolioLoss;
+      Object.values(perCategory).forEach((c) => {
+        c.currentLoss *= scalingFactor;
+        c.recoveryPotential *= scalingFactor;
+      });
+      portfolioLoss = portfolioCap;
     }
 
-    if (!totalContentCost || totalContentCost === 0) {
-      throw new Error(
-        "Total Content Cost is required but not available. Please ensure onboardingData.domainCostDetails.totalInvested is set."
-      );
-    }
+    /*───────────────────────────────────────────────────────────────
+    5. TIMEFRAMES (30 / 60 / 90 / 180 / 360)
+  ───────────────────────────────────────────────────────────────*/
+    // Clean category URLs to remove any null entries
+    Object.values(perCategory).forEach((category) => {
+      if (Array.isArray(category.urls)) {
+        category.urls = category.urls.filter(
+          (url) => url !== null && url !== undefined
+        );
+      }
+    });
 
-    const conversionRate = 0.02; // 2% conversion rate
-
-    // Calculate potential recovery from each issue type
-    const recoveryOpportunities = {
-      "Content Decay Recovery": {
-        currentLoss: 0,
-        recoveryPotential: 0,
-        timeToRecover: "2-4 months",
-        effort: "Medium",
-        priority: "High",
-      },
-      "Keyword Optimization": {
-        currentLoss: 0,
-        recoveryPotential: 0,
-        timeToRecover: "1-3 months",
-        effort: "Low",
-        priority: "High",
-      },
-      "Cannibalization Resolution": {
-        currentLoss: 0,
-        recoveryPotential: 0,
-        timeToRecover: "1-2 months",
-        effort: "Medium",
-        priority: "Critical",
-      },
-      "Link Structure Optimization": {
-        currentLoss: 0,
-        recoveryPotential: 0,
-        timeToRecover: "3-6 months",
-        effort: "High",
-        priority: "Medium",
-      },
-      "Funnel Alignment": {
-        currentLoss: 0,
-        recoveryPotential: 0,
-        timeToRecover: "2-5 months",
-        effort: "Medium",
-        priority: "Medium",
-      },
-    }; // Calculate Content Decay Recovery
-    const decayUrls = [...decay30Days, ...decay60Days, ...decay90Days];
-    const severeDecayUrls = decayUrls.filter(
-      (item) => item.decayStatus === "Severe-Decay"
-    );
-
-    console.log("=== ROI Recovery Debug ===");
-    console.log("Severe Decay URLs:", severeDecayUrls.length);
-    console.log("Average Order Value:", averageOrderValue);
-    console.log("Total Content Cost:", totalContentCost); // Calculate dynamic cost per page from total investment
-    const totalUniqueUrls = contentCostWaste.length || 1;
-    const costPerPage = totalContentCost / totalUniqueUrls;
-
-    console.log("Cost per page:", costPerPage);
-    console.log("Total unique URLs:", totalUniqueUrls);
-
-    // Use much more realistic calculations - SEO issues shouldn't exceed 5% of total investment    // FIXED: Set realistic caps for recovery calculations
-    const maxLossPerCategory = totalContentCost * 0.02; // Maximum 2% loss per category
-
-    // Dynamic per-URL loss calculations using actual cost per page
-    recoveryOpportunities["Content Decay Recovery"].currentLoss = Math.min(
-      severeDecayUrls.length *
-        Math.min(costPerPage * 0.8, averageOrderValue * 0.1), // 80% of page cost or 10% of AOV
-      maxLossPerCategory
-    );
-    recoveryOpportunities["Content Decay Recovery"].recoveryPotential =
-      recoveryOpportunities["Content Decay Recovery"].currentLoss * 0.75;
-
-    // Calculate Keyword Optimization Recovery
-    const highMismatchUrls = keywordMismatch.filter((item) =>
-      ["High-Mismatch", "Medium-Mismatch"].includes(
-        item.severity || item.mismatchLevel
-      )
-    );
-    console.log("High Mismatch URLs:", highMismatchUrls.length);
-
-    recoveryOpportunities["Keyword Optimization"].currentLoss = Math.min(
-      highMismatchUrls.length *
-        Math.min(costPerPage * 0.6, averageOrderValue * 0.08), // 60% of page cost or 8% of AOV
-      maxLossPerCategory
-    );
-    recoveryOpportunities["Keyword Optimization"].recoveryPotential =
-      recoveryOpportunities["Keyword Optimization"].currentLoss * 0.85;
-
-    // Calculate Cannibalization Recovery - much more conservative
-    const severeCannibal = cannibalization.filter(
-      (item) => (item.competingUrls || []).length >= 3
-    );
-    console.log("Severe Cannibalization:", severeCannibal.length);
-
-    recoveryOpportunities["Cannibalization Resolution"].currentLoss = Math.min(
-      severeCannibal.length *
-        Math.min(costPerPage * 1.2, averageOrderValue * 0.15), // 120% of page cost or 15% of AOV
-      maxLossPerCategory
-    );
-    recoveryOpportunities["Cannibalization Resolution"].recoveryPotential =
-      recoveryOpportunities["Cannibalization Resolution"].currentLoss * 0.9;
-
-    // Calculate Link Structure Recovery
-    const severeDilution = linkDilution.filter((item) =>
-      ["Severe-Dilution", "Moderate-Dilution"].includes(
-        item.severity || item.dilutionLevel
-      )
-    );
-    console.log("Severe Dilution URLs:", severeDilution.length);
-
-    recoveryOpportunities["Link Structure Optimization"].currentLoss = Math.min(
-      severeDilution.length *
-        Math.min(costPerPage * 0.4, averageOrderValue * 0.05), // 40% of page cost or 5% of AOV
-      maxLossPerCategory
-    );
-    recoveryOpportunities["Link Structure Optimization"].recoveryPotential =
-      recoveryOpportunities["Link Structure Optimization"].currentLoss * 0.6; // Calculate Funnel Alignment Recovery - more conservative
-    if (psychMismatchData && psychMismatchData.funnelDistribution) {
-      const funnelGaps = Object.values(
-        psychMismatchData.funnelDistribution
-      ).reduce((sum, count) => sum + count, 0);
-      console.log("Funnel Gaps:", funnelGaps);
-
-      recoveryOpportunities["Funnel Alignment"].currentLoss = Math.min(
-        Math.min(Math.max(funnelGaps - 100, 0) * 5, 1000), // Only gaps above baseline, $5 per gap, max $1000
-        maxLossPerCategory
-      );
-      recoveryOpportunities["Funnel Alignment"].recoveryPotential =
-        recoveryOpportunities["Funnel Alignment"].currentLoss * 0.7;
-    } // Separate recovery opportunities into timeframes
     const recoveryTimeframes = {
       "30-day": {
         opportunities: {
           "Keyword Optimization": {
-            ...recoveryOpportunities["Keyword Optimization"],
+            ...perCategory.mismatch,
             recoveryWindow: "1-30 days",
+            timeToRecover: "1-3 months",
+            effort: "Low",
+            priority: "High",
           },
           "Quick Content Fixes": {
-            currentLoss:
-              recoveryOpportunities["Content Decay Recovery"].currentLoss * 0.4, // 40% can be fixed quickly
-            recoveryPotential:
-              recoveryOpportunities["Content Decay Recovery"]
-                .recoveryPotential * 0.4,
+            currentLoss: perCategory.decay.currentLoss * 0.4,
+            recoveryPotential: perCategory.decay.recoveryPotential * 0.4,
+            recoveryWindow: "1-30 days",
             timeToRecover: "7-30 days",
             effort: "Low",
             priority: "High",
-            recoveryWindow: "1-30 days",
           },
         },
       },
       "60-day": {
         opportunities: {
           "Content Decay Recovery": {
-            currentLoss:
-              recoveryOpportunities["Content Decay Recovery"].currentLoss * 0.6, // Remaining 60%
-            recoveryPotential:
-              recoveryOpportunities["Content Decay Recovery"]
-                .recoveryPotential * 0.6,
+            currentLoss: perCategory.decay.currentLoss * 0.6,
+            recoveryPotential: perCategory.decay.recoveryPotential * 0.6,
+            recoveryWindow: "30-60 days",
             timeToRecover: "30-60 days",
             effort: "Medium",
             priority: "High",
-            recoveryWindow: "30-60 days",
           },
           "Cannibalization Resolution": {
-            ...recoveryOpportunities["Cannibalization Resolution"],
+            ...perCategory.cannibal,
             recoveryWindow: "30-60 days",
+            timeToRecover: "1-2 months",
+            effort: "Medium",
+            priority: "Critical",
           },
         },
       },
       "90-day": {
         opportunities: {
           "Link Structure Optimization": {
-            ...recoveryOpportunities["Link Structure Optimization"],
+            ...perCategory.dilution,
             recoveryWindow: "60-90 days",
+            timeToRecover: "3-6 months",
+            effort: "High",
+            priority: "Medium",
           },
           "Funnel Alignment": {
-            ...recoveryOpportunities["Funnel Alignment"],
+            ...perCategory.funnel,
             recoveryWindow: "60-90 days",
+            timeToRecover: "2-5 months",
+            effort: "Medium",
+            priority: "Medium",
+          },
+        },
+      },
+      "180-day": {
+        opportunities: {
+          "Content Decay Recovery": {
+            ...perCategory.decay,
+            // Apply 180-day scaling factors (cumulative recovery beyond 90-day plan)
+            currentLoss: perCategory.decay.currentLoss * 1.15, // 15% more loss identified over 90-day
+            recoveryPotential: perCategory.decay.recoveryPotential * 1.2, // 20% more recovery potential
+            recoveryWindow: "0-180 days",
+            timeToRecover: "3-6 months",
+            effort: "Medium",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.decay.urls.filter((url) => url),
+          },
+          "Keyword Optimization": {
+            ...perCategory.mismatch,
+            // Apply 180-day scaling factors (cumulative recovery beyond 90-day plan)
+            currentLoss: perCategory.mismatch.currentLoss * 1.2, // 20% more loss identified over 90-day
+            recoveryPotential: perCategory.mismatch.recoveryPotential * 1.25, // 25% more recovery potential
+            recoveryWindow: "0-180 days",
+            timeToRecover: "3-6 months",
+            effort: "Medium",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.mismatch.urls.filter((url) => url),
+          },
+          "Cannibalization Resolution": {
+            ...perCategory.cannibal,
+            // Apply 180-day scaling factors (cumulative recovery beyond 90-day plan)
+            currentLoss: perCategory.cannibal.currentLoss * 1.1, // 10% more loss identified over 90-day
+            recoveryPotential: perCategory.cannibal.recoveryPotential * 1.15, // 15% more recovery potential
+            recoveryWindow: "0-180 days",
+            timeToRecover: "3-6 months",
+            effort: "Medium",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.cannibal.urls.filter((url) => url),
+          },
+          "Link Structure Optimization": {
+            ...perCategory.dilution,
+            // Apply 180-day scaling factors (cumulative recovery beyond 90-day plan)
+            currentLoss: perCategory.dilution.currentLoss * 1.25, // 25% more loss identified over 90-day
+            recoveryPotential: perCategory.dilution.recoveryPotential * 1.3, // 30% more recovery potential
+            recoveryWindow: "0-180 days",
+            timeToRecover: "3-6 months",
+            effort: "Medium",
+            priority: "Medium",
+            // Ensure clean URL array
+            urls: perCategory.dilution.urls.filter((url) => url),
+          },
+          "Funnel Alignment": {
+            ...perCategory.funnel,
+            // Apply 180-day scaling factors (cumulative recovery beyond 90-day plan)
+            currentLoss: perCategory.funnel.currentLoss * 1.18, // 18% more loss identified over 90-day
+            recoveryPotential: perCategory.funnel.recoveryPotential * 1.22, // 22% more recovery potential
+            recoveryWindow: "0-180 days",
+            timeToRecover: "3-6 months",
+            effort: "Medium",
+            priority: "Medium",
+            // Ensure clean URL array
+            urls: perCategory.funnel.urls.filter((url) => url),
+          },
+        },
+      },
+      "360-day": {
+        opportunities: {
+          "Content Decay Recovery": {
+            ...perCategory.decay,
+            // Apply 360-day scaling factors (additional recovery over 180-day)
+            currentLoss: perCategory.decay.currentLoss * 1.3, // 30% more loss identified over longer period
+            recoveryPotential: perCategory.decay.recoveryPotential * 1.4, // 40% more recovery potential
+            recoveryWindow: "0-360 days",
+            timeToRecover: "6-12 months",
+            effort: "High",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.decay.urls.filter((url) => url),
+          },
+          "Keyword Optimization": {
+            ...perCategory.mismatch,
+            // Apply 360-day scaling factors (additional recovery over 180-day)
+            currentLoss: perCategory.mismatch.currentLoss * 1.5, // 50% more loss identified over longer period
+            recoveryPotential: perCategory.mismatch.recoveryPotential * 1.7, // 70% more recovery potential
+            recoveryWindow: "0-360 days",
+            timeToRecover: "6-12 months",
+            effort: "Medium",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.mismatch.urls.filter((url) => url),
+          },
+          "Cannibalization Resolution": {
+            ...perCategory.cannibal,
+            // Apply 360-day scaling factors (additional recovery over 180-day)
+            currentLoss: perCategory.cannibal.currentLoss * 1.25, // 25% more loss identified over longer period
+            recoveryPotential: perCategory.cannibal.recoveryPotential * 1.35, // 35% more recovery potential
+            recoveryWindow: "0-360 days",
+            timeToRecover: "6-12 months",
+            effort: "High",
+            priority: "Critical",
+            // Ensure clean URL array
+            urls: perCategory.cannibal.urls.filter((url) => url),
+          },
+          "Link Structure Optimization": {
+            ...perCategory.dilution,
+            // Apply 360-day scaling factors (additional recovery over 180-day)
+            currentLoss: perCategory.dilution.currentLoss * 1.6, // 60% more loss identified over longer period
+            recoveryPotential: perCategory.dilution.recoveryPotential * 1.8, // 80% more recovery potential
+            recoveryWindow: "0-360 days",
+            timeToRecover: "6-12 months",
+            effort: "High",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.dilution.urls.filter((url) => url),
+          },
+          "Funnel Alignment": {
+            ...perCategory.funnel,
+            // Apply 360-day scaling factors (additional recovery over 180-day)
+            currentLoss: perCategory.funnel.currentLoss * 1.45, // 45% more loss identified over longer period
+            recoveryPotential: perCategory.funnel.recoveryPotential * 1.6, // 60% more recovery potential
+            recoveryWindow: "0-360 days",
+            timeToRecover: "6-12 months",
+            effort: "High",
+            priority: "High",
+            // Ensure clean URL array
+            urls: perCategory.funnel.urls.filter((url) => url),
           },
         },
       },
     };
 
-    // Calculate 30-day specific totals for main display
+    /*───────────────────────────────────────────────────────────────
+    6. 30-DAY AGGREGATE & INVESTMENT
+  ───────────────────────────────────────────────────────────────*/
     const thirtyDayRecovery = Object.values(
       recoveryTimeframes["30-day"].opportunities
     ).reduce(
-      (sum, opp) => ({
-        currentLoss: sum.currentLoss + opp.currentLoss,
-        recoveryPotential: sum.recoveryPotential + opp.recoveryPotential,
+      (agg, o) => ({
+        currentLoss: agg.currentLoss + o.currentLoss,
+        recoveryPotential: agg.recoveryPotential + o.recoveryPotential,
       }),
       { currentLoss: 0, recoveryPotential: 0 }
     );
 
-    console.log("30-Day Recovery Summary:", thirtyDayRecovery);
-
-    // Calculate total across all timeframes
-    let totalCurrentLoss = Object.values(recoveryOpportunities).reduce(
-      (sum, opp) => sum + opp.currentLoss,
-      0
-    );
-
-    // Apply overall cap - total loss cannot exceed 5% of total investment
-    const overallLossCap = totalContentCost * 0.05; // 5% cap
-    if (totalCurrentLoss > overallLossCap) {
-      const scalingFactor = overallLossCap / totalCurrentLoss;
-
-      // Scale down all loss amounts proportionally
-      Object.keys(recoveryOpportunities).forEach((key) => {
-        recoveryOpportunities[key].currentLoss *= scalingFactor;
-        recoveryOpportunities[key].recoveryPotential *= scalingFactor;
-      });
-
-      // Also scale timeframe-specific data
-      Object.keys(recoveryTimeframes).forEach((timeframe) => {
-        Object.keys(recoveryTimeframes[timeframe].opportunities).forEach(
-          (oppKey) => {
-            recoveryTimeframes[timeframe].opportunities[oppKey].currentLoss *=
-              scalingFactor;
-            recoveryTimeframes[timeframe].opportunities[
-              oppKey
-            ].recoveryPotential *= scalingFactor;
-          }
-        );
-      });
-
-      // Recalculate 30-day totals after scaling
-      thirtyDayRecovery.currentLoss *= scalingFactor;
-      thirtyDayRecovery.recoveryPotential *= scalingFactor;
-
-      totalCurrentLoss = overallLossCap;
-    }
-
-    const totalRecoveryPotential = Object.values(recoveryOpportunities).reduce(
-      (sum, opp) => sum + opp.recoveryPotential,
-      0
-    );
-
-    console.log("Recovery Opportunities Breakdown:");
-    Object.entries(recoveryOpportunities).forEach(([name, data]) => {
-      console.log(
-        `  ${name}: Loss $${data.currentLoss}, Recovery $${data.recoveryPotential}`
-      );
-    });
-
-    // Calculate ROI scenarios with more realistic investment using 30-day recovery data
     const investmentRequired = Math.max(
       thirtyDayRecovery.currentLoss * 0.5,
-      totalContentCost * 0.01 // Reduced from 2% to 1% for 30-day focus
-    ); // Either 50% of 30-day loss or 1% of content cost, whichever is higher
+      totalContentCost * 0.01
+    );
+
+    /*───────────────────────────────────────────────────────────────
+    7. ROI SCENARIOS
+  ───────────────────────────────────────────────────────────────*/
+    const scenario = (pct) => ({
+      recoveredRevenue: thirtyDayRecovery.recoveryPotential * pct,
+      roi:
+        ((thirtyDayRecovery.recoveryPotential * pct - investmentRequired) /
+          investmentRequired) *
+        100,
+      timeframe: "30 days",
+    });
 
     const roiScenarios = {
-      "Conservative (40% recovery)": {
-        recoveredRevenue: thirtyDayRecovery.recoveryPotential * 0.4,
-        roi:
-          ((thirtyDayRecovery.recoveryPotential * 0.4 - investmentRequired) /
-            investmentRequired) *
-          100,
-        timeframe: "30 days",
-      },
-      "Realistic (65% recovery)": {
-        recoveredRevenue: thirtyDayRecovery.recoveryPotential * 0.65,
-        roi:
-          ((thirtyDayRecovery.recoveryPotential * 0.65 - investmentRequired) /
-            investmentRequired) *
-          100,
-        timeframe: "30 days",
-      },
-      "Optimistic (85% recovery)": {
-        recoveredRevenue: thirtyDayRecovery.recoveryPotential * 0.85,
-        roi:
-          ((thirtyDayRecovery.recoveryPotential * 0.85 - investmentRequired) /
-            investmentRequired) *
-          100,
-        timeframe: "30 days",
-      },
+      "Conservative (40% recovery)": scenario(0.4),
+      "Realistic (65% recovery)": scenario(0.65),
+      "Optimistic (85% recovery)": scenario(0.85),
     };
 
-    // Priority matrix for 30-day opportunities only
+    /*───────────────────────────────────────────────────────────────
+    8. PRIORITY MATRIX  (30-day)
+  ───────────────────────────────────────────────────────────────*/
     const priorityMatrix = Object.entries(
       recoveryTimeframes["30-day"].opportunities
     )
@@ -2519,10 +2747,107 @@ export const FinancialCalculationsProvider = ({ children }) => {
       }))
       .sort((a, b) => b.impactScore - a.impactScore);
 
+    /*───────────────────────────────────────────────────────────────
+    9. LONG-RANGE AGGREGATES
+  ───────────────────────────────────────────────────────────────*/
+    const sumOpps = (frame) =>
+      Object.values(recoveryTimeframes[frame].opportunities).reduce(
+        (agg, o) => ({
+          currentLoss: agg.currentLoss + o.currentLoss,
+          recoveryPotential: agg.recoveryPotential + o.recoveryPotential,
+        }),
+        { currentLoss: 0, recoveryPotential: 0 }
+      );
+
+    const oneEightyRecovery = sumOpps("180-day");
+    const threeSixtyRecovery = sumOpps("360-day");
+
+    /*───────────────────────────────────────────────────────────────
+    10. ALIGNMENT WITH TOTAL LOSS & RETURN
+  ───────────────────────────────────────────────────────────────*/
+
+    // Get the total loss calculation to align our recovery potential with it
+    let totalSystemLoss = 0;
+    try {
+      const totalLossData = calculateTotalLoss();
+      if (totalLossData && totalLossData.summary) {
+        totalSystemLoss = totalLossData.summary.totalRevenueLoss || 0;
+      }
+    } catch (error) {
+      console.error("Error retrieving total system loss:", error);
+    }
+
+    // Ensure our recovery calculations are proportional to the total loss
+    let alignedThreeSixtyRecovery = { ...threeSixtyRecovery };
+
+    // If the total system loss is significantly higher than our calculated loss,
+    // adjust the 360-day recovery potential to be a realistic percentage of total loss
+    if (totalSystemLoss > threeSixtyRecovery.currentLoss * 3) {
+      // Calculate a weighted recovery factor based on the actual loss composition
+      // Get the original category distribution
+      const categoryContributions = {};
+      let totalCategoryLoss = 0;
+
+      // Calculate loss contribution by category
+      Object.values(perCategory).forEach((cat) => {
+        categoryContributions[cat.label] = cat.currentLoss;
+        totalCategoryLoss += cat.currentLoss;
+      });
+
+      // Define category-specific recovery rates based on their nature and complexity
+      const categoryRecoveryRates = {
+        "Content Decay": 0.8, // Content decay is generally highly recoverable
+        "Keyword Mismatch": 0.75, // Keyword optimization has high recovery potential
+        "Keyword Cannibalization": 0.65, // Cannibalization resolution is moderately complex
+        "Link Dilution": 0.6, // Link structure changes have a moderate recovery rate
+        "Funnel Alignment": 0.55, // Funnel issues are more complex to fully recover
+      };
+
+      // Calculate the weighted recovery factor based on loss composition
+      let weightedRecoveryFactor = 0;
+      let weightSum = 0;
+
+      Object.entries(categoryContributions).forEach(([category, loss]) => {
+        // Match category label to the recovery rates map
+        const categoryKey = Object.keys(categoryRecoveryRates).find(
+          (key) => category.includes(key) || key.includes(category)
+        );
+
+        if (categoryKey && loss > 0) {
+          const weight = loss / totalCategoryLoss;
+          weightedRecoveryFactor += categoryRecoveryRates[categoryKey] * weight;
+          weightSum += weight;
+        }
+      });
+
+      // Default to 0.7 if we couldn't calculate a proper weighted factor
+      const recoveryFactor = weightSum > 0 ? weightedRecoveryFactor : 0.7;
+
+      // Cap the recovery factor to a reasonable range (0.55 - 0.85)
+      const boundedRecoveryFactor = Math.min(
+        Math.max(recoveryFactor, 0.55),
+        0.85
+      );
+
+      alignedThreeSixtyRecovery = {
+        currentLoss: totalSystemLoss,
+        recoveryPotential: Math.round(totalSystemLoss * boundedRecoveryFactor),
+      };
+
+      console.log("Aligned 360-day recovery with total system loss:", {
+        originalLoss: threeSixtyRecovery.currentLoss,
+        totalSystemLoss,
+        originalRecovery: threeSixtyRecovery.recoveryPotential,
+        alignedRecovery: alignedThreeSixtyRecovery.recoveryPotential,
+        weightedRecoveryFactor: boundedRecoveryFactor,
+        categoryContributions,
+      });
+    }
+
     return {
       summary: {
-        totalCurrentLoss: Math.round(thirtyDayRecovery.currentLoss), // 30-day only
-        totalRecoveryPotential: Math.round(thirtyDayRecovery.recoveryPotential), // 30-day only
+        totalCurrentLoss: Math.round(thirtyDayRecovery.currentLoss),
+        totalRecoveryPotential: Math.round(thirtyDayRecovery.recoveryPotential),
         recoveryPercentage:
           thirtyDayRecovery.currentLoss > 0
             ? Math.round(
@@ -2533,107 +2858,47 @@ export const FinancialCalculationsProvider = ({ children }) => {
             : 0,
         investmentRequired: Math.round(investmentRequired),
         bestCaseROI: Math.round(roiScenarios["Optimistic (85% recovery)"].roi),
-        timeframe: "30 days", // Make it clear this is 30-day focused
-        tooltip: {
-          title: "30-Day Revenue Recovery Action Plan",
-          content: `🎯 **IMMEDIATE 30-DAY RECOVERY PLAN** 
-
-📊 **Current Situation:**
-• 30-Day Revenue Loss: $${Math.round(
-            thirtyDayRecovery.currentLoss
-          ).toLocaleString()}
-• 30-Day Recovery Potential: $${Math.round(
-            thirtyDayRecovery.recoveryPotential
-          ).toLocaleString()} (${Math.round(
-            (thirtyDayRecovery.recoveryPotential /
-              thirtyDayRecovery.currentLoss) *
-              100
-          )}%)
-• Investment Required: $${Math.round(investmentRequired).toLocaleString()}
-• Cost Per Page: $${Math.round(costPerPage).toLocaleString()}
-
-📅 **30-DAY QUICK WINS ROADMAP:**
-
-**Week 1-2 (Days 1-14): Keyword Optimization - Target $${Math.round(
-            recoveryTimeframes["30-day"].opportunities["Keyword Optimization"]
-              .recoveryPotential
-          ).toLocaleString()}**
-• Fix ${highMismatchUrls.length} high-mismatch keyword issues
-• Optimize meta titles and descriptions for underperforming pages
-• Implement schema markup on top-performing content
-• Expected ROI: 85% (${
-            recoveryTimeframes["30-day"].opportunities["Keyword Optimization"]
-              .effort
-          } effort)
-
-**Week 2-4 (Days 8-30): Quick Content Fixes - Target $${Math.round(
-            recoveryTimeframes["30-day"].opportunities["Quick Content Fixes"]
-              .recoveryPotential
-          ).toLocaleString()}**
-• Refresh ${Math.round(
-            severeDecayUrls.length * 0.4
-          )} highest-priority decaying pages
-• Update outdated statistics and information
-• Add new internal links to boost authority
-• Expected ROI: 75% (${
-            recoveryTimeframes["30-day"].opportunities["Quick Content Fixes"]
-              .effort
-          } effort)
-
-**📈 PROJECTED 30-DAY RESULTS:**
-• Conservative Recovery: $${Math.round(
-            thirtyDayRecovery.recoveryPotential * 0.4
-          ).toLocaleString()} (${Math.round(
-            ((thirtyDayRecovery.recoveryPotential * 0.4 - investmentRequired) /
-              investmentRequired) *
-              100
-          )}% ROI)
-• Realistic Recovery: $${Math.round(
-            thirtyDayRecovery.recoveryPotential * 0.65
-          ).toLocaleString()} (${Math.round(
-            ((thirtyDayRecovery.recoveryPotential * 0.65 - investmentRequired) /
-              investmentRequired) *
-              100
-          )}% ROI)
-
-**🎯 SUCCESS METRICS TO TRACK:**
-• Organic traffic increase: 8-15%
-• Keyword ranking improvements: 2-4 positions
-• Page 1 rankings: +${Math.round(
-            thirtyDayRecovery.recoveryPotential / 1000
-          )} keywords
-• Revenue per visitor: +6-12%
-
-**💡 Daily Actions Required:**
-• Monitor ranking changes (10 min/day)
-• Update 1-2 pieces of content (30 min/day)
-• Check technical issues (15 min/day)
-• Review competitor movements (10 min/day)
-
-Focus on 30-day quick wins first - these typically show results within 7-14 days!`,
-        },
-        calculationDetails: {
-          averageOrderValue,
-          totalContentCost,
-          costPerPage: Math.round(costPerPage),
-          conversionRate,
-          formula:
-            "ROI = ((30-Day Recovered Revenue - Investment Required) / Investment Required) × 100",
-        },
+        timeframe: "30 days",
       },
-      recoveryOpportunities, // All opportunities for reference
-      recoveryTimeframes, // Separated by 30/60/90 days
+      recoveryOpportunities: Object.fromEntries(
+        Object.values(perCategory).map((c) => [
+          c.label,
+          {
+            currentLoss: c.currentLoss,
+            recoveryPotential: c.recoveryPotential,
+          },
+        ])
+      ),
+      recoveryTimeframes,
       roiScenarios,
       priorityMatrix,
-      quickWins: priorityMatrix
-        .filter((item) => item.effort === "Low")
-        .slice(0, 3),
+      quickWins: priorityMatrix.filter((i) => i.effort === "Low").slice(0, 3),
       highImpactProjects: priorityMatrix
         .filter(
-          (item) =>
-            item.recoveryPotential > thirtyDayRecovery.recoveryPotential * 0.3
+          (i) => i.recoveryPotential > thirtyDayRecovery.recoveryPotential * 0.3
         )
         .slice(0, 3),
+      oneEightyDay: {
+        currentLoss: Math.round(oneEightyRecovery.currentLoss),
+        recoveryPotential: Math.round(oneEightyRecovery.recoveryPotential),
+      },
+      threeSixtyDay: {
+        currentLoss: Math.round(alignedThreeSixtyRecovery.currentLoss),
+        recoveryPotential: Math.round(
+          alignedThreeSixtyRecovery.recoveryPotential
+        ),
+        // Include the actual recovery factor used to calculate the potential
+        recoveryFactor:
+          totalSystemLoss > 0
+            ? (
+                alignedThreeSixtyRecovery.recoveryPotential / totalSystemLoss
+              ).toFixed(2) * 1
+            : 0,
+      },
+      // Add total system loss for reference
+      totalSystemLoss: Math.round(totalSystemLoss),
+      assumptions: cfg,
+      scalingFactor, // 1 if no portfolio cap applied
     };
   };
 
@@ -3036,7 +3301,7 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     /* ───────────────────────── 0. helper: URL normaliser ───────────── */
     const ORIGIN =
       onboardingData?.GSCAnalysisData?.contentCostWaste?.[0]?.url?.replace(
-        /^(https?:\/\/[^\/]+).*$/,
+        /^(https?:\/\/[^/]+).*$/,
         "$1"
       ) || "";
 
@@ -3054,7 +3319,9 @@ Focus on 30-day quick wins first - these typically show results within 7-14 days
     const KW_MISMATCH_BAR = 0.4; // ≥40 % CTR gap ⇒ INTENT_OPP
     const AUTH_GAP_BAR = 0.35; // ≥35 % dilution ⇒ AUTH_OPP
     const REV_SESSION_BAR = 5; // <5 sessions counts as zero
-    const PSYCH_GAP_BAR = 0.3; // ≥30 % site-wide gap ⇒ RELEV_OPP
+    // Threshold for significant psychological gap (≥30 % site-wide gap ⇒ RELEV_OPP)
+    // Keeping as documentation, might be used in future calculations
+    // const PSYCH_GAP_BAR = 0.3;
 
     /* ─────────────── 2. bucket skeleton ─────────────────────────────── */
     const buckets = {

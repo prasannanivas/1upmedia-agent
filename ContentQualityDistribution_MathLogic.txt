@@ -1,0 +1,62 @@
+# Math Logic Explanation for getContentQualityDistribution
+
+This document explains the mathematical logic and calculations used in the `getContentQualityDistribution` function.
+
+---
+
+## 1. Inputs and Initial Checks
+- **averageOrderValue (AOV):** From calculations or onboarding data.
+- **totalContentCost:** From calculations or onboarding data.
+- **conversionRate:** Fixed at 2% (0.02).
+- **totalUniqueUrls:** Number of unique URLs (from contentCostWaste array).
+- **costPerUrl:** `totalContentCost / totalUniqueUrls`
+
+---
+
+## 2. Quality Categories
+- Defines 5 categories: Excellent (90-100), Good (75-89), Average (60-74), Poor (40-59), Critical (0-39).
+- Each URL is assigned a quality score and placed in a category.
+
+---
+
+## 3. Quality Score Calculation (Per URL)
+- Each URL starts at 100 points.
+- Penalties are subtracted for each issue:
+  - **Decay Penalty:** If the URL has decay, a penalty is applied based on severity.
+  - **Mismatch Penalty:** If the URL has a keyword mismatch, a penalty is applied based on severity.
+  - **Cannibalization Penalty:** If the URL is involved in cannibalization, a penalty is applied based on severity.
+  - **Dilution Penalty:** If the URL has link dilution, a penalty is applied based on severity.
+- **Minimum score is 0.**
+
+---
+
+## 4. Revenue Loss Calculation (Per URL)
+- For each issue, a revenue loss is estimated and summed for the URL.
+- **totalRevenueLoss:** Sum of all revenue losses across URLs.
+
+---
+
+## 5. Distribution and Grading
+- Calculates the count and percentage of URLs in each quality category.
+- Maps categories to A-D grades:
+  - A: Excellent
+  - B: Good
+  - C: Average
+  - D: Poor + Critical
+- Calculates grade distribution and percentages.
+
+---
+
+## 6. Output
+- Returns a summary with:
+  - Total URLs analyzed
+  - Average quality score
+  - Total revenue loss
+  - Quality grade (A-D)
+  - Cost per URL
+  - Distribution and grade breakdowns
+  - Lists of worst and best performers
+
+---
+
+**This logic provides a comprehensive, multi-factor quality assessment for all content URLs, with clear grading and loss estimates.**

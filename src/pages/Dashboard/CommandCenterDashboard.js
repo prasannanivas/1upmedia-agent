@@ -58,6 +58,8 @@ const CommandCenterDashboard = () => {
     "30-day": false,
     "60-day": false,
     "90-day": false,
+    "180-day": false,
+    "360-day": false,
   });
 
   // Toggle function for individual plans
@@ -240,8 +242,11 @@ const CommandCenterDashboard = () => {
           roiRecoveryData?.summary?.totalRecoveryPotential || 0,
         recoveryTimeframe,
         recoveryTrend,
-        // Full recovery breakdown for 30/60/90 day display
+        // Full recovery breakdown for 30/60/90/180/360 day display
         recoveryTimeframes: roiRecoveryData?.recoveryTimeframes || {},
+        // Include the threeSixtyDay data and totalSystemLoss for the 360-day view
+        threeSixtyDay: roiRecoveryData?.threeSixtyDay || {},
+        totalSystemLoss: roiRecoveryData?.totalSystemLoss || 0,
         roiRecoveryTooltip: roiRecoveryData?.summary?.tooltip || {},
 
         // KPI Grid using context data
@@ -327,11 +332,9 @@ const CommandCenterDashboard = () => {
     getCannibalizationLoss,
     funnelGapIdentifier,
     getContentQualityDistribution,
+    calculateTotalLoss,
     getMoodyCreditScore,
     getROIRecoveryPotential,
-    expandedPlans,
-    isRecoveryBreakdownExpanded,
-    togglePlan,
   ]);
 
   if (loading) {
@@ -868,6 +871,276 @@ const CommandCenterDashboard = () => {
                           in domain authority, 40-60% boost in qualified lead
                           generation, and sustainable long-term growth
                           foundation.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* 180-Day Recovery */}
+                <div className="recovery-period" data-period="180-day">
+                  <div className="period-header">
+                    <span className="period-label">180 Days</span>
+                    <span className="period-amount">
+                      $
+                      {(
+                        Object.values(
+                          commandCenterData.recoveryTimeframes?.["180-day"]
+                            ?.opportunities || {}
+                        ).reduce(
+                          (sum, opp) => sum + (opp.recoveryPotential || 0),
+                          0
+                        ) || 0
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="period-opportunities">
+                    {Object.entries(
+                      commandCenterData.recoveryTimeframes?.["180-day"]
+                        ?.opportunities || {}
+                    ).map(([name, data]) => (
+                      <div key={name} className="opportunity-item">
+                        <span className="opportunity-name">{name}</span>
+                        <span className="opportunity-value">
+                          ${(data.recoveryPotential || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>{" "}
+                  <button
+                    className="view-plan-btn"
+                    onClick={() => togglePlan("180-day")}
+                  >
+                    {expandedPlans["180-day"]
+                      ? "Hide Plan"
+                      : "View 180-Day Plan"}
+                    {expandedPlans["180-day"] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {expandedPlans["180-day"] && (
+                    <div className="recovery-plan-content">
+                      <div className="plan-content">
+                        <h5>🚀 180-Day Full-Scale Transformation</h5>
+                        <div className="plan-section">
+                          <h6>
+                            Complete Content Strategy Overhaul (Month 1-3):
+                          </h6>
+                          <ul>
+                            <li>
+                              <strong>Content Decay Recovery:</strong>{" "}
+                              Comprehensive content refresh and update strategy
+                            </li>
+                            <li>
+                              <strong>Keyword Optimization:</strong> Full-scale
+                              keyword gap analysis and targeted content creation
+                            </li>
+                            <li>
+                              <strong>Cannibalization Resolution:</strong>{" "}
+                              Complete audit and consolidation of competing
+                              content
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="plan-section">
+                          <h6>
+                            Advanced Technical & Authority Building (Month 4-6):
+                          </h6>
+                          <ul>
+                            <li>
+                              <strong>Link Structure Optimization:</strong>{" "}
+                              End-to-end link architecture rebuilding and
+                              authority distribution
+                            </li>
+                            <li>
+                              <strong>Funnel Alignment:</strong> Complete
+                              conversion pathway optimization across all content
+                            </li>
+                            <li>
+                              <strong>Domain Authority Building:</strong>{" "}
+                              Strategic partnerships and comprehensive
+                              backlinking campaign
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="expected-results">
+                          <strong>Expected Results:</strong> 60-80% recovery of
+                          underperforming content value, 70-90% resolution of
+                          technical SEO issues, and establishment of sustainable
+                          growth systems.
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {/* 360-Day Recovery */}
+                <div className="recovery-period" data-period="360-day">
+                  <div className="period-header">
+                    <span className="period-label">360 Days</span>
+                    <span className="period-amount">
+                      $
+                      {
+                        // Use threeSixtyDay directly which includes the alignment with totalSystemLoss
+                        (
+                          commandCenterData.threeSixtyDay?.recoveryPotential ||
+                          Object.values(
+                            commandCenterData.recoveryTimeframes?.["360-day"]
+                              ?.opportunities || {}
+                          ).reduce(
+                            (sum, opp) => sum + (opp.recoveryPotential || 0),
+                            0
+                          ) ||
+                          0
+                        ).toLocaleString()
+                      }
+                    </span>
+                    {commandCenterData.totalSystemLoss && (
+                      <div
+                        className="recovery-note"
+                        style={{
+                          fontSize: "11px",
+                          marginTop: "4px",
+                          opacity: 0.8,
+                        }}
+                      >
+                        <div>
+                          {Math.round(
+                            (commandCenterData.threeSixtyDay
+                              ?.recoveryPotential /
+                              commandCenterData.totalSystemLoss) *
+                              100
+                          )}
+                          % of $
+                          {commandCenterData.totalSystemLoss?.toLocaleString()}{" "}
+                          total losses
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "10px",
+                            marginTop: "2px",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          Based on weighted analysis of your content issues
+                          <FinancialTooltip
+                            title="Recovery Factor Calculation"
+                            content={
+                              <div>
+                                <p>
+                                  This recovery potential is calculated using a
+                                  weighted analysis of your specific content
+                                  issues:
+                                </p>
+                                <ul
+                                  style={{
+                                    paddingLeft: "15px",
+                                    margin: "5px 0",
+                                  }}
+                                >
+                                  <li>Content Decay: Up to 80% recoverable</li>
+                                  <li>
+                                    Keyword Mismatch: Up to 75% recoverable
+                                  </li>
+                                  <li>
+                                    Cannibalization: Up to 65% recoverable
+                                  </li>
+                                  <li>Link Structure: Up to 60% recoverable</li>
+                                  <li>
+                                    Funnel Alignment: Up to 55% recoverable
+                                  </li>
+                                </ul>
+                                <p>
+                                  Your actual recovery factor is weighted based
+                                  on the proportion each issue contributes to
+                                  your total loss.
+                                </p>
+                              </div>
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="period-opportunities">
+                    {Object.entries(
+                      commandCenterData.recoveryTimeframes?.["360-day"]
+                        ?.opportunities || {}
+                    ).map(([name, data]) => (
+                      <div key={name} className="opportunity-item">
+                        <span className="opportunity-name">{name}</span>
+                        <span className="opportunity-value">
+                          ${(data.recoveryPotential || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>{" "}
+                  <button
+                    className="view-plan-btn"
+                    onClick={() => togglePlan("360-day")}
+                  >
+                    {expandedPlans["360-day"]
+                      ? "Hide Plan"
+                      : "View 360-Day Plan"}
+                    {expandedPlans["360-day"] ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </button>
+                  {expandedPlans["360-day"] && (
+                    <div className="recovery-plan-content">
+                      <div className="plan-content">
+                        <h5>🚀 360-Day Complete Digital Transformation</h5>
+                        <div className="plan-section">
+                          <h6>
+                            Holistic Content Ecosystem Development (Q1-Q2):
+                          </h6>
+                          <ul>
+                            <li>
+                              <strong>Content Decay Recovery:</strong> Full
+                              content inventory rebuild with predictive decay
+                              prevention
+                            </li>
+                            <li>
+                              <strong>Keyword Optimization:</strong>{" "}
+                              Comprehensive semantic topical authority
+                              development
+                            </li>
+                            <li>
+                              <strong>Cannibalization Resolution:</strong>{" "}
+                              Strategic content consolidation and topic
+                              ownership framework
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="plan-section">
+                          <h6>
+                            Advanced Technical & Authority Integration (Q3-Q4):
+                          </h6>
+                          <ul>
+                            <li>
+                              <strong>Link Structure Optimization:</strong>{" "}
+                              Enterprise-grade link architecture with authority
+                              flow modeling
+                            </li>
+                            <li>
+                              <strong>Funnel Alignment:</strong> Omnichannel
+                              customer journey optimization and content mapping
+                            </li>
+                            <li>
+                              <strong>Market Position Solidification:</strong>{" "}
+                              Thought leadership establishment and competitive
+                              moat building
+                            </li>
+                          </ul>
+                        </div>
+                        <div className="expected-results">
+                          <strong>Expected Results:</strong> 80-100% recovery of
+                          total recoverable revenue potential, establishment as
+                          industry authority, and development of sustainable
+                          competitive advantage.
                         </div>
                       </div>
                     </div>

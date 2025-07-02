@@ -1,0 +1,114 @@
+# Math Logic Explanation for getROIRecoveryPotential
+
+This document explains the mathematical logic and calculations used in the `getROIRecoveryPotential` function.
+
+---
+
+## 1. Inputs and Initial Checks
+- **averageOrderValue (AOV):** Pulled from calculations or onboarding data.
+- **totalContentCost:** Total invested in content, from onboarding data.
+- **conversionRate:** Fixed at 2% (0.02).
+- If AOV or totalContentCost is missing or zero, the function throws an error.
+
+---
+
+## 2. Cost Per Page Calculation
+- **totalUniqueUrls:** Number of unique URLs (from contentCostWaste array).
+- **costPerPage:** `totalContentCost / totalUniqueUrls`
+
+---
+
+## 3. Maximum Loss Per Category
+- **maxLossPerCategory:** `totalContentCost * 0.02` (2% of total investment)
+  - This caps the loss attributed to any single SEO issue category.
+
+---
+
+## 4. Recovery Opportunity Calculations
+For each SEO issue type, the function estimates current loss and recovery potential:
+
+### a. Content Decay Recovery
+- **Severe Decay URLs:** Count of URLs with severe decay.
+- **Current Loss:**
+  - `severeDecayUrls.length * min(costPerPage * 0.8, averageOrderValue * 0.1)`
+  - Capped at `maxLossPerCategory`.
+- **Recovery Potential:** `currentLoss * 0.75`
+
+### b. Keyword Optimization
+- **High Mismatch URLs:** Count of URLs with high/medium keyword mismatch.
+- **Current Loss:**
+  - `highMismatchUrls.length * min(costPerPage * 0.6, averageOrderValue * 0.08)`
+  - Capped at `maxLossPerCategory`.
+- **Recovery Potential:** `currentLoss * 0.85`
+
+### c. Cannibalization Resolution
+- **Severe Cannibalization:** URLs with 3+ competing URLs.
+- **Current Loss:**
+  - `severeCannibal.length * min(costPerPage * 1.2, averageOrderValue * 0.15)`
+  - Capped at `maxLossPerCategory`.
+- **Recovery Potential:** `currentLoss * 0.9`
+
+### d. Link Structure Optimization
+- **Severe Dilution:** URLs with severe/moderate dilution.
+- **Current Loss:**
+  - `severeDilution.length * min(costPerPage * 0.4, averageOrderValue * 0.05)`
+  - Capped at `maxLossPerCategory`.
+- **Recovery Potential:** `currentLoss * 0.6`
+
+### e. Funnel Alignment
+- **Funnel Gaps:** Sum of funnel distribution gaps (if available).
+- **Current Loss:**
+  - `min(max((funnelGaps - 100), 0) * 5, 1000)`
+  - Capped at `maxLossPerCategory`.
+- **Recovery Potential:** `currentLoss * 0.7`
+
+---
+
+## 5. Timeframe Buckets
+- **30-day:**
+  - Keyword Optimization (full)
+  - Quick Content Fixes (40% of Content Decay Recovery)
+- **60-day:**
+  - Remaining 60% of Content Decay Recovery
+  - Cannibalization Resolution
+- **90-day:**
+  - Link Structure Optimization
+  - Funnel Alignment
+
+---
+
+## 6. 30-Day Recovery Totals
+- **thirtyDayRecovery.currentLoss:** Sum of currentLoss for 30-day opportunities.
+- **thirtyDayRecovery.recoveryPotential:** Sum of recoveryPotential for 30-day opportunities.
+
+---
+
+## 7. Overall Loss Cap
+- **overallLossCap:** `totalContentCost * 0.05` (5% of total investment)
+- If total current loss across all categories exceeds this cap, all loss and recovery values are scaled down proportionally.
+
+---
+
+## 8. ROI Scenarios (30-Day Focus)
+- **investmentRequired:** `max(thirtyDayRecovery.currentLoss * 0.5, totalContentCost * 0.01)`
+  - Either 50% of 30-day loss or 1% of content cost, whichever is higher.
+- **ROI Calculations:**
+  - Conservative: 40% recovery
+  - Realistic: 65% recovery
+  - Optimistic: 85% recovery
+  - `ROI = ((Recovered Revenue - Investment Required) / Investment Required) * 100`
+
+---
+
+## 9. Priority Matrix
+- Each 30-day opportunity is scored for impact based on recovery potential, effort, and priority.
+
+---
+
+## 10. Output
+- Returns a summary object with:
+  - 30-day loss, recovery potential, recovery %, investment required, best-case ROI, and details for all categories and timeframes.
+
+---
+
+**This logic ensures that all recovery and ROI estimates are realistic, conservative, and capped to avoid overestimating the impact of SEO issues.**

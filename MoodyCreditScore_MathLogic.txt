@@ -1,0 +1,60 @@
+# Math Logic Explanation for getMoodyCreditScore
+
+This document explains the mathematical logic and calculations used in the `getMoodyCreditScore` function.
+
+---
+
+## 1. Inputs and Data Sources
+- Uses results from `getContentQualityDistribution()` and `getROIRecoveryPotential()`.
+- **averageOrderValue (AOV):** From calculations or onboarding data.
+- **totalContentCost:** From calculations or onboarding data.
+
+---
+
+## 2. Content Health Score (40%)
+- **contentHealthScore:** The average quality score from `getContentQualityDistribution()` (0-100 scale).
+
+---
+
+## 3. Technical Health Score (25%)
+- Starts at 100.
+- **404 Penalty:** `notFoundPages.length * 2`, capped at 25 points.
+- **Link Dilution Penalty:** If there are severe/moderate dilution issues, penalty is `(dilutionUrls / linkDilution.length) * 35`, capped at 30 points.
+- **technicalHealthScore:** `100 - notFoundPenalty - dilutionPenalty`, minimum 0.
+
+---
+
+## 4. Performance Health Score (20%)
+- **recoveryPercentage:** From `getROIRecoveryPotential().summary.recoveryPercentage` (0-100).
+- **performanceHealthScore:** `recoveryPercentage`, capped between 0 and 100.
+
+---
+
+## 5. Strategic Alignment Score (15%)
+- Starts at 100.
+- If psychological data is available, calculates average of four scores (emotionalResonance, cognitiveClarity, persuasionLeverage, behavioralMomentum).
+- **psychPenalty:** `70 - avgPsychScore` (if avgPsychScore < 70), subtracted from 100.
+- **strategicAlignmentScore:** `100 - psychPenalty`, minimum 0.
+
+---
+
+## 6. Overall Score Calculation
+- **overallScore:**
+  - `overallScore = contentHealthScore * 0.4 + technicalHealthScore * 0.25 + performanceHealthScore * 0.2 + strategicAlignmentScore * 0.15`
+  - Rounded to nearest integer.
+
+---
+
+## 7. Credit Rating and Risk Level
+- **creditRating:** Determined by `getCreditRating(overallScore)`.
+- **riskLevel:** Determined by `getRiskLevel(overallScore)`.
+
+---
+
+## 8. Output
+- Returns a summary with overall score, credit rating, risk level, total revenue loss, and component scores.
+- Also includes risk factors and recommendations based on score thresholds.
+
+---
+
+**This logic provides a weighted, multi-factor SEO health score similar to a financial credit score, combining content, technical, performance, and strategic factors.**
