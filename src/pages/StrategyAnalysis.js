@@ -196,7 +196,7 @@ const StrategyAnalysis = () => {
 
     try {
       // Use getLinkDilution for link dilution analysis
-      const linkDilutionData = getLinkDilution();
+      const linkDilutionData = getLinkDilution({});
       dilutionValue = linkDilutionData?.summary?.totalRevenueLoss || 0;
       dilutionPercentage = linkDilutionData?.summary?.dilutionPercentage || 0;
     } catch (error) {
@@ -224,7 +224,7 @@ const StrategyAnalysis = () => {
 
     try {
       // Use getRevenueLeak for additional revenue leak analysis
-      const revenueLeakData = getRevenueLeak();
+      const revenueLeakData = getRevenueLeak({});
       const additionalLeak = revenueLeakData?.estimatedRevenueLoss || 0;
       lostEquityValue =
         cannibalizationValue + dilutionValue + additionalLeak * 0.1; // 10% of revenue leak
@@ -672,9 +672,13 @@ const StrategyAnalysis = () => {
           </div>
           <div className="kpi-content">
             <div className="kpi-value">
-              $
-              {calculateTotalLoss().summary?.totalRevenueLoss?.toFixed(2) ||
-                panels.equityLeaks.lostEquityValue.toLocaleString()}
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(
+                calculateTotalLoss().summary?.totalRevenueLoss ||
+                  panels.equityLeaks.lostEquityValue
+              )}
             </div>
             <div className="kpi-label">Lost Equity Value</div>
           </div>

@@ -616,7 +616,7 @@ const RiskDashboard = () => {
         // Use getLinkDilution function from FinancialCalculations context
         ...(() => {
           try {
-            const linkDilutionData = getLinkDilution();
+            const linkDilutionData = getLinkDilution({});
             return {
               lowDALinks:
                 linkDilutionData?.lowDALinks ||

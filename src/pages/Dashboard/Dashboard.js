@@ -9,10 +9,13 @@ import {
   FileText,
   Activity,
   AlertTriangle,
+  Settings,
 } from "lucide-react";
 import "./Dashboard.css";
+import "./SettingsButton.css";
 import FinancialTooltip from "../../components/FinancialTooltip";
 import BucketDataVisualization from "../../components/BucketDataVisualization";
+import CalculationParametersModal from "./CalculationParametersModal";
 
 // BucketDataVisualization component
 
@@ -47,21 +50,93 @@ const Dashboard = () => {
   const [CFOMode, setCFOMode] = useState(false);
   const [bucketData, setBucketData] = useState({});
 
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Parameter settings for financial calculations
+  const [calculationParams, setCalculationParams] = useState({
+    revenueLeak: {
+      conversionRate: 0.02,
+      recoveryRate: 0.8,
+      discountRate: 0.1,
+      horizonDays: 700,
+    },
+    contentDecay: {
+      conversionRate: 0.02,
+      recoveryRate: 0.7,
+      discountRate: 0.1,
+      horizonDays: 700,
+      defaultAvgContentCost: 400,
+    },
+    keywordMismatch: {
+      conversionRate: 0.02,
+      discountRate: 0.1,
+      recoveryRate: 0.8,
+      horizonDays: 700,
+      defaultAvgContentCost: 400,
+      impressionsClickRate: 0.003,
+      clicksMultiplier: 0.1,
+      maxLostClicksCap: 15,
+      minLostClicks: 2,
+      strandedCapexPercentage: 0.05,
+      maxRevenueLossCap: 0.6,
+    },
+    linkDilution: {
+      conversionRate: 0.02,
+      discountRate: 0.1,
+      recoveryRate: 0.8,
+      horizonDays: 700,
+      capexLossRate: 0.05,
+      clickLossMultiplier: 0.3,
+      maxDilutionFactor: 0.4,
+      maxClicksLost: 8,
+    },
+    psychMismatch: {
+      conversionRate: 0.02,
+      revenueLossRatio: 0.15,
+      highMismatchThreshold: 30,
+      mediumMismatchThreshold: 15,
+      lowMismatchThreshold: 5,
+    },
+    cannibalizationLoss: {
+      conversionRate: 0.02,
+      discountRate: 0.1,
+      recoveryRate: 0.8,
+      horizonDays: 700,
+      defaultAvgContentCost: 400,
+      lostClicksPercentage: 0.15,
+      maxLostClicksCap: 10,
+      investmentCapPercentage: 0.5,
+    },
+    buckets: {
+      highCTRThreshold: 0.05,
+      mismatchRiskThreshold: 0.3,
+      linkDilutionThreshold: 0.4,
+      cannibalRiskThreshold: 0.5,
+    },
+  });
+
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
     if (!onboardingData?.GSCAnalysisData) return;
 
     try {
-      // Use FinancialCalculations functions instead of manual calculations
-      const revenueLeakData = getRevenueLeak();
-      const contentDecayData = getContentDecay();
-      const keywordMismatchData = getKeywordMismatch();
-      const linkDilutionData = getLinkDilution();
-      const psychoMismatchData = getPsychMismatch();
-      const cannibalizationData = getCannibalizationLoss();
+      // Use FinancialCalculations functions with parameters from calculationParams
+      const revenueLeakData = getRevenueLeak(calculationParams.revenueLeak);
+      const contentDecayData = getContentDecay(calculationParams.contentDecay);
+      const keywordMismatchData = getKeywordMismatch(
+        calculationParams.keywordMismatch
+      );
+      const linkDilutionData = getLinkDilution(calculationParams.linkDilution);
+      const psychoMismatchData = getPsychMismatch(
+        calculationParams.psychMismatch
+      );
+      const cannibalizationData = getCannibalizationLoss(
+        calculationParams.cannibalizationLoss
+      );
       const totalLossData = calculateTotalLoss();
 
-      setBucketData(categoriseIntoBuckets());
+      setBucketData(categoriseIntoBuckets(calculationParams.buckets));
 
       console.log(
         "Revenue Leak Data:",
@@ -180,6 +255,10 @@ const Dashboard = () => {
     getPsychMismatch,
     getCannibalizationLoss,
     calculateTotalLoss,
+    calculationParams,
+    categoriseIntoBuckets,
+    // We're intentionally not including rollUpData and bucketData as dependencies
+    // to prevent infinite render loops, as they're set within this effect
   ]);
 
   useEffect(() => {
@@ -187,7 +266,11 @@ const Dashboard = () => {
       onboardingData?.GSCAnalysisData,
       showSitemapOnlyData
     );
-  }, [onboardingData?.GSCAnalysisData, showSitemapOnlyData]);
+  }, [
+    onboardingData?.GSCAnalysisData,
+    showSitemapOnlyData,
+    processGSCDataForCalculations,
+  ]);
 
   useEffect(() => {
     if (onboardingData?.GSCAnalysisData) {
@@ -197,10 +280,30 @@ const Dashboard = () => {
         showGAUrlsOnly
       );
     }
-  }, [onboardingData?.GSCAnalysisData, showGAUrlsOnly]);
+  }, [
+    onboardingData?.GSCAnalysisData,
+    showGAUrlsOnly,
+    processGSCDataForCalculations,
+  ]);
+
+  // Function to handle applying the new parameter settings
+  const applySettings = (newParams) => {
+    setCalculationParams(newParams);
+    // The useEffect will automatically recompute with new parameters
+    setIsModalOpen(false);
+  };
 
   return (
     <div className="dashboard-container">
+      {/* Calculation Parameters Modal */}
+      {isModalOpen && (
+        <CalculationParametersModal
+          params={calculationParams}
+          onClose={() => setIsModalOpen(false)}
+          onApply={applySettings}
+        />
+      )}
+
       {/* <h1>Content Ledger Dashboard</h1> */}
       {/* <header className="dashboard-header">
         <p>
@@ -261,6 +364,15 @@ const Dashboard = () => {
               </label>
               <span className="toggle-label">Show CFO Mode</span>
             </div>
+
+            <button
+              className="settings-button"
+              onClick={() => setIsModalOpen(true)}
+              title="Adjust calculation parameters"
+            >
+              <Settings size={18} />
+              <span>Calculation Settings</span>
+            </button>
           </div>
           <div className="dashboard-cards">
             {showRollupData &&

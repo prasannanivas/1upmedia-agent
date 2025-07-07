@@ -431,7 +431,7 @@ const KeywordIntelDashboard = () => {
       console.log(
         "🎯 KeywordIntel: Getting Revenue Leak (Content Cost Waste) from FinancialCalculations"
       );
-      const revenueLeakResult = getRevenueLeak();
+      const revenueLeakResult = getRevenueLeak({});
       console.log("✅ KeywordIntel: Revenue Leak result:", revenueLeakResult);
       total_wasted_spend = Math.abs(
         revenueLeakResult?.estimatedRevenueLoss || 0

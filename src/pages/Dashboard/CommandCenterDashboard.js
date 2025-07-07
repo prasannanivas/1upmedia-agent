@@ -91,11 +91,11 @@ const CommandCenterDashboard = () => {
 
     try {
       // Use FinancialCalculations context functions for all metrics
-      const revenueLeakData = getRevenueLeak();
+      const revenueLeakData = getRevenueLeak({});
       const contentDecayData = getContentDecay();
       const keywordMismatchData = getKeywordMismatch();
-      const linkDilutionData = getLinkDilution();
-      const psychMismatchData = getPsychMismatch();
+      const linkDilutionData = getLinkDilution({});
+      const psychMismatchData = getPsychMismatch({});
       const funnelGapData = funnelGapIdentifier();
       const contentQualityData = getContentQualityDistribution();
       const creditScoreData = getMoodyCreditScore();

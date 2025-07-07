@@ -336,13 +336,13 @@ const ContentLedgerDashboard = () => {
 
     try {
       // Use getRevenueLeak for wasted spend calculation
-      revenueLeakData = getRevenueLeak();
+      revenueLeakData = getRevenueLeak({});
 
       // Use getContentDecay for deep decay count
       decayAnalysisData = getContentDecay();
 
       // Use getLinkDilution for high dilution count
-      dilutionAnalysisData = getLinkDilution();
+      dilutionAnalysisData = getLinkDilution({});
 
       // Use getMoodyCreditScore for credit score
       moodyCreditData = getMoodyCreditScore();
@@ -931,7 +931,7 @@ const ContentLedgerDashboard = () => {
                     (sortConfig.direction === "desc" ? "↓" : "↑")}
                 </th>
                 <th onClick={() => handleSort("revenue")} className="sortable">
-                  Revenue{" "}
+                  EST. Revenue{" "}
                   {sortConfig.key === "revenue" &&
                     (sortConfig.direction === "desc" ? "↓" : "↑")}
                 </th>
@@ -1234,7 +1234,7 @@ const ContentLedgerDashboard = () => {
                     </span>
                   </div>
                   <div className="metric-item">
-                    <span className="metric-label">Revenue:</span>
+                    <span className="metric-label">EST. Revenue:</span>
                     <span className="metric-value">
                       {formatCurrency(selectedRow.revenue)}
                     </span>

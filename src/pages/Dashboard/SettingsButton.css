@@ -1,0 +1,34 @@
+.settings-button {
+  display: flex;
+  align-items: center;
+  background-color: #f0f0f0;
+  color: #333;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 15px;
+  font-size: 14px;
+}
+
+.settings-button:hover {
+  background-color: #e0e0e0;
+}
+
+.settings-button svg {
+  margin-right: 8px;
+}
+
+/* Make sure the toggle container has proper alignment */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+
+/* Add to your existing Dashboard.css file */
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
