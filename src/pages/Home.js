@@ -15,8 +15,12 @@ import LeakDashboard from "../pages/Dashboard/Dashboard";
 import { useFinancialCalculations } from "../context/FinancialCalculations";
 
 const HomePage = () => {
-  const { getPercentageProfileCompletion, onboardingData, loading } =
-    useOnboarding();
+  const {
+    getPercentageProfileCompletion,
+    onboardingData,
+    loading,
+    setOnboardingData,
+  } = useOnboarding();
   const navigate = useNavigate();
   const {
     getRevenueLeak,
@@ -63,9 +67,45 @@ const HomePage = () => {
               ) : (
                 <div className="metric-value">
                   $
-                  {(
-                    onboardingData.domainCostDetails?.totalInvested || 0
-                  ).toLocaleString()}
+                  <input
+                    type="text"
+                    value={
+                      onboardingData.domainCostDetails?.totalInvested ===
+                      undefined
+                        ? ""
+                        : Number(
+                            onboardingData.domainCostDetails.totalInvested
+                          ).toLocaleString(undefined, {
+                            maximumFractionDigits: 2,
+                          })
+                    }
+                    style={{
+                      width: "240px",
+                      fontSize: "1em",
+                      border: "1px solid #ccc",
+                      borderRadius: "4px",
+                      padding: "2px 6px",
+                      textAlign: "right",
+                      background: "rgba(255,255,255,0.7)",
+                    }}
+                    onChange={(e) => {
+                      // Remove commas and non-numeric except dot
+                      const raw = e.target.value.replace(/,/g, "");
+                      const num = parseFloat(raw);
+                      setOnboardingData((prev) => ({
+                        ...prev,
+                        domainCostDetails: {
+                          ...prev.domainCostDetails,
+                          totalInvested: isNaN(num) ? "" : num,
+                        },
+                      }));
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.target.blur();
+                      }
+                    }}
+                  />
                 </div>
               )}
               <div className="metric-subtitle">Content investment to date</div>
@@ -99,22 +139,88 @@ const HomePage = () => {
                       !onboardingData.GSCAnalysisData ||
                       !onboardingData.domainCostDetails
                     ) {
-                      return (totalInvested || 0).toLocaleString();
+                      // Format with 2 decimals, subscripting decimals (no dot in main, dot in subscript)
+                      const value = (totalInvested || 0).toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      );
+                      const [intPart, decPart] = value.split(".");
+                      return (
+                        <>
+                          {intPart}
+                          {decPart && (
+                            <>
+                              <span style={{ fontSize: "1em" }}>.</span>
+                              <sub
+                                style={{
+                                  fontSize: "0.7em",
+                                  verticalAlign: "sub",
+                                }}
+                              >
+                                {decPart}
+                              </sub>
+                            </>
+                          )}
+                        </>
+                      );
                     }
                     try {
                       // Get comprehensive loss using FinancialCalculations context
-
                       const currentContentValue =
                         totalInvested -
                         calculateTotalLoss()?.summary.totalRevenueLoss;
-
-                      return currentContentValue.toLocaleString();
+                      // Format with 2 decimals, subscripting decimals (no dot in main, dot in subscript)
+                      const value = currentContentValue.toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      );
+                      const [intPart, decPart] = value.split(".");
+                      return (
+                        <>
+                          {intPart}
+                          {decPart && (
+                            <>
+                              <span style={{ fontSize: "1em" }}>.</span>
+                              <sub
+                                style={{
+                                  fontSize: "0.7em",
+                                  verticalAlign: "sub",
+                                }}
+                              >
+                                {decPart}
+                              </sub>
+                            </>
+                          )}
+                        </>
+                      );
                     } catch (error) {
                       console.error(
                         "Error calculating comprehensive loss:",
                         error
                       );
-                      return (totalInvested || 0).toLocaleString();
+                      const value = (totalInvested || 0).toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                      );
+                      const [intPart, decPart] = value.split(".");
+                      return (
+                        <>
+                          {intPart}
+                          {decPart && (
+                            <>
+                              <span style={{ fontSize: "1em" }}>.</span>
+                              <sub
+                                style={{
+                                  fontSize: "0.7em",
+                                  verticalAlign: "sub",
+                                }}
+                              >
+                                {decPart}
+                              </sub>
+                            </>
+                          )}
+                        </>
+                      );
                     }
                   })()}
                 </div>
