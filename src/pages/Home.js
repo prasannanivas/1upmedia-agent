@@ -148,19 +148,7 @@ const HomePage = () => {
                       return (
                         <>
                           {intPart}
-                          {decPart && (
-                            <>
-                              <span style={{ fontSize: "1em" }}>.</span>
-                              <sub
-                                style={{
-                                  fontSize: "0.7em",
-                                  verticalAlign: "sub",
-                                }}
-                              >
-                                {decPart}
-                              </sub>
-                            </>
-                          )}
+                          {decPart && <span>{decPart}</span>}
                         </>
                       );
                     }
@@ -181,14 +169,13 @@ const HomePage = () => {
                           {decPart && (
                             <>
                               <span style={{ fontSize: "1em" }}>.</span>
-                              <sub
+                              <span
                                 style={{
                                   fontSize: "0.7em",
-                                  verticalAlign: "sub",
                                 }}
                               >
                                 {decPart}
-                              </sub>
+                              </span>
                             </>
                           )}
                         </>
