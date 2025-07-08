@@ -53,68 +53,75 @@ const Dashboard = () => {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Parameter settings for financial calculations
+  // Parameter settings for financial calculations with documentation for white paper/regulatory purposes
   const [calculationParams, setCalculationParams] = useState({
     revenueLeak: {
-      conversionRate: 0.02,
-      recoveryRate: 0.8,
-      discountRate: 0.1,
-      horizonDays: 700,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      recoveryRate: 0.8, // Percentage of theoretical value recoverable through optimization (proprietary)
+      discountRate: 0.1, // Standard capital discount rate (public)
+      horizonDays: 700, // Content lifespan estimate (proprietary model)
     },
     contentDecay: {
-      conversionRate: 0.02,
-      recoveryRate: 0.7,
-      discountRate: 0.1,
-      horizonDays: 700,
-      defaultAvgContentCost: 400,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      recoveryRate: 0.7, // Recovery coefficient for decayed content (proprietary)
+      discountRate: 0.1, // Standard capital discount rate (public)
+      horizonDays: 700, // Content lifespan estimate (proprietary model)
+      defaultAvgContentCost: 400, // Default content production cost estimate (customizable)
     },
     keywordMismatch: {
-      conversionRate: 0.02,
-      discountRate: 0.1,
-      recoveryRate: 0.8,
-      horizonDays: 700,
-      defaultAvgContentCost: 400,
-      impressionsClickRate: 0.003,
-      clicksMultiplier: 0.1,
-      maxLostClicksCap: 15,
-      minLostClicks: 2,
-      strandedCapexPercentage: 0.05,
-      maxRevenueLossCap: 0.6,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      discountRate: 0.1, // Standard capital discount rate (public)
+      recoveryRate: 0.8, // Intent recovery coefficient (proprietary)
+      horizonDays: 700, // Content lifespan estimate (proprietary model)
+      defaultAvgContentCost: 400, // Default content production cost estimate (customizable)
+      impressionsClickRate: 0.003, // Search impression-to-click coefficient (proprietary)
+      clicksMultiplier: 0.1, // Click loss multiplier for mismatched content (proprietary)
+      maxLostClicksCap: 15, // Maximum theoretical click loss cap (proprietary)
+      minLostClicks: 2, // Minimum theoretical click loss floor (proprietary)
+      strandedCapexPercentage: 0.05, // Stranded capital percentage (proprietary)
+      maxRevenueLossCap: 0.6, // Maximum revenue impact cap (proprietary)
     },
     linkDilution: {
-      conversionRate: 0.02,
-      discountRate: 0.1,
-      recoveryRate: 0.8,
-      horizonDays: 700,
-      capexLossRate: 0.05,
-      clickLossMultiplier: 0.3,
-      maxDilutionFactor: 0.4,
-      maxClicksLost: 8,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      discountRate: 0.1, // Standard capital discount rate (public)
+      recoveryRate: 0.8, // Link equity recovery coefficient (proprietary)
+      horizonDays: 700, // Content lifespan estimate (proprietary model)
+      capexLossRate: 0.05, // Capital expenditure loss rate for diluted links (proprietary)
+      clickLossMultiplier: 0.3, // Click loss multiplier for diluted link authority (proprietary)
+      maxDilutionFactor: 0.4, // Maximum dilution factor cap (proprietary)
+      maxClicksLost: 8, // Maximum clicks lost to dilution cap (proprietary)
     },
     psychMismatch: {
-      conversionRate: 0.02,
-      revenueLossRatio: 0.15,
-      highMismatchThreshold: 30,
-      mediumMismatchThreshold: 15,
-      lowMismatchThreshold: 5,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      revenueLossRatio: 0.15, // Psychological mismatch impact ratio (proprietary)
+      highMismatchThreshold: 30, // High severity psychological mismatch threshold (proprietary)
+      mediumMismatchThreshold: 15, // Medium severity psychological mismatch threshold (proprietary)
+      lowMismatchThreshold: 5, // Low severity psychological mismatch threshold (proprietary)
     },
     cannibalizationLoss: {
-      conversionRate: 0.02,
-      discountRate: 0.1,
-      recoveryRate: 0.8,
-      horizonDays: 700,
-      defaultAvgContentCost: 400,
-      lostClicksPercentage: 0.15,
-      maxLostClicksCap: 10,
-      investmentCapPercentage: 0.5,
+      conversionRate: 0.02, // Industry standard e-commerce conversion rate (public)
+      discountRate: 0.1, // Standard capital discount rate (public)
+      recoveryRate: 0.8, // Cannibalization recovery coefficient (proprietary)
+      horizonDays: 700, // Content lifespan estimate (proprietary model)
+      defaultAvgContentCost: 400, // Default content production cost estimate (customizable)
+      lostClicksPercentage: 0.15, // Percentage of clicks lost to cannibalization (proprietary)
+      maxLostClicksCap: 10, // Maximum clicks lost to cannibalization cap (proprietary)
+      investmentCapPercentage: 0.5, // Investment impact cap percentage (proprietary)
     },
     buckets: {
-      highCTRThreshold: 0.05,
-      mismatchRiskThreshold: 0.3,
-      linkDilutionThreshold: 0.4,
-      cannibalRiskThreshold: 0.5,
+      highCTRThreshold: 0.05, // High CTR performance threshold (proprietary)
+      mismatchRiskThreshold: 0.3, // Keyword mismatch risk threshold (proprietary)
+      linkDilutionThreshold: 0.4, // Link dilution risk threshold (proprietary)
+      cannibalRiskThreshold: 0.5, // Cannibalization risk threshold (proprietary)
     },
   });
+
+  // Transparency levels for documentation and white paper/regulatory purposes
+  const parameterTransparencyLevels = {
+    public: ["conversionRate", "discountRate"], // Industry standard metrics that can be fully disclosed
+    regulatory: ["recoveryRate", "horizonDays", "defaultAvgContentCost"], // For regulatory filings with ranges
+    proprietary: ["clickLossMultiplier", "maxLostClicksCap", "dilutionFactor"], // Core IP with limited disclosure
+  };
 
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
@@ -301,6 +308,8 @@ const Dashboard = () => {
           params={calculationParams}
           onClose={() => setIsModalOpen(false)}
           onApply={applySettings}
+          // Only the most important parameters are exposed for editing,
+          // following our "Show the Recipe, Hide the Spice" disclosure philosophy
         />
       )}
 
