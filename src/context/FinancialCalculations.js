@@ -17,12 +17,16 @@ export const FinancialCalculationsProvider = ({ children }) => {
   const [decay30Days, setDecay30Days] = useState([]);
   const [decay60Days, setDecay60Days] = useState([]);
   const [decay90Days, setDecay90Days] = useState([]);
+  const [decay180Days, setDecay180Days] = useState([]);
+  const [decay365Days, setDecay365Days] = useState([]);
+  const [decay700Days, setDecay700Days] = useState([]);
   const [decaySummary, setDecaySummary] = useState({});
   const [psychMismatchData, setPsychMismatchdata] = useState([]);
   const [allSitemapUrls, setAllSitemapUrls] = useState([]);
   const [allGSCUrls, setAllGSCUrls] = useState([]);
   const [allGAUrls, setAllGAUrls] = useState([]);
   const [urlAnalysis, setUrlAnalysis] = useState([]);
+  const [decayLossDays, setDecayLossDays] = useState("700Days");
 
   // Analysis States
   const [keywordMismatch, setKeywordMismatch] = useState([]);
@@ -169,6 +173,15 @@ export const FinancialCalculationsProvider = ({ children }) => {
       setDecay90Days(
         filterBySitemapUrls(gscData?.contentDecay?.decay90Days || [])
       );
+      setDecay180Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay180Days || [])
+      );
+      setDecay365Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay365Days || [])
+      );
+      setDecay700Days(
+        filterBySitemapUrls(gscData?.contentDecay?.decay700Days || [])
+      );
       setKeywordMismatch(filterBySitemapUrls(gscData?.keywordMismatch || []));
       setContentCostWaste(filterBySitemapUrls(gscData?.contentCostWaste || []));
       setLinkDilution(filterBySitemapUrls(gscData?.linkDilution || []));
@@ -263,6 +276,15 @@ export const FinancialCalculationsProvider = ({ children }) => {
       setDecay30Days(filterByGAUrls(gscData?.contentDecay?.decay30Days || []));
       setDecay60Days(filterByGAUrls(gscData?.contentDecay?.decay60Days || []));
       setDecay90Days(filterByGAUrls(gscData?.contentDecay?.decay90Days || []));
+      setDecay180Days(
+        filterByGAUrls(gscData?.contentDecay?.decay180Days || [])
+      );
+      setDecay365Days(
+        filterByGAUrls(gscData?.contentDecay?.decay365Days || [])
+      );
+      setDecay700Days(
+        filterByGAUrls(gscData?.contentDecay?.decay700Days || [])
+      );
       setKeywordMismatch(filterByGAUrls(gscData?.keywordMismatch || []));
       setContentCostWaste(filterByGAUrls(gscData?.contentCostWaste || []));
       setLinkDilution(filterByGAUrls(gscData?.linkDilution || []));
@@ -323,6 +345,10 @@ export const FinancialCalculationsProvider = ({ children }) => {
       setDecay30Days(gscData?.contentDecay?.decay30Days || []);
       setDecay60Days(gscData?.contentDecay?.decay60Days || []);
       setDecay90Days(gscData?.contentDecay?.decay90Days || []);
+      setDecay180Days(gscData?.contentDecay?.decay180Days || []);
+      setDecay365Days(gscData?.contentDecay?.decay365Days || []);
+      setDecay700Days(gscData?.contentDecay?.decay700Days || []);
+
       setKeywordMismatch(gscData?.keywordMismatch || []);
       setContentCostWaste(gscData?.contentCostWaste || []);
       setLinkDilution(gscData?.linkDilution || []);
@@ -482,7 +508,19 @@ export const FinancialCalculationsProvider = ({ children }) => {
     horizonDays = 700, // Time horizon in days
     defaultAvgContentCost = 400, // Default content cost per URL
   } = {}) => {
-    const totalUniqueUrls = contentCostWaste.length || 1;
+    const totalUniqueUrls =
+      [
+        ...new Set(
+          [
+            ...decay30Days,
+            ...decay60Days,
+            ...decay90Days,
+            ...decay180Days,
+            ...decay365Days,
+            ...decay700Days,
+          ].map((obj) => obj.url)
+        ),
+      ].length || 1;
 
     const averageOrderValue =
       calculations.averageOrderValue ||
@@ -516,6 +554,9 @@ export const FinancialCalculationsProvider = ({ children }) => {
       ...decay30Days.map((d) => ({ ...d, timeframe: "30Days" })),
       ...decay60Days.map((d) => ({ ...d, timeframe: "60Days" })),
       ...decay90Days.map((d) => ({ ...d, timeframe: "90Days" })),
+      ...decay180Days.map((d) => ({ ...d, timeframe: "180Days" })),
+      ...decay365Days.map((d) => ({ ...d, timeframe: "365Days" })),
+      ...decay700Days.map((d) => ({ ...d, timeframe: "700Days" })),
     ];
 
     // Deduplicate by URL with highest severity
@@ -637,6 +678,59 @@ export const FinancialCalculationsProvider = ({ children }) => {
         peakDrop: item.metrics?.peakDrop || 0,
       }));
 
+    // Calculate individual losses for each timeframe
+    const timeframeLosses = {
+      "30Days": 0,
+      "60Days": 0,
+      "90Days": 0,
+      "180Days": 0,
+      "365Days": 0,
+      "700Days": 0,
+    };
+
+    // Calculate losses for each specific timeframe
+    const calculateTimeframeLoss = (decayData, timeframeDays) => {
+      let timeframeLoss = 0;
+      decayData.forEach((item) => {
+        if (item.hasDecay) {
+          const peak = item.metrics?.peakClicks || 1;
+          const current = item.metrics?.currentClicks || 0.5;
+          const safeCurrent = current > 0 ? current : 0.5;
+          const decayRate = Math.log(peak / safeCurrent) / timeframeDays;
+          const baselineCashflow = peak * CVR * AOV;
+
+          const urlRevenueLoss =
+            baselineCashflow *
+            (1 - Math.exp(-decayRate * timeframeDays)) *
+            RR_RECOVERY *
+            ((1 - Math.exp(-DISCOUNT_RATE * (timeframeDays / 305))) /
+              DISCOUNT_RATE);
+
+          timeframeLoss += urlRevenueLoss;
+        }
+      });
+      return timeframeLoss;
+    };
+
+    timeframeLosses["30Days"] = Math.round(
+      calculateTimeframeLoss(decay30Days, 30)
+    );
+    timeframeLosses["60Days"] = Math.round(
+      calculateTimeframeLoss(decay60Days, 60)
+    );
+    timeframeLosses["90Days"] = Math.round(
+      calculateTimeframeLoss(decay90Days, 90)
+    );
+    timeframeLosses["180Days"] = Math.round(
+      calculateTimeframeLoss(decay180Days, 180)
+    );
+    timeframeLosses["365Days"] = Math.round(
+      calculateTimeframeLoss(decay365Days, 365)
+    );
+    timeframeLosses["700Days"] = Math.round(
+      calculateTimeframeLoss(decay700Days, 700)
+    );
+
     return {
       summary: {
         totalUrlsAnalyzed,
@@ -647,7 +741,11 @@ export const FinancialCalculationsProvider = ({ children }) => {
             : 0,
         totalClicksLost,
         totalImpressionsLost,
-        totalRevenueLoss: Math.round(calculatedRevenueLoss),
+        totalRevenueLoss:
+          timeframeLosses[decayLossDays] ||
+          timeframeLosses["700Days"] ||
+          timeframeLosses["365Days"] ||
+          Math.round(calculatedRevenueLoss),
         totalUniqueUrls,
         costPerUrl: Math.round(cpuBase),
         tooltip: {
@@ -666,8 +764,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
           discountRate: DISCOUNT_RATE,
           presentValueFactor: PV_FACTOR,
           formula:
-            "Recoverable Value = Baseline × (1 - exp(-decay_rate × 700)) × Recovery Rate × PV Factor",
-          decayRateFormula: "decay_rate = ln(peak / current) / 700",
+            "Recoverable Value = Baseline × (1 - exp(-decay_rate × timeframe)) × Recovery Rate × PV Factor",
+          decayRateFormula: "decay_rate = ln(peak / current) / timeframe_days",
         },
       },
       decayCategories,
@@ -678,7 +776,11 @@ export const FinancialCalculationsProvider = ({ children }) => {
         "30Days": decay30Days.length,
         "60Days": decay60Days.length,
         "90Days": decay90Days.length,
+        "180Days": decay180Days.length,
+        "365Days": decay365Days.length,
+        "700Days": decay700Days.length,
       },
+      timeframeLosses,
     };
   };
 
@@ -1826,7 +1928,14 @@ export const FinancialCalculationsProvider = ({ children }) => {
     const allUrls = new Set();
 
     // Collect URLs from various data sources
-    [...decay30Days, ...decay60Days, ...decay90Days].forEach((item) => {
+    [
+      ...decay30Days,
+      ...decay60Days,
+      ...decay90Days,
+      ...decay180Days,
+      ...decay365Days,
+      ...decay700Days,
+    ].forEach((item) => {
       if (item.url) allUrls.add(item.url);
     });
 
@@ -1862,9 +1971,14 @@ export const FinancialCalculationsProvider = ({ children }) => {
       }
 
       // Check for decay issues
-      const decayIssue = [...decay30Days, ...decay60Days, ...decay90Days].find(
-        (item) => item.url === url
-      );
+      const decayIssue = [
+        ...decay30Days,
+        ...decay60Days,
+        ...decay90Days,
+        ...decay180Days,
+        ...decay365Days,
+        ...decay700Days,
+      ].find((item) => item.url === url);
       if (decayIssue?.hasDecay) {
         const decayPenalty =
           {
@@ -3254,11 +3368,18 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
       const contentDecayUniqueURLs = {};
       const seenDecayUrls = new Set();
-      [...decay30Days, ...decay60Days, ...decay90Days].forEach((item) => {
+      [
+        ...decay30Days,
+        ...decay60Days,
+        ...decay90Days,
+        ...decay180Days,
+        ...decay365Days,
+        ...decay700Days,
+      ].forEach((item) => {
         if (item.url && !seenDecayUrls.has(item.url)) {
           contentDecayUniqueURLs[item.url] = getSafePerUrlLoss(
             contentDecayLoss,
-            decay30Days
+            decay700Days
           );
           seenDecayUrls.add(item.url);
         }
@@ -3438,7 +3559,14 @@ export const FinancialCalculationsProvider = ({ children }) => {
     );
 
     // Decay
-    const decayFeed = [...decay30Days, ...decay60Days, ...decay90Days];
+    const decayFeed = [
+      ...decay30Days,
+      ...decay60Days,
+      ...decay90Days,
+      ...decay180Days,
+      ...decay365Days,
+      ...decay700Days,
+    ];
     const decayMap = new Map(
       decayFeed.map((x) => [norm(x.url), x.decayStatus])
     );
@@ -4329,6 +4457,9 @@ export const FinancialCalculationsProvider = ({ children }) => {
         decay30Days,
         decay60Days,
         decay90Days,
+        decay180Days,
+        decay365Days,
+        decay700Days,
         riskMetrics,
         decaySummary,
         keywordMismatch,
@@ -4336,6 +4467,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         contentCostWaste,
         linkDilution,
         notFoundPages,
+        allGSCUrls,
         psychMismatchData,
         gaDataInsightsSummary,
         gaDataTopPerformers,
@@ -4350,6 +4482,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
         getCannibalizationLoss,
         calculateTotalLoss,
         funnelGapIdentifier,
+        decayLossDays,
+        setDecayLossDays,
         getContentQualityDistribution,
         getMoodyCreditScore,
         getROIRecoveryPotential,

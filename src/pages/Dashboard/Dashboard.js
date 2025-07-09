@@ -31,6 +31,7 @@ const Dashboard = () => {
     calculateTotalLoss,
     processGSCDataForCalculations,
     categoriseIntoBuckets,
+    decayLossDays,
   } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
@@ -143,7 +144,8 @@ const Dashboard = () => {
       );
       const totalLossData = calculateTotalLoss();
 
-      setBucketData(categoriseIntoBuckets(calculationParams.buckets));
+      const newBucketData = categoriseIntoBuckets(calculationParams.buckets);
+      setBucketData(newBucketData);
 
       console.log(
         "Revenue Leak Data:",
@@ -159,12 +161,13 @@ const Dashboard = () => {
         "Cannibalization Data:",
         cannibalizationData,
         "Bucket Data:",
-        bucketData,
+        newBucketData,
         "Total Loss Data:",
         totalLossData
       );
 
-      setRollUpData(totalLossData.RollingUpTotal);
+      const newRollUpData = totalLossData.RollingUpTotal;
+      setRollUpData(newRollUpData);
 
       // Update stats with calculated values from FinancialCalculations
       console.log("Total Loss Data Detailed:", {
@@ -174,7 +177,7 @@ const Dashboard = () => {
         tooltip: totalLossData?.summary?.tooltip,
       });
 
-      console.log("RollUp Data:", rollUpData);
+      console.log("RollUp Data:", newRollUpData);
 
       setStats({
         totalLoss: {
@@ -253,30 +256,26 @@ const Dashboard = () => {
         },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    onboardingData,
-    getRevenueLeak,
-    getContentDecay,
-    getKeywordMismatch,
-    getLinkDilution,
-    getPsychMismatch,
-    getCannibalizationLoss,
-    calculateTotalLoss,
+    onboardingData?.GSCAnalysisData,
     calculationParams,
-    categoriseIntoBuckets,
-    // We're intentionally not including rollUpData and bucketData as dependencies
-    // to prevent infinite render loops, as they're set within this effect
+    decayLossDays,
+    // Functions from context are intentionally excluded to prevent infinite re-renders
   ]);
 
   useEffect(() => {
-    processGSCDataForCalculations(
-      onboardingData?.GSCAnalysisData,
-      showSitemapOnlyData
-    );
+    if (onboardingData?.GSCAnalysisData) {
+      processGSCDataForCalculations(
+        onboardingData.GSCAnalysisData,
+        showSitemapOnlyData
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     onboardingData?.GSCAnalysisData,
     showSitemapOnlyData,
-    processGSCDataForCalculations,
+    // processGSCDataForCalculations excluded to prevent infinite loop
   ]);
 
   useEffect(() => {
@@ -287,10 +286,11 @@ const Dashboard = () => {
         showGAUrlsOnly
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     onboardingData?.GSCAnalysisData,
     showGAUrlsOnly,
-    processGSCDataForCalculations,
+    // processGSCDataForCalculations excluded to prevent infinite loop
   ]);
 
   // Function to handle applying the new parameter settings

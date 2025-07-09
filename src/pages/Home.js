@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   User,
   CheckCircle,
@@ -34,9 +34,33 @@ const HomePage = () => {
     decay30Days,
     decay60Days,
     decay90Days,
+    decay180Days,
+    decay365Days,
+    decay700Days,
+    allGSCUrls,
+    setDecayLossDays,
   } = useFinancialCalculations();
 
   const [decayTimeframe, setDecayTimeframe] = useState(30);
+
+  useEffect(() => {
+    // Ensure onboarding data is loaded before calculating metrics
+    if (decayTimeframe > 0 && decayTimeframe <= 45) {
+      setDecayLossDays("30Days");
+    } else if (decayTimeframe < 79 && decayTimeframe >= 45) {
+      setDecayLossDays("60Days");
+    } else if (decayTimeframe < 144 && decayTimeframe >= 79) {
+      setDecayLossDays("90Days");
+    } else if (decayTimeframe < 300 && decayTimeframe >= 145) {
+      setDecayLossDays("180Days");
+    } else if (decayTimeframe < 666 && decayTimeframe >= 300) {
+      setDecayLossDays("365Days");
+    } else if (decayTimeframe <= 700 && decayTimeframe >= 666) {
+      setDecayLossDays("700Days");
+    }
+    console.log("Setting decay loss days:", decayTimeframe);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decayTimeframe]);
 
   // Function to extrapolate decay percentage for any day value
   // Maximum decay is 95% at 700 days
@@ -46,14 +70,28 @@ const HomePage = () => {
     }
 
     try {
-      const totalContentUrls =
-        onboardingData?.GSCAnalysisData?.contentCostWaste?.length || 1;
+      const totalContentUrls = Array.from(
+        new Set(
+          [
+            ...allGSCUrls,
+            ...decay30Days,
+            ...decay60Days,
+            ...decay90Days,
+            ...decay180Days,
+            ...decay365Days,
+            ...decay700Days,
+          ].map((item) => (typeof item === "string" ? item : item.url))
+        )
+      ).length;
 
       // Known data points
       const dataPoints = [
         { days: 30, count: decay30Days.length },
         { days: 60, count: decay60Days.length },
         { days: 90, count: decay90Days.length },
+        { days: 180, count: decay180Days.length },
+        { days: 365, count: decay365Days.length },
+        { days: 700, count: decay700Days.length },
       ];
 
       // Convert counts to percentages for easier calculation
