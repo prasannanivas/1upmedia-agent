@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   User,
   CheckCircle,
@@ -30,7 +31,105 @@ const HomePage = () => {
     getPsychMismatch,
     getCannibalizationLoss,
     calculateTotalLoss,
+    decay30Days,
+    decay60Days,
+    decay90Days,
   } = useFinancialCalculations();
+
+  const [decayTimeframe, setDecayTimeframe] = useState(30);
+
+  // Function to extrapolate decay percentage for any day value
+  // Maximum decay is 95% at 700 days
+  const getExtrapolatedDecayPercentage = (days) => {
+    if (!onboardingData.GSCAnalysisData || !onboardingData.domainCostDetails) {
+      return 0;
+    }
+
+    try {
+      const totalContentUrls =
+        onboardingData?.GSCAnalysisData?.contentCostWaste?.length || 1;
+
+      // Known data points
+      const dataPoints = [
+        { days: 30, count: decay30Days.length },
+        { days: 60, count: decay60Days.length },
+        { days: 90, count: decay90Days.length },
+      ];
+
+      // Convert counts to percentages for easier calculation
+      const dataPercentages = dataPoints.map((point) => ({
+        days: point.days,
+        percentage:
+          totalContentUrls > 0 ? (point.count / totalContentUrls) * 100 : 0,
+      }));
+
+      // If we have exact data point, use it
+      const exactMatch = dataPercentages.find((point) => point.days === days);
+      if (exactMatch) {
+        return Math.round(exactMatch.percentage);
+      }
+
+      // Constants for the decay model
+      const MAX_DECAY_PERCENTAGE = 95; // Maximum decay at 700 days
+      const MAX_DECAY_DAYS = 700;
+
+      // Use logarithmic decay model: percentage = MAX * (1 - exp(-k * days))
+      // This ensures asymptotic approach to 95% at 700 days
+
+      // Calculate decay constant k based on known data points
+      // Use the 90-day data point to calibrate the model
+      const p90 = dataPercentages[2].percentage; // 90-day percentage
+
+      // Solve for k: p90 = 95 * (1 - exp(-k * 90))
+      // k = -ln(1 - p90/95) / 90
+      const k =
+        p90 > 0
+          ? -Math.log(1 - Math.min(p90 / MAX_DECAY_PERCENTAGE, 0.99)) / 90
+          : 0.01;
+
+      let estimatedPercentage;
+
+      if (days <= 90) {
+        // For days 0-90, use interpolation between known points for accuracy
+        if (days < 30) {
+          // Linear interpolation from 0 to 30-day point
+          const ratio = days / 30;
+          estimatedPercentage = ratio * dataPercentages[0].percentage;
+        } else if (days <= 60) {
+          // Linear interpolation between 30 and 60
+          const ratio = (days - 30) / (60 - 30);
+          estimatedPercentage =
+            dataPercentages[0].percentage +
+            ratio *
+              (dataPercentages[1].percentage - dataPercentages[0].percentage);
+        } else {
+          // Linear interpolation between 60 and 90
+          const ratio = (days - 60) / (90 - 60);
+          estimatedPercentage =
+            dataPercentages[1].percentage +
+            ratio *
+              (dataPercentages[2].percentage - dataPercentages[1].percentage);
+        }
+      } else {
+        // For days > 90, use logarithmic decay model
+        estimatedPercentage = MAX_DECAY_PERCENTAGE * (1 - Math.exp(-k * days));
+
+        // Ensure we don't exceed the maximum
+        estimatedPercentage = Math.min(
+          estimatedPercentage,
+          MAX_DECAY_PERCENTAGE
+        );
+      }
+
+      // Ensure minimum bound
+      estimatedPercentage = Math.max(0, estimatedPercentage);
+
+      return Math.round(estimatedPercentage);
+    } catch (error) {
+      console.error("Error extrapolating decay:", error);
+      return 0;
+    }
+  };
 
   const completionPercentage = getPercentageProfileCompletion();
 
@@ -225,7 +324,7 @@ const HomePage = () => {
           >
             <div className="metric-icon">📉</div>
             <div className="metric-content">
-              <h3 className="metric-label">Content Decay</h3>
+              <h3 className="metric-label">Loss Percentage</h3>
               {loading ? (
                 <div className="metric-value loading">⏳ Loading...</div>
               ) : (
@@ -272,6 +371,157 @@ const HomePage = () => {
               )}{" "}
               <div className="metric-subtitle">
                 Average across all 6 loss types
+              </div>
+            </div>
+          </motion.div>
+          <motion.div
+            className="metric-card decay-percentage"
+            initial={{ x: 30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+          >
+            <div className="metric-icon">⏱️</div>
+            <div className="metric-content">
+              <h3 className="metric-label">Decay Percentage</h3>
+              {loading ? (
+                <div className="metric-value loading">⏳ Loading...</div>
+              ) : (
+                <div className="metric-value">
+                  {(() => {
+                    // Wait for onboarding data to be loaded before calculating
+                    if (
+                      !onboardingData.GSCAnalysisData ||
+                      !onboardingData.domainCostDetails
+                    ) {
+                      return "0%";
+                    }
+                    try {
+                      // Use extrapolated decay percentage for any day value
+                      const decayPercentage =
+                        getExtrapolatedDecayPercentage(decayTimeframe);
+                      return `${decayPercentage}%`;
+                    } catch (error) {
+                      console.error("Error calculating content decay:", error);
+                      return "0%";
+                    }
+                  })()}
+                </div>
+              )}
+
+              {/* Timeframe Slider */}
+              <div
+                className="decay-timeframe-slider"
+                style={{ margin: "10px 0" }}
+              >
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <span style={{ fontSize: "0.8em", color: "#666" }}>7d</span>
+                  <input
+                    type="range"
+                    min="7"
+                    max="700"
+                    step="1"
+                    value={decayTimeframe}
+                    onChange={(e) => {
+                      setDecayTimeframe(parseInt(e.target.value));
+                    }}
+                    style={{
+                      flex: 1,
+                      height: "6px",
+                      background:
+                        "linear-gradient(to right, #4CAF50, #FFC107, #FF5722, #F44336, #8B0000)",
+                      borderRadius: "3px",
+                      outline: "none",
+                      cursor: "pointer",
+                      WebkitAppearance: "none",
+                    }}
+                  />
+                  <span style={{ fontSize: "0.8em", color: "#666" }}>700d</span>
+                </div>
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: "0.75em",
+                    color: "#888",
+                    marginTop: "4px",
+                  }}
+                >
+                  {decayTimeframe} day decay window
+                  {(decayTimeframe === 30 ||
+                    decayTimeframe === 60 ||
+                    decayTimeframe === 90) && (
+                    <span style={{ color: "#4CAF50", fontWeight: "bold" }}>
+                      {" "}
+                      ✓ Real Data
+                    </span>
+                  )}
+                  {decayTimeframe === 700 && (
+                    <span style={{ color: "#8B0000", fontWeight: "bold" }}>
+                      {" "}
+                      ⚠ Max Decay (95%)
+                    </span>
+                  )}
+                </div>
+                {/* Quick preset buttons */}
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    gap: "6px",
+                    marginTop: "6px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  {[7, 14, 30, 60, 90, 180, 365, 700].map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => setDecayTimeframe(preset)}
+                      style={{
+                        padding: "2px 6px",
+                        fontSize: "0.7em",
+                        border:
+                          decayTimeframe === preset
+                            ? "1px solid #4CAF50"
+                            : "1px solid #ddd",
+                        borderRadius: "3px",
+                        background:
+                          decayTimeframe === preset ? "#4CAF50" : "white",
+                        color: decayTimeframe === preset ? "white" : "#666",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {preset}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="metric-subtitle">
+                {(() => {
+                  try {
+                    if (
+                      !onboardingData.GSCAnalysisData ||
+                      !onboardingData.domainCostDetails
+                    ) {
+                      return `${decayTimeframe} day content decay analysis`;
+                    }
+
+                    // Calculate estimated affected URLs
+                    const totalContentUrls =
+                      onboardingData?.GSCAnalysisData?.contentCostWaste
+                        ?.length || 1;
+                    const decayPercentage =
+                      getExtrapolatedDecayPercentage(decayTimeframe);
+                    const estimatedUrls = Math.round(
+                      (decayPercentage / 100) * totalContentUrls
+                    );
+
+                    return `~${estimatedUrls} URLs estimated affected in ${decayTimeframe} days`;
+                  } catch (error) {
+                    return `${decayTimeframe} day content decay analysis`;
+                  }
+                })()}
               </div>
             </div>
           </motion.div>

@@ -545,11 +545,49 @@ const CommandCenterDashboard = () => {
               <span
                 className={`recovery-trend ${commandCenterData.recoveryTrend}`}
               >
-                {commandCenterData.recoveryTrend === "positive" ? "▲" : "▼"}80%
+                {commandCenterData.recoveryTrend === "positive" ? "▲" : "▼"}
+                {Math.round(
+                  (commandCenterData.roiRecoveryPotential /
+                    Math.max(commandCenterData.totalSystemLoss || 1, 1)) *
+                    100
+                )}
+                %
               </span>
             </div>
             <div className="recovery-timeframe">
               in ≤ {commandCenterData.recoveryTimeframe} days
+            </div>
+            <div className="recovery-summary">
+              <div className="summary-stat">
+                <span className="stat-label">Total System Loss:</span>
+                <span className="stat-value">
+                  ${(commandCenterData.totalSystemLoss || 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="summary-stat">
+                <span className="stat-label">Recovery Rate:</span>
+                <span className="stat-value">
+                  {Math.round(
+                    (commandCenterData.roiRecoveryPotential /
+                      Math.max(commandCenterData.totalSystemLoss || 1, 1)) *
+                      100
+                  )}
+                  %
+                </span>
+              </div>
+              <div className="summary-stat">
+                <span className="stat-label">Investment Required:</span>
+                <span className="stat-value">
+                  $
+                  {Math.round(
+                    Math.max(
+                      (commandCenterData.roiRecoveryPotential || 0) * 0.05,
+                      (onboardingData?.domainCostDetails?.totalInvested || 0) *
+                        0.01
+                    )
+                  ).toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>{" "}
           {/* 30/60/90 Day Recovery Breakdown */}
@@ -597,7 +635,6 @@ const CommandCenterDashboard = () => {
             </div>
             {isRecoveryBreakdownExpanded && (
               <div className="recovery-timeline">
-                {" "}
                 {/* 30-Day Recovery */}
                 <div className="recovery-period" data-period="30-day">
                   <div className="period-header">
@@ -605,29 +642,21 @@ const CommandCenterDashboard = () => {
                     <span className="period-amount">
                       $
                       {(
-                        Object.values(
-                          commandCenterData.recoveryTimeframes?.["30-day"]
-                            ?.opportunities || {}
-                        ).reduce(
-                          (sum, opp) => sum + (opp.recoveryPotential || 0),
-                          0
-                        ) || 0
+                        commandCenterData.recoveryTimeframes?.["30-day"]
+                          ?.recoveryPotential || 0
                       ).toLocaleString()}
                     </span>
                   </div>
-                  <div className="period-opportunities">
-                    {Object.entries(
+                  <div className="period-factors">
+                    {(
                       commandCenterData.recoveryTimeframes?.["30-day"]
-                        ?.opportunities || {}
-                    ).map(([name, data]) => (
-                      <div key={name} className="opportunity-item">
-                        <span className="opportunity-name">{name}</span>
-                        <span className="opportunity-value">
-                          ${(data.recoveryPotential || 0).toLocaleString()}
-                        </span>
+                        ?.factors || []
+                    ).map((factor, index) => (
+                      <div key={index} className="factor-item">
+                        <span className="factor-name">{factor}</span>
                       </div>
                     ))}
-                  </div>{" "}
+                  </div>
                   <button
                     className="view-plan-btn"
                     onClick={() => togglePlan("30-day")}
@@ -648,139 +677,29 @@ const CommandCenterDashboard = () => {
                           <ul>
                             <li>
                               <strong>Keyword Optimization:</strong> Fix
-                              high-impact keyword mismatches on top-performing
-                              pages
+                              high-impact keyword mismatches and search intent
+                              alignment
                             </li>
                             <li>
-                              <strong>Technical Quick Fixes:</strong> Resolve
-                              critical SEO issues like broken links and meta tag
-                              optimization
+                              <strong>Content Updates:</strong> Refresh
+                              top-performing content showing decay signals
                             </li>
                             <li>
-                              <strong>Content Updates:</strong> Refresh outdated
-                              statistics and information on decay-affected pages
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="plan-section">
-                          <h6>Follow-up Actions (Week 3-4):</h6>
-                          <ul>
-                            <li>
-                              <strong>Internal Linking:</strong> Improve link
-                              structure for priority pages
-                            </li>
-                            <li>
-                              <strong>Performance Monitoring:</strong> Track
-                              improvements and adjust tactics
-                            </li>
-                            <li>
-                              <strong>Quick Content Additions:</strong> Add FAQ
-                              sections and related content blocks
+                              <strong>Technical Fixes:</strong> Resolve critical
+                              cannibalization conflicts
                             </li>
                           </ul>
                         </div>
                         <div className="expected-results">
-                          <strong>Expected Results:</strong> 10-15% improvement
-                          in organic traffic and 5-10% boost in conversion rates
-                          within 30 days.
+                          <strong>Expected Results:</strong> 5-15% improvement
+                          in organic traffic and quick revenue recovery from
+                          low-hanging fruit optimizations.
                         </div>
                       </div>
                     </div>
                   )}
-                </div>{" "}
-                {/* 60-Day Recovery */}
-                <div className="recovery-period" data-period="60-day">
-                  <div className="period-header">
-                    <span className="period-label">60 Days</span>
-                    <span className="period-amount">
-                      $
-                      {(
-                        Object.values(
-                          commandCenterData.recoveryTimeframes?.["60-day"]
-                            ?.opportunities || {}
-                        ).reduce(
-                          (sum, opp) => sum + (opp.recoveryPotential || 0),
-                          0
-                        ) || 0
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="period-opportunities">
-                    {Object.entries(
-                      commandCenterData.recoveryTimeframes?.["60-day"]
-                        ?.opportunities || {}
-                    ).map(([name, data]) => (
-                      <div key={name} className="opportunity-item">
-                        <span className="opportunity-name">{name}</span>
-                        <span className="opportunity-value">
-                          ${(data.recoveryPotential || 0).toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>{" "}
-                  <button
-                    className="view-plan-btn"
-                    onClick={() => togglePlan("60-day")}
-                  >
-                    {expandedPlans["60-day"] ? "Hide Plan" : "View 60-Day Plan"}
-                    {expandedPlans["60-day"] ? (
-                      <ChevronUp size={16} />
-                    ) : (
-                      <ChevronDown size={16} />
-                    )}
-                  </button>
-                  {expandedPlans["60-day"] && (
-                    <div className="recovery-plan-content">
-                      <div className="plan-content">
-                        <h5>📈 60-Day Comprehensive Recovery</h5>
-                        <div className="plan-section">
-                          <h6>Strategic Content Improvements (Week 1-4):</h6>
-                          <ul>
-                            <li>
-                              <strong>Content Decay Recovery:</strong>{" "}
-                              Comprehensive refresh of underperforming content
-                              with new data and enhanced UX
-                            </li>
-                            <li>
-                              <strong>Keyword Strategy Refinement:</strong>{" "}
-                              Optimize content alignment with search intent and
-                              user behavior
-                            </li>
-                            <li>
-                              <strong>Competitive Analysis:</strong> Identify
-                              content gaps and opportunities vs competitors
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="plan-section">
-                          <h6>
-                            Technical & Structural Optimization (Week 5-8):
-                          </h6>
-                          <ul>
-                            <li>
-                              <strong>Cannibalization Resolution:</strong>{" "}
-                              Consolidate competing pages with proper redirects
-                              and canonical tags
-                            </li>
-                            <li>
-                              <strong>Site Architecture:</strong> Improve
-                              internal linking structure and site hierarchy
-                            </li>
-                            <li>
-                              <strong>Performance Optimization:</strong> Enhance
-                              page speed and Core Web Vitals
-                            </li>
-                          </ul>
-                        </div>
-                        <div className="expected-results">
-                          <strong>Expected Results:</strong> 15-25% improvement
-                          in organic traffic and 20-30% boost in conversion
-                          rates within 60 days.
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>{" "}
+                </div>
+
                 {/* 90-Day Recovery */}
                 <div className="recovery-period" data-period="90-day">
                   <div className="period-header">
@@ -788,29 +707,21 @@ const CommandCenterDashboard = () => {
                     <span className="period-amount">
                       $
                       {(
-                        Object.values(
-                          commandCenterData.recoveryTimeframes?.["90-day"]
-                            ?.opportunities || {}
-                        ).reduce(
-                          (sum, opp) => sum + (opp.recoveryPotential || 0),
-                          0
-                        ) || 0
+                        commandCenterData.recoveryTimeframes?.["90-day"]
+                          ?.recoveryPotential || 0
                       ).toLocaleString()}
                     </span>
                   </div>
-                  <div className="period-opportunities">
-                    {Object.entries(
+                  <div className="period-factors">
+                    {(
                       commandCenterData.recoveryTimeframes?.["90-day"]
-                        ?.opportunities || {}
-                    ).map(([name, data]) => (
-                      <div key={name} className="opportunity-item">
-                        <span className="opportunity-name">{name}</span>
-                        <span className="opportunity-value">
-                          ${(data.recoveryPotential || 0).toLocaleString()}
-                        </span>
+                        ?.factors || []
+                    ).map((factor, index) => (
+                      <div key={index} className="factor-item">
+                        <span className="factor-name">{factor}</span>
                       </div>
                     ))}
-                  </div>{" "}
+                  </div>
                   <button
                     className="view-plan-btn"
                     onClick={() => togglePlan("90-day")}
@@ -825,57 +736,49 @@ const CommandCenterDashboard = () => {
                   {expandedPlans["90-day"] && (
                     <div className="recovery-plan-content">
                       <div className="plan-content">
-                        <h5>🚀 90-Day Strategic Transformation</h5>
+                        <h5>📈 90-Day Strategic Recovery</h5>
                         <div className="plan-section">
-                          <h6>Advanced SEO & Authority Building (Week 1-6):</h6>
+                          <h6>Content Strategy (Month 1-2):</h6>
                           <ul>
                             <li>
-                              <strong>Link Structure Optimization:</strong>{" "}
-                              Complete audit and restructuring of
-                              internal/external links for maximum SEO value
+                              <strong>Content Decay Recovery:</strong>{" "}
+                              Comprehensive refresh of underperforming content
+                              with enhanced UX
                             </li>
                             <li>
-                              <strong>Content Authority Enhancement:</strong>{" "}
-                              Develop comprehensive topic clusters and pillar
-                              pages
+                              <strong>Link Authority Building:</strong>{" "}
+                              Strategic internal linking and authority flow
+                              optimization
                             </li>
                             <li>
-                              <strong>Technical SEO Mastery:</strong> Advanced
-                              schema markup, site speed optimization, and
-                              crawlability improvements
+                              <strong>Psychographic Alignment:</strong> Content
+                              messaging optimization for target audience
                             </li>
                           </ul>
                         </div>
                         <div className="plan-section">
-                          <h6>Funnel & Conversion Optimization (Week 7-12):</h6>
+                          <h6>Technical & Structural (Month 3):</h6>
                           <ul>
                             <li>
-                              <strong>Funnel Alignment:</strong> Strategic
-                              content mapping to buyer journey stages with
-                              psychological triggers
+                              <strong>Site Architecture:</strong> Improve
+                              content hierarchy and user journey flows
                             </li>
                             <li>
-                              <strong>Conversion Rate Optimization:</strong> A/B
-                              testing of landing pages, CTAs, and user
-                              experience flows
-                            </li>
-                            <li>
-                              <strong>Analytics & Attribution:</strong> Enhanced
-                              tracking and attribution modeling for better
-                              decision making
+                              <strong>Performance Optimization:</strong>{" "}
+                              Enhanced page speed and Core Web Vitals
                             </li>
                           </ul>
                         </div>
                         <div className="expected-results">
-                          <strong>Expected Results:</strong> 30-50% improvement
-                          in domain authority, 40-60% boost in qualified lead
-                          generation, and sustainable long-term growth
-                          foundation.
+                          <strong>Expected Results:</strong> 25-40% improvement
+                          in organic traffic and 30-45% boost in conversion
+                          rates.
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
+
                 {/* 180-Day Recovery */}
                 <div className="recovery-period" data-period="180-day">
                   <div className="period-header">
@@ -883,29 +786,21 @@ const CommandCenterDashboard = () => {
                     <span className="period-amount">
                       $
                       {(
-                        Object.values(
-                          commandCenterData.recoveryTimeframes?.["180-day"]
-                            ?.opportunities || {}
-                        ).reduce(
-                          (sum, opp) => sum + (opp.recoveryPotential || 0),
-                          0
-                        ) || 0
+                        commandCenterData.recoveryTimeframes?.["180-day"]
+                          ?.recoveryPotential || 0
                       ).toLocaleString()}
                     </span>
                   </div>
-                  <div className="period-opportunities">
-                    {Object.entries(
+                  <div className="period-factors">
+                    {(
                       commandCenterData.recoveryTimeframes?.["180-day"]
-                        ?.opportunities || {}
-                    ).map(([name, data]) => (
-                      <div key={name} className="opportunity-item">
-                        <span className="opportunity-name">{name}</span>
-                        <span className="opportunity-value">
-                          ${(data.recoveryPotential || 0).toLocaleString()}
-                        </span>
+                        ?.factors || []
+                    ).map((factor, index) => (
+                      <div key={index} className="factor-item">
+                        <span className="factor-name">{factor}</span>
                       </div>
                     ))}
-                  </div>{" "}
+                  </div>
                   <button
                     className="view-plan-btn"
                     onClick={() => togglePlan("180-day")}
@@ -922,160 +817,75 @@ const CommandCenterDashboard = () => {
                   {expandedPlans["180-day"] && (
                     <div className="recovery-plan-content">
                       <div className="plan-content">
-                        <h5>🚀 180-Day Full-Scale Transformation</h5>
+                        <h5>🎯 180-Day Comprehensive Recovery</h5>
                         <div className="plan-section">
-                          <h6>
-                            Complete Content Strategy Overhaul (Month 1-3):
-                          </h6>
+                          <h6>Advanced Content Strategy (Month 1-4):</h6>
                           <ul>
                             <li>
-                              <strong>Content Decay Recovery:</strong>{" "}
-                              Comprehensive content refresh and update strategy
+                              <strong>Content Portfolio Optimization:</strong>{" "}
+                              Complete content audit and strategic restructuring
                             </li>
                             <li>
-                              <strong>Keyword Optimization:</strong> Full-scale
-                              keyword gap analysis and targeted content creation
+                              <strong>Competitive Positioning:</strong> Market
+                              gap analysis and authority building initiatives
                             </li>
                             <li>
-                              <strong>Cannibalization Resolution:</strong>{" "}
-                              Complete audit and consolidation of competing
-                              content
+                              <strong>User Experience Enhancement:</strong>{" "}
+                              Advanced UX optimization based on user behavior
+                              data
                             </li>
                           </ul>
                         </div>
                         <div className="plan-section">
-                          <h6>
-                            Advanced Technical & Authority Building (Month 4-6):
-                          </h6>
+                          <h6>Authority & Technical Excellence (Month 5-6):</h6>
                           <ul>
                             <li>
-                              <strong>Link Structure Optimization:</strong>{" "}
-                              End-to-end link architecture rebuilding and
-                              authority distribution
-                            </li>
-                            <li>
-                              <strong>Funnel Alignment:</strong> Complete
-                              conversion pathway optimization across all content
-                            </li>
-                            <li>
                               <strong>Domain Authority Building:</strong>{" "}
-                              Strategic partnerships and comprehensive
-                              backlinking campaign
+                              Strategic link acquisition and content
+                              partnerships
+                            </li>
+                            <li>
+                              <strong>Technical SEO Mastery:</strong> Advanced
+                              schema, structured data, and site optimization
+                            </li>
+                            <li>
+                              <strong>Conversion Optimization:</strong> A/B
+                              testing and funnel optimization implementation
                             </li>
                           </ul>
                         </div>
                         <div className="expected-results">
-                          <strong>Expected Results:</strong> 60-80% recovery of
-                          underperforming content value, 70-90% resolution of
-                          technical SEO issues, and establishment of sustainable
-                          growth systems.
+                          <strong>Expected Results:</strong> 50-70% improvement
+                          in organic performance with established market
+                          authority and sustainable growth foundation.
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
+
                 {/* 360-Day Recovery */}
                 <div className="recovery-period" data-period="360-day">
                   <div className="period-header">
                     <span className="period-label">360 Days</span>
                     <span className="period-amount">
                       $
-                      {
-                        // Use threeSixtyDay directly which includes the alignment with totalSystemLoss
-                        (
-                          commandCenterData.threeSixtyDay?.recoveryPotential ||
-                          Object.values(
-                            commandCenterData.recoveryTimeframes?.["360-day"]
-                              ?.opportunities || {}
-                          ).reduce(
-                            (sum, opp) => sum + (opp.recoveryPotential || 0),
-                            0
-                          ) ||
-                          0
-                        ).toLocaleString()
-                      }
+                      {(
+                        commandCenterData.recoveryTimeframes?.["360-day"]
+                          ?.recoveryPotential || 0
+                      ).toLocaleString()}
                     </span>
-                    {commandCenterData.totalSystemLoss && (
-                      <div
-                        className="recovery-note"
-                        style={{
-                          fontSize: "11px",
-                          marginTop: "4px",
-                          opacity: 0.8,
-                        }}
-                      >
-                        <div>
-                          {Math.round(
-                            (commandCenterData.threeSixtyDay
-                              ?.recoveryPotential /
-                              commandCenterData.totalSystemLoss) *
-                              100
-                          )}
-                          % of $
-                          {commandCenterData.totalSystemLoss?.toLocaleString()}{" "}
-                          total losses
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "10px",
-                            marginTop: "2px",
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          Based on weighted analysis of your content issues
-                          <FinancialTooltip
-                            title="Recovery Factor Calculation"
-                            content={
-                              <div>
-                                <p>
-                                  This recovery potential is calculated using a
-                                  weighted analysis of your specific content
-                                  issues:
-                                </p>
-                                <ul
-                                  style={{
-                                    paddingLeft: "15px",
-                                    margin: "5px 0",
-                                  }}
-                                >
-                                  <li>Content Decay: Up to 80% recoverable</li>
-                                  <li>
-                                    Keyword Mismatch: Up to 75% recoverable
-                                  </li>
-                                  <li>
-                                    Cannibalization: Up to 65% recoverable
-                                  </li>
-                                  <li>Link Structure: Up to 60% recoverable</li>
-                                  <li>
-                                    Funnel Alignment: Up to 55% recoverable
-                                  </li>
-                                </ul>
-                                <p>
-                                  Your actual recovery factor is weighted based
-                                  on the proportion each issue contributes to
-                                  your total loss.
-                                </p>
-                              </div>
-                            }
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
-                  <div className="period-opportunities">
-                    {Object.entries(
+                  <div className="period-factors">
+                    {(
                       commandCenterData.recoveryTimeframes?.["360-day"]
-                        ?.opportunities || {}
-                    ).map(([name, data]) => (
-                      <div key={name} className="opportunity-item">
-                        <span className="opportunity-name">{name}</span>
-                        <span className="opportunity-value">
-                          ${(data.recoveryPotential || 0).toLocaleString()}
-                        </span>
+                        ?.factors || []
+                    ).map((factor, index) => (
+                      <div key={index} className="factor-item">
+                        <span className="factor-name">{factor}</span>
                       </div>
                     ))}
-                  </div>{" "}
+                  </div>
                   <button
                     className="view-plan-btn"
                     onClick={() => togglePlan("360-day")}
@@ -1092,55 +902,55 @@ const CommandCenterDashboard = () => {
                   {expandedPlans["360-day"] && (
                     <div className="recovery-plan-content">
                       <div className="plan-content">
-                        <h5>🚀 360-Day Complete Digital Transformation</h5>
+                        <h5>🏆 360-Day Market Leadership Strategy</h5>
                         <div className="plan-section">
-                          <h6>
-                            Holistic Content Ecosystem Development (Q1-Q2):
-                          </h6>
+                          <h6>Strategic Foundation (Q1-Q2):</h6>
                           <ul>
                             <li>
-                              <strong>Content Decay Recovery:</strong> Full
-                              content inventory rebuild with predictive decay
-                              prevention
+                              <strong>Complete System Optimization:</strong>{" "}
+                              Full implementation of all 6 recovery factors
                             </li>
                             <li>
-                              <strong>Keyword Optimization:</strong>{" "}
-                              Comprehensive semantic topical authority
-                              development
+                              <strong>Content Authority Development:</strong>{" "}
+                              Thought leadership establishment and topical
+                              expertise
                             </li>
                             <li>
-                              <strong>Cannibalization Resolution:</strong>{" "}
-                              Strategic content consolidation and topic
-                              ownership framework
+                              <strong>Market Position Solidification:</strong>{" "}
+                              Competitive moat building and sustainable
+                              advantage creation
                             </li>
                           </ul>
                         </div>
                         <div className="plan-section">
-                          <h6>
-                            Advanced Technical & Authority Integration (Q3-Q4):
-                          </h6>
+                          <h6>Market Leadership & Scaling (Q3-Q4):</h6>
                           <ul>
                             <li>
-                              <strong>Link Structure Optimization:</strong>{" "}
-                              Enterprise-grade link architecture with authority
-                              flow modeling
+                              <strong>Industry Authority:</strong> Recognition
+                              as market leader through content excellence and
+                              expertise
                             </li>
                             <li>
-                              <strong>Funnel Alignment:</strong> Omnichannel
-                              customer journey optimization and content mapping
+                              <strong>Predictive Optimization:</strong>{" "}
+                              AI-driven content strategy and performance
+                              prediction systems
                             </li>
                             <li>
-                              <strong>Market Position Solidification:</strong>{" "}
-                              Thought leadership establishment and competitive
-                              moat building
+                              <strong>Ecosystem Development:</strong>{" "}
+                              Partnership networks and collaborative content
+                              strategies
                             </li>
                           </ul>
                         </div>
                         <div className="expected-results">
-                          <strong>Expected Results:</strong> 80-100% recovery of
-                          total recoverable revenue potential, establishment as
-                          industry authority, and development of sustainable
-                          competitive advantage.
+                          <strong>Expected Results:</strong>{" "}
+                          {Math.round(
+                            (commandCenterData.threeSixtyDay?.recoveryFactor ||
+                              0.8) * 100
+                          )}
+                          % recovery of total system loss, market leadership
+                          position, and sustainable competitive advantage with
+                          predictive optimization systems.
                         </div>
                       </div>
                     </div>
