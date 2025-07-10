@@ -7,6 +7,83 @@ import React, {
 } from "react";
 import { useOnboarding } from "./OnboardingContext";
 
+function estimateInvestment(
+  factorLosses,
+  RECOVERY_FRAMEWORK,
+  curveType = "power",
+  { avgLossPerUrl = 1, baseHourlyRate = 120 } = {}
+) {
+  // 1. URLs affected per category + totals
+  const urlsPerCat = {};
+  let totalUrlsAffected = 0;
+  let totalHoursRaw = 0;
+
+  for (const [category, loss] of Object.entries(factorLosses)) {
+    const urls = Math.ceil(loss / avgLossPerUrl);
+    const hoursPerUrl = RECOVERY_FRAMEWORK.hoursPerUrl?.[category] ?? 3; // fallback
+    urlsPerCat[category] = urls;
+
+    totalUrlsAffected += urls;
+    totalHoursRaw += urls * hoursPerUrl;
+  }
+
+  // 2. Pick a discount factor based on curveType
+  const df = learningDiscount(curveType, totalUrlsAffected, RECOVERY_FRAMEWORK);
+
+  // 3. Final investment
+  const effectiveHours = totalHoursRaw * df;
+
+  console.log("Investment Calculation Details:", {
+    totalUrlsAffected,
+    totalHoursRaw,
+    effectiveHours, // hours after discount
+    df, // discount factor
+  });
+  return {
+    totalUrlsAffected,
+    totalHoursRaw,
+    effectiveHours,
+    investmentUSD: effectiveHours,
+  };
+}
+
+function learningDiscount(type, n, cfg) {
+  if (n <= 0) return 1;
+
+  switch (type) {
+    case "hyperbola": {
+      // Effort multiplier = a / (b + n)
+      const { a = 1, b = 0 } = cfg.hyperbola ?? {};
+      return clamp(a / (b + n));
+    }
+    case "step": {
+      // tiers sorted asc by upTo
+      const tiers = cfg.tiers ?? [];
+      let discount = 1;
+      for (const { upTo, discount: d } of tiers) {
+        if (n >= upTo) discount -= d; // subtract e.g., 0.10 for 10 %
+      }
+      return clamp(discount);
+    }
+    case "logistic": {
+      // L / (1 + e^{-k(n - m)})
+      const { L = 1, k = 0.1, m = 50 } = cfg.logistic ?? {};
+      const val = L / (1 + Math.exp(-k * (n - m)));
+      return clamp(val);
+    }
+    case "power":
+    default: {
+      // 1 – p * log10(n)   (your original 15 % log-scale model)
+      const p = cfg.learningCurveDiscount ?? 0.15;
+      return clamp(1 - p * Math.log10(Math.max(1, n)), 0.7); // floor at 0.7
+    }
+  }
+}
+
+function clamp(x, min = 0, max = 1) {
+  return Math.min(Math.max(x, min), max);
+}
+
 const FinancialCalculationsContext = createContext();
 
 export const FinancialCalculationsProvider = ({ children }) => {
@@ -2771,34 +2848,31 @@ export const FinancialCalculationsProvider = ({ children }) => {
     7. INVESTMENT CALCULATION WITH LEARNING CURVE
   ───────────────────────────────────────────────────────────────*/
 
-    // Calculate total URLs affected across all categories
-    const totalUrlsAffected = Object.keys(factorLosses).reduce(
-      (sum, category) => {
-        // Estimate URLs affected based on loss amount and average cost per URL
-        const avgLossPerUrl = 500; // Conservative estimate
-        return sum + Math.ceil(factorLosses[category] / avgLossPerUrl);
-      },
-      0
-    );
+    // Enhanced investment estimation supporting multiple learning curve types
+    // Calculate dynamic avgLossPerUrl from total system loss and total URLs
+    const totalUniqueUrls = totalLossData?.summary?.urls || 1;
+    const dynamicAvgLossPerUrl =
+      totalUniqueUrls > 0 ? totalSystemLoss / totalUniqueUrls : 500;
 
-    // Base investment calculation
-    const baseHourlyRate = 120;
-    const totalHours = Object.entries(factorLosses).reduce(
-      (sum, [category, loss]) => {
-        const hoursPerUrl = RECOVERY_FRAMEWORK.hoursPerUrl[category] || 3;
-        const urlsForCategory = Math.ceil(loss / 500);
-        return sum + urlsForCategory * hoursPerUrl;
-      },
-      0
-    );
+    console.log("Dynamic avgLossPerUrl calculation:", {
+      totalSystemLoss,
+      totalUniqueUrls,
+      dynamicAvgLossPerUrl: Math.round(dynamicAvgLossPerUrl),
+    });
 
-    // Apply 15% log-scale learning curve discount
+    // See estimateInvestment and learningDiscount helpers below
+    const curveType = RECOVERY_FRAMEWORK.curveType || "power"; // default to 'power' if not set
+    const investmentEst = estimateInvestment(
+      factorLosses,
+      RECOVERY_FRAMEWORK,
+      curveType,
+      { avgLossPerUrl: dynamicAvgLossPerUrl, baseHourlyRate: 120 }
+    );
+    const totalUrlsAffected = investmentEst.totalUrlsAffected;
+    const totalHours = investmentEst.totalHoursRaw;
+    const investmentRequired = investmentEst.investmentUSD;
     const learningCurveMultiplier =
-      1 -
-      RECOVERY_FRAMEWORK.learningCurveDiscount *
-        Math.log10(Math.max(1, totalUrlsAffected));
-    const investmentRequired =
-      totalHours * baseHourlyRate * Math.max(0.7, learningCurveMultiplier);
+      investmentEst.effectiveHours / (investmentEst.totalHoursRaw || 1);
 
     /*───────────────────────────────────────────────────────────────
     8. NPV CALCULATION WITH WACC DISCOUNT

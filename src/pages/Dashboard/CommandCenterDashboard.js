@@ -240,6 +240,7 @@ const CommandCenterDashboard = () => {
         creditHealth: creditScoreData?.summary?.riskLevel || "⚠️ At Risk", // ROI Recovery from context
         roiRecoveryPotential:
           roiRecoveryData?.summary?.totalRecoveryPotential || 0,
+        investmentRequired: roiRecoveryData?.summary?.investmentRequired || 0,
         recoveryTimeframe,
         recoveryTrend,
         // Full recovery breakdown for 30/60/90/180/360 day display
@@ -580,11 +581,7 @@ const CommandCenterDashboard = () => {
                 <span className="stat-value">
                   $
                   {Math.round(
-                    Math.max(
-                      (commandCenterData.roiRecoveryPotential || 0) * 0.05,
-                      (onboardingData?.domainCostDetails?.totalInvested || 0) *
-                        0.01
-                    )
+                    Math.max(commandCenterData?.investmentRequired || 0)
                   ).toLocaleString()}
                 </span>
               </div>
