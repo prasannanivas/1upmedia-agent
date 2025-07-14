@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Settings - 1up Media</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 40px;
+      width: 100%;
+      max-width: 500px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 12px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #333;
+      font-weight: 500;
+      font-size: 16px;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .currency-symbol {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 15px 20px 15px 40px;
+      border: 2px solid #e1e5e9;
+      border-radius: 12px;
+      font-size: 18px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #667eea;
+      background: white;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-loading {
+      color: transparent;
+    }
+
+    .btn-loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+      border: 2px solid transparent;
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+      }
+
+      100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+      }
+    }
+
+    .status-message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+    }
+
+    .status-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .status-success {
+      background: #d1f2eb;
+      color: #0f5132;
+      border: 1px solid #a7e6d7;
+    }
+
+    .status-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f1aeb5;
+    }
+
+    .current-rate {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .current-rate-label {
+      color: #1565c0;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 5px;
+    }
+
+    .current-rate-value {
+      color: #0d47a1;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .info-text {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">1M</div>
+      <h1>Admin Settings</h1>
+      <p class="subtitle">Configure system-wide settings</p>
+    </div>
+
+    <div class="current-rate" id="currentRateDisplay">
+      <div class="current-rate-label">Current Base Hourly Rate</div>
+      <div class="current-rate-value" id="currentRateValue">Loading...</div>
+    </div>
+
+    <form id="settingsForm">
+      <div class="form-group">
+        <label for="hourlyRate">Base Hourly Rate</label>
+        <p class="info-text">
+          This rate is used for all financial calculations across the platform. Changes will take effect immediately.
+        </p>
+        <div class="input-group">
+          <span class="currency-symbol">$</span>
+          <input type="number" id="hourlyRate" name="hourlyRate" placeholder="20" min="1" max="1000" step="0.01"
+            required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">
+        Update Hourly Rate
+      </button>
+    </form>
+
+    <div class="status-message" id="statusMessage"></div>
+  </div>
+
+  <script>
+    const API_BASE_URL = 'https://ai.1upmedia.com:443/verbedge';
+
+    // Elements
+    const form = document.getElementById('settingsForm');
+    const hourlyRateInput = document.getElementById('hourlyRate');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMessage = document.getElementById('statusMessage');
+    const currentRateValue = document.getElementById('currentRateValue');
+    const currentRateDisplay = document.getElementById('currentRateDisplay');
+
+    // Load current rate on page load
+    async function loadCurrentRate() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/base-hourly-rate`);
+        if (response.ok) {
+          const data = await response.json();
+          const currentRate = data.setting?.value || 'N/A';
+          currentRateValue.textContent = `$${currentRate}`;
+          hourlyRateInput.placeholder = currentRate;
+        } else {
+          currentRateValue.textContent = 'Unable to load';
+          currentRateDisplay.style.background = '#fff3cd';
+          currentRateDisplay.style.borderColor = '#ffeaa7';
+        }
+      } catch (error) {
+        console.error('Error loading current rate:', error);
+        currentRateValue.textContent = 'Error loading';
+        currentRateDisplay.style.background = '#f8d7da';
+        currentRateDisplay.style.borderColor = '#f1aeb5';
+      }
+    }
+
+    // Show status message
+    function showStatus(message, isError = false) {
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message ${isError ? 'status-error' : 'status-success'} show`;
+
+      setTimeout(() => {
+        statusMessage.classList.remove('show');
+      }, 5000);
+    }
+
+    // Set button loading state
+    function setLoading(isLoading) {
+      if (isLoading) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('btn-loading');
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('btn-loading');
+      }
+    }
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const rate = hourlyRateInput.value.trim();
+
+      if (!rate || isNaN(rate) || parseFloat(rate) <= 0) {
+        showStatus('Please enter a valid hourly rate.', true);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/base-hourly-rate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            rate: rate
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showStatus(`Hourly rate successfully updated to $${rate}!`);
+          currentRateValue.textContent = `$${rate}`;
+          hourlyRateInput.value = '';
+          hourlyRateInput.placeholder = rate;
+
+          // Reset current rate display styling
+          currentRateDisplay.style.background = '#e3f2fd';
+          currentRateDisplay.style.borderColor = '#bbdefb';
+        } else {
+          throw new Error(data.message || 'Failed to update hourly rate');
+        }
+      } catch (error) {
+        console.error('Error updating hourly rate:', error);
+        showStatus(
+          error.message || 'Failed to update hourly rate. Please try again.',
+          true
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // Input validation
+    hourlyRateInput.addEventListener('input', (e) => {
+      const value = parseFloat(e.target.value);
+      if (value < 1) {
+        e.target.setCustomValidity('Rate must be at least $1');
+      } else if (value > 1000) {
+        e.target.setCustomValidity('Rate cannot exceed $1000');
+      } else {
+        e.target.setCustomValidity('');
+      }
+    });
+
+    // Load current rate when page loads
+    document.addEventListener('DOMContentLoaded', loadCurrentRate);
+  </script>
+</body>
+
+</html>

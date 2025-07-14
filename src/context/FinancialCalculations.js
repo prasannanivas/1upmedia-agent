@@ -35,6 +35,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
   const [linkDilution, setLinkDilution] = useState([]);
   const [notFoundPages, setNotFoundPages] = useState([]);
   const [riskMetrics, setRiskMetrics] = useState([]);
+  const [baseHourlyRate, setBaseHourlyRate] = useState(120); // Default base hourly rate
 
   // GA Data States
   const [gaDataInsightsSummary, setGaDataInsightsSummary] = useState({
@@ -57,6 +58,33 @@ export const FinancialCalculationsProvider = ({ children }) => {
     averageOrderValue: 0,
     contentCost: 0,
   });
+
+  // Fetch base hourly rate from API
+  useEffect(() => {
+    const fetchBaseHourlyRate = async () => {
+      try {
+        const response = await fetch(
+          "https://ai.1upmedia.com/verbedge/base-hourly-rate"
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const hourlyRate = data.setting?.value || 120; // fallback to 120 if API fails
+          setBaseHourlyRate(hourlyRate);
+        } else {
+          console.warn(
+            "Failed to fetch base hourly rate, using default value of 120"
+          );
+          setBaseHourlyRate(120);
+        }
+      } catch (error) {
+        console.error("Error fetching base hourly rate:", error);
+        setBaseHourlyRate(120); // fallback to default
+      }
+    };
+
+    fetchBaseHourlyRate();
+  }, []);
+
   useEffect(() => {
     if (onboardingData?.GSCAnalysisData) {
       try {
@@ -402,8 +430,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
   function estimateInvestment(
     factorLosses,
     RECOVERY_FRAMEWORK,
-    curveType = "power",
-    { avgLossPerUrl = 1, baseHourlyRate = 120 } = {}
+    curveType = "power"
   ) {
     // 1. URLs affected per category + totals
 
@@ -2869,7 +2896,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       factorLosses,
       RECOVERY_FRAMEWORK,
       curveType,
-      { avgLossPerUrl: dynamicAvgLossPerUrl, baseHourlyRate: 120 }
+      { avgLossPerUrl: dynamicAvgLossPerUrl }
     );
     const totalUrlsAffected = investmentEst.totalUrlsAffected;
     const totalHours = investmentEst.totalHoursRaw;
