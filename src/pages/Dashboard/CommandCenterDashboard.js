@@ -555,9 +555,7 @@ const CommandCenterDashboard = () => {
                 %
               </span>
             </div>
-            <div className="recovery-timeframe">
-              in ≤ {commandCenterData.recoveryTimeframe} days
-            </div>
+            <div className="recovery-timeframe">in ≤ 360 days</div>
             <div className="recovery-summary">
               <div className="summary-stat">
                 <span className="stat-label">Total System Loss:</span>
