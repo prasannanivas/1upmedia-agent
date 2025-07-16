@@ -32,6 +32,10 @@ const Dashboard = () => {
     processGSCDataForCalculations,
     categoriseIntoBuckets,
     decayLossDays,
+    showSitemapOnlyData,
+    setShowSitemapOnlyData,
+    showGAUrlsOnly,
+    setShowGAUrlsOnly,
   } = useFinancialCalculations();
   // Initialize state with data from context or defaults
   const [stats, setStats] = useState({
@@ -46,8 +50,6 @@ const Dashboard = () => {
 
   const [rollUpData, setRollUpData] = useState({});
   const [showRollupData, setShowRollupData] = useState(false);
-  const [showSitemapOnlyData, setShowSitemapOnlyData] = useState(false);
-  const [showGAUrlsOnly, setShowGAUrlsOnly] = useState(false);
   const [CFOMode, setCFOMode] = useState(false);
   const [bucketData, setBucketData] = useState({});
 
@@ -116,13 +118,6 @@ const Dashboard = () => {
       cannibalRiskThreshold: 0.5, // Cannibalization risk threshold (proprietary)
     },
   });
-
-  // Transparency levels for documentation and white paper/regulatory purposes
-  const parameterTransparencyLevels = {
-    public: ["conversionRate", "discountRate"], // Industry standard metrics that can be fully disclosed
-    regulatory: ["recoveryRate", "horizonDays", "defaultAvgContentCost"], // For regulatory filings with ranges
-    proprietary: ["clickLossMultiplier", "maxLostClicksCap", "dilutionFactor"], // Core IP with limited disclosure
-  };
 
   // Calculate all dashboard metrics using FinancialCalculations functions
   useEffect(() => {
@@ -256,42 +251,7 @@ const Dashboard = () => {
         },
       });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    onboardingData?.GSCAnalysisData,
-    calculationParams,
-    decayLossDays,
-    // Functions from context are intentionally excluded to prevent infinite re-renders
-  ]);
-
-  useEffect(() => {
-    if (onboardingData?.GSCAnalysisData) {
-      processGSCDataForCalculations(
-        onboardingData.GSCAnalysisData,
-        showSitemapOnlyData
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    onboardingData?.GSCAnalysisData,
-    showSitemapOnlyData,
-    // processGSCDataForCalculations excluded to prevent infinite loop
-  ]);
-
-  useEffect(() => {
-    if (onboardingData?.GSCAnalysisData) {
-      processGSCDataForCalculations(
-        onboardingData.GSCAnalysisData,
-        false,
-        showGAUrlsOnly
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    onboardingData?.GSCAnalysisData,
-    showGAUrlsOnly,
-    // processGSCDataForCalculations excluded to prevent infinite loop
-  ]);
+  });
 
   // Function to handle applying the new parameter settings
   const applySettings = (newParams) => {

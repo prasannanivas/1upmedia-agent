@@ -179,7 +179,7 @@ const CalculationParametersModal = ({ params, onClose, onApply }) => {
                   title={paramDescriptions.defaultAvgContentCost}
                 >
                   Content Production Cost:
-                  <span className="param-badge regulatory">Regulatory</span>
+                  <span className="param-badge public">Public</span>
                 </label>
                 <input
                   id="global-defaultAvgContentCost"
@@ -217,7 +217,7 @@ const CalculationParametersModal = ({ params, onClose, onApply }) => {
                   title={paramDescriptions.horizonDays}
                 >
                   Content Lifespan (days):
-                  <span className="param-badge regulatory">Regulatory</span>
+                  <span className="param-badge public">Public</span>
                 </label>
                 <input
                   id="global-horizonDays"

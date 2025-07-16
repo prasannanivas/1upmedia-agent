@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  use,
-} from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { useOnboarding } from "./OnboardingContext";
 
 const FinancialCalculationsContext = createContext();
@@ -27,7 +21,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
   const [allGAUrls, setAllGAUrls] = useState([]);
   const [urlAnalysis, setUrlAnalysis] = useState([]);
   const [decayLossDays, setDecayLossDays] = useState("700Days");
-
+  const [showSitemapOnlyData, setShowSitemapOnlyData] = useState(false);
+  const [showGAUrlsOnly, setShowGAUrlsOnly] = useState(false);
   // Analysis States
   const [keywordMismatch, setKeywordMismatch] = useState([]);
   const [cannibalization, setCannibalization] = useState([]);
@@ -126,17 +121,13 @@ export const FinancialCalculationsProvider = ({ children }) => {
     onboardingData?.domainCostDetails?.contentCost,
     onboardingData?.funnelAnalysis,
     onboardingData?.allSitemapUrls,
+    showSitemapOnlyData,
+    showGAUrlsOnly,
   ]);
 
   const processGSCDataForCalculations = (
-    gscData = onboardingData?.GSCAnalysisData || {},
-    useSitemapOnlyUrls = false,
-    useOnlyGoogleAnalyticsUrls = false
+    gscData = onboardingData?.GSCAnalysisData || {}
   ) => {
-    // This function will process the GSC data for financial calculations
-
-    // Segregate Content Decay Data
-
     const base_url =
       gscData?.contentCostWaste?.[0]?.url?.replace(
         /^(https?:\/\/[^/]+).*$/,
@@ -159,7 +150,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       allSitemapUrls.length
     );
 
-    if (useSitemapOnlyUrls && allSitemapUrls.length > 0) {
+    if (showSitemapOnlyData && allSitemapUrls.length > 0) {
       const sitemapUrlsSet = new Set(allSitemapUrls.map((url) => url));
 
       console.log(
@@ -267,7 +258,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         "->",
         cannibalization.length
       );
-    } else if (useOnlyGoogleAnalyticsUrls) {
+    } else if (showGAUrlsOnly) {
       console.log(
         "Filtering GSC data by Google Analytics URLs...",
         allGAUrls.length
@@ -4599,6 +4590,10 @@ export const FinancialCalculationsProvider = ({ children }) => {
         getCrawlErrorPercentage,
         getTotalWastedSpend,
         getContentWastePages,
+        showSitemapOnlyData,
+        setShowSitemapOnlyData,
+        showGAUrlsOnly,
+        setShowGAUrlsOnly,
         processGSCDataForCalculations,
       }}
     >

@@ -1141,7 +1141,7 @@ const KeywordIntelDashboard = () => {
       </div>
 
       {/* Conversion Rate Slider */}
-      <div className="conversion-rate-section">
+      {/* <div className="conversion-rate-section">
         <h3>CONVERSION RATE OPTIMIZER</h3>
         <div className="slider-container">
           <div className="slider-info">
@@ -1177,7 +1177,7 @@ const KeywordIntelDashboard = () => {
             value, IRR calculations, and opportunity stack rankings
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Main Dashboard Grid */}
       <div className="intel-grid">

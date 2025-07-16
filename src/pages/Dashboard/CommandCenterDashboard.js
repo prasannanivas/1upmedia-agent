@@ -435,7 +435,7 @@ const CommandCenterDashboard = () => {
       {/* Credit Score and ROI Recovery */}
       <div className="command-metrics-row">
         <div className="moody-credit-section">
-          <h3>Moody Credit Score</h3>
+          <h3>Credit Score</h3>
           <div className="credit-score-display">
             <div className="credit-score-value">
               <span className="grade-moody">
@@ -449,92 +449,6 @@ const CommandCenterDashboard = () => {
                 className="gauge-fill"
                 style={{ width: `${commandCenterData.creditScore}%` }}
               ></div>
-            </div>
-          </div>
-        </div>{" "}
-        <div className="content-grades-section">
-          <h3>Content Quality Distribution</h3>
-          <div className="grade-distribution">
-            <div className="grade-bar-container">
-              <div className="grade-info">
-                <span className="grade-label grade-a">A</span>
-                <div className="grade-bar">
-                  <div
-                    className="grade-fill grade-a-fill"
-                    style={{
-                      width: `${
-                        commandCenterData.contentGrades?.percentA || 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-                <span className="grade-percent">
-                  {Math.round(commandCenterData.contentGrades?.percentA || 0)}%
-                </span>
-                <span className="grade-count">
-                  ({commandCenterData.contentGrades?.A || 0})
-                </span>
-              </div>
-
-              <div className="grade-info">
-                <span className="grade-label grade-b">B</span>
-                <div className="grade-bar">
-                  <div
-                    className="grade-fill grade-b-fill"
-                    style={{
-                      width: `${
-                        commandCenterData.contentGrades?.percentB || 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-                <span className="grade-percent">
-                  {Math.round(commandCenterData.contentGrades?.percentB || 0)}%
-                </span>
-                <span className="grade-count">
-                  ({commandCenterData.contentGrades?.B || 0})
-                </span>
-              </div>
-
-              <div className="grade-info">
-                <span className="grade-label grade-c">C</span>
-                <div className="grade-bar">
-                  <div
-                    className="grade-fill grade-c-fill"
-                    style={{
-                      width: `${
-                        commandCenterData.contentGrades?.percentC || 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-                <span className="grade-percent">
-                  {Math.round(commandCenterData.contentGrades?.percentC || 0)}%
-                </span>
-                <span className="grade-count">
-                  ({commandCenterData.contentGrades?.C || 0})
-                </span>
-              </div>
-
-              <div className="grade-info">
-                <span className="grade-label grade-d">D</span>
-                <div className="grade-bar">
-                  <div
-                    className="grade-fill grade-d-fill"
-                    style={{
-                      width: `${
-                        commandCenterData.contentGrades?.percentD || 0
-                      }%`,
-                    }}
-                  ></div>
-                </div>
-                <span className="grade-percent">
-                  {Math.round(commandCenterData.contentGrades?.percentD || 0)}%
-                </span>
-                <span className="grade-count">
-                  ({commandCenterData.contentGrades?.D || 0})
-                </span>
-              </div>
             </div>
           </div>
         </div>{" "}
@@ -955,6 +869,92 @@ const CommandCenterDashboard = () => {
             )}
           </div>
         </div>
+        <div className="content-grades-section">
+          <h3>Content Quality Distribution</h3>
+          <div className="grade-distribution">
+            <div className="grade-bar-container">
+              <div className="grade-info">
+                <span className="grade-label grade-a">A</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-a-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentA || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentA || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.A || 0})
+                </span>
+              </div>
+
+              <div className="grade-info">
+                <span className="grade-label grade-b">B</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-b-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentB || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentB || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.B || 0})
+                </span>
+              </div>
+
+              <div className="grade-info">
+                <span className="grade-label grade-c">C</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-c-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentC || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentC || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.C || 0})
+                </span>
+              </div>
+
+              <div className="grade-info">
+                <span className="grade-label grade-d">D</span>
+                <div className="grade-bar">
+                  <div
+                    className="grade-fill grade-d-fill"
+                    style={{
+                      width: `${
+                        commandCenterData.contentGrades?.percentD || 0
+                      }%`,
+                    }}
+                  ></div>
+                </div>
+                <span className="grade-percent">
+                  {Math.round(commandCenterData.contentGrades?.percentD || 0)}%
+                </span>
+                <span className="grade-count">
+                  ({commandCenterData.contentGrades?.D || 0})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>{" "}
       </div>
 
       {/* KPI Grid */}
@@ -1122,7 +1122,7 @@ const CommandCenterDashboard = () => {
       </div>
 
       {/* Conversion Rate Slider */}
-      <div className="conversion-rate-section">
+      {/* <div className="conversion-rate-section">
         <h3>CONVERSION RATE OPTIMIZER</h3>
         <div className="slider-container">
           <div className="slider-info">
@@ -1182,7 +1182,7 @@ const CommandCenterDashboard = () => {
             calculations and total combined financial impact
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Traffic & ROI Sparks */}
       {/* <div className="sparks-section">

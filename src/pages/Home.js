@@ -42,6 +42,33 @@ const HomePage = () => {
   } = useFinancialCalculations();
 
   const [decayTimeframe, setDecayTimeframe] = useState(30);
+  const [isEditingInvestment, setIsEditingInvestment] = useState(false);
+  const [tempInvestmentValue, setTempInvestmentValue] = useState("");
+
+  // Helper functions for investment editing
+  const handleEditInvestment = () => {
+    setTempInvestmentValue(
+      onboardingData.domainCostDetails?.totalInvested?.toString() || ""
+    );
+    setIsEditingInvestment(true);
+  };
+
+  const handleSaveInvestment = () => {
+    const num = parseFloat(tempInvestmentValue.replace(/,/g, ""));
+    setOnboardingData((prev) => ({
+      ...prev,
+      domainCostDetails: {
+        ...prev.domainCostDetails,
+        totalInvested: isNaN(num) ? 0 : num,
+      },
+    }));
+    setIsEditingInvestment(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingInvestment(false);
+    setTempInvestmentValue("");
+  };
 
   useEffect(() => {
     // Ensure onboarding data is loaded before calculating metrics
@@ -203,46 +230,110 @@ const HomePage = () => {
                 <div className="metric-value loading">⏳ Loading...</div>
               ) : (
                 <div className="metric-value">
-                  $
-                  <input
-                    type="text"
-                    value={
-                      onboardingData.domainCostDetails?.totalInvested ===
-                      undefined
-                        ? ""
-                        : Number(
-                            onboardingData.domainCostDetails.totalInvested
-                          ).toLocaleString(undefined, {
-                            maximumFractionDigits: 2,
-                          })
-                    }
-                    style={{
-                      width: "240px",
-                      fontSize: "1em",
-                      border: "1px solid #ccc",
-                      borderRadius: "4px",
-                      padding: "2px 6px",
-                      textAlign: "right",
-                      background: "rgba(255,255,255,0.7)",
-                    }}
-                    onChange={(e) => {
-                      // Remove commas and non-numeric except dot
-                      const raw = e.target.value.replace(/,/g, "");
-                      const num = parseFloat(raw);
-                      setOnboardingData((prev) => ({
-                        ...prev,
-                        domainCostDetails: {
-                          ...prev.domainCostDetails,
-                          totalInvested: isNaN(num) ? "" : num,
-                        },
-                      }));
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.target.blur();
-                      }
-                    }}
-                  />
+                  {isEditingInvestment ? (
+                    <div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        $
+                        <input
+                          type="text"
+                          value={tempInvestmentValue}
+                          style={{
+                            width: "200px",
+                            fontSize: "1em",
+                            border: "1px solid #ccc",
+                            borderRadius: "4px",
+                            padding: "2px 6px",
+                            textAlign: "right",
+                            background: "rgba(255,255,255,0.9)",
+                          }}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, "");
+                            setTempInvestmentValue(raw);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleSaveInvestment();
+                            } else if (e.key === "Escape") {
+                              handleCancelEdit();
+                            }
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <button
+                          onClick={handleSaveInvestment}
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: "0.8em",
+                            background: "#4CAF50",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "3px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          style={{
+                            padding: "4px 8px",
+                            fontSize: "0.8em",
+                            background: "#f44336",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "3px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ marginBottom: "8px" }}>
+                        $
+                        {(
+                          onboardingData.domainCostDetails?.totalInvested || 0
+                        ).toLocaleString(undefined, {
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                      <div
+                        style={{ display: "flex", justifyContent: "center" }}
+                      >
+                        <button
+                          onClick={handleEditInvestment}
+                          style={{
+                            padding: "2px 6px",
+                            fontSize: "0.7em",
+                            background: "#2196F3",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "3px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               <div className="metric-subtitle">Content investment to date</div>
@@ -264,10 +355,6 @@ const HomePage = () => {
                   {" "}
                   ${" "}
                   {(() => {
-                    console.log(
-                      "test dashboard",
-                      onboardingData.GSCAnalysisData
-                    );
                     const totalInvested =
                       onboardingData.domainCostDetails?.totalInvested || 0;
 
