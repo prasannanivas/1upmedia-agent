@@ -35,6 +35,8 @@ const RiskDashboard = () => {
     getTotalWastedSpend,
     // Get the getRiskMetric function to access sample data
     getRiskMetric,
+    // Get enhanced keyword efficiency metrics
+    getKeywordEfficiencyMetrics,
   } = useFinancialCalculations();
   const navigate = useNavigate();
 
@@ -536,25 +538,55 @@ const RiskDashboard = () => {
         })(),
       },
       keywordEfficiency: {
-        avgKD: parseFloat(avgKD.toFixed(1)),
-        avgDA: domainAuthority,
-        overreachRatio:
-          domainAuthority > 0
-            ? parseFloat((avgKD / domainAuthority).toFixed(1))
-            : 1.0,
-        topOverexertions: searchConsoleData
-          .filter((item) => item.position > 50)
-          .slice(0, 2)
-          .map((item) => ({
-            url: item.keys?.[1] || "Unknown page",
-            kd: Math.min(80, Math.max(30, item.position)),
-            da: domainAuthority,
-          })),
-        // Use centralized calculations for efficiency metrics
-        blendedAuthority:
-          centralizedMetrics.keywordEfficiency?.blendedAuthority || 0,
-        efficiencyRatio:
-          centralizedMetrics.keywordEfficiency?.efficiencyRatio || 0,
+        // Use centralized keyword efficiency calculations
+        ...(() => {
+          try {
+            const keywordEfficiencyData = getKeywordEfficiencyMetrics();
+            return keywordEfficiencyData;
+          } catch (error) {
+            console.error("Error getting keyword efficiency data:", error);
+            // Fallback to basic calculation
+            return {
+              avgKD: parseFloat(avgKD.toFixed(1)),
+              avgDA: domainAuthority,
+              blendedAuthority: parseFloat(
+                (domainAuthority * 0.6 + pageAuthority * 0.4).toFixed(1)
+              ),
+              efficiencyRatio:
+                avgKD > 0
+                  ? parseFloat((domainAuthority / avgKD).toFixed(2))
+                  : 1.0,
+              competitivenessIndex: 5.0,
+              opportunityScore: 50,
+              authorityDeficit: Math.max(
+                0,
+                parseFloat((avgKD - domainAuthority).toFixed(1))
+              ),
+              overreachRatio:
+                domainAuthority > 0
+                  ? parseFloat((avgKD / domainAuthority).toFixed(2))
+                  : 999,
+              riskLevel: "Medium",
+              performanceMetrics: {
+                avgPosition: parseFloat(avgPosition.toFixed(1)),
+                totalKeywords: searchConsoleData.length,
+                top10Keywords: searchConsoleData.filter(
+                  (item) => (item.position || 100) <= 10
+                ).length,
+                top20Keywords: searchConsoleData.filter(
+                  (item) => (item.position || 100) <= 20
+                ).length,
+                beyondPage2: searchConsoleData.filter(
+                  (item) => (item.position || 100) > 20
+                ).length,
+              },
+              topOverexertions: [],
+              recommendations: [
+                "Enable keyword efficiency analysis by connecting data sources",
+              ],
+            };
+          }
+        })(),
       }, // ...existing code for remaining metrics...
       strategyRatio: {
         // Use funnelGapIdentifier function from FinancialCalculations context
@@ -759,6 +791,7 @@ const RiskDashboard = () => {
     getLinkDilution,
     getTotalWastedSpend,
     funnelGapIdentifier,
+    getKeywordEfficiencyMetrics,
   ]);
 
   // Initialize risk metrics state with calculated values
@@ -1405,24 +1438,110 @@ const RiskDashboard = () => {
               <span>
                 Avg KD Targeted: {riskMetrics.keywordEfficiency.avgKD}
               </span>
-              <span>Avg DA: {riskMetrics.keywordEfficiency.avgDA}</span>
-              <span className="overexposed">→ Overexposed!</span>
+              <span>
+                Blended Authority:{" "}
+                {riskMetrics.keywordEfficiency.blendedAuthority}
+              </span>
+              <span
+                className={`risk-level ${riskMetrics.keywordEfficiency.riskLevel.toLowerCase()}`}
+              >
+                Risk: {riskMetrics.keywordEfficiency.riskLevel}
+              </span>
+            </div>
+            <div className="efficiency-details">
+              <div className="metric-row">
+                <span>Efficiency Ratio:</span>
+                <span
+                  className={
+                    riskMetrics.keywordEfficiency.efficiencyRatio < 0.8
+                      ? "warning"
+                      : "success"
+                  }
+                >
+                  {riskMetrics.keywordEfficiency.efficiencyRatio}x
+                </span>
+              </div>
+              <div className="metric-row">
+                <span>Authority Deficit:</span>
+                <span
+                  className={
+                    riskMetrics.keywordEfficiency.authorityDeficit > 0
+                      ? "warning"
+                      : "success"
+                  }
+                >
+                  {riskMetrics.keywordEfficiency.authorityDeficit > 0
+                    ? "+"
+                    : ""}
+                  {riskMetrics.keywordEfficiency.authorityDeficit}
+                </span>
+              </div>
+              <div className="metric-row">
+                <span>Opportunity Score:</span>
+                <span
+                  className={
+                    riskMetrics.keywordEfficiency.opportunityScore < 50
+                      ? "warning"
+                      : "success"
+                  }
+                >
+                  {riskMetrics.keywordEfficiency.opportunityScore}/100
+                </span>
+              </div>
+              <div className="metric-row">
+                <span>Competitiveness Index:</span>
+                <span>
+                  {riskMetrics.keywordEfficiency.competitivenessIndex}/10
+                </span>
+              </div>
+            </div>
+            <div className="performance-breakdown">
+              <h4>Keyword Performance Distribution:</h4>
+              <div className="keyword-brackets">
+                <span className="bracket top-10">
+                  Top 10:{" "}
+                  {
+                    riskMetrics.keywordEfficiency.performanceMetrics
+                      .top10Keywords
+                  }
+                </span>
+                <span className="bracket top-20">
+                  Top 20:{" "}
+                  {
+                    riskMetrics.keywordEfficiency.performanceMetrics
+                      .top20Keywords
+                  }
+                </span>
+                <span className="bracket beyond-20">
+                  Beyond P2:{" "}
+                  {riskMetrics.keywordEfficiency.performanceMetrics.beyondPage2}
+                </span>
+              </div>
             </div>
             <div className="risk-details">
-              <p>
-                • KD/DA Overreach Ratio:{" "}
-                {riskMetrics.keywordEfficiency.overreachRatio}x (High Risk)
-              </p>
-              <p>• Top Overexertions:</p>
+              <p>• Top Overexertions (Authority vs Difficulty Gap):</p>
               {riskMetrics.keywordEfficiency.topOverexertions.map(
                 (item, index) => (
                   <p key={index} className="overexertion-item">
-                    &nbsp;&nbsp;• {item?.url} → KD {item.kd} | DA {item.da}
+                    &nbsp;&nbsp;• {item?.url} → KD {item.kd} | DA {item.da} |
+                    Gap: +{item.gap} | Pos: {item.position}
                   </p>
                 )
               )}
+              <div className="recommendations">
+                <h4>🎯 Strategic Recommendations:</h4>
+                {riskMetrics.keywordEfficiency.recommendations.map(
+                  (rec, index) => (
+                    <p key={index} className="recommendation-item">
+                      &nbsp;&nbsp;• {rec}
+                    </p>
+                  )
+                )}
+              </div>
             </div>
-            <button className="view-more-btn">Punching-Up Scatterplot ▸</button>
+            <button className="view-more-btn">
+              Authority-Difficulty Matrix ▸
+            </button>
           </div>
         </div>
         {/* 5. Strategy Ratio */}

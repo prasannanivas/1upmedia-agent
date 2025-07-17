@@ -861,6 +861,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
           recoveryRate: RR_RECOVERY,
           discountRate: DISCOUNT_RATE,
           presentValueFactor: PV_FACTOR,
+          horizonDays: horizonDays,
+          horizonYears: HORIZON_YEARS,
           formula:
             "Recoverable Value = Baseline × (1 - exp(-decay_rate × timeframe)) × Recovery Rate × PV Factor",
           decayRateFormula: "decay_rate = ln(peak / current) / timeframe_days",
@@ -1681,7 +1683,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
       );
     }
 
-    const conversionRate = 0.02; // 2% conversion rate
+    const conversionRate = 0.02; // 2% industry standard
     // FIXED: Calculate cost per URL based on analyzed content only
     const costPerUrl = totalContentCost / totalAnalyzed;
 
@@ -1817,7 +1819,13 @@ export const FinancialCalculationsProvider = ({ children }) => {
         psychGap: Math.round(psychGap * 100) / 100,
         compositeGap: Math.round(compositeGap * 100) / 100,
         calculatedRevenueLoss: Math.round(stageRevenueLoss),
-        severityScore,
+        recommendations: getFunnelStageRecommendations(
+          stage,
+          gapSeverity,
+          distributionGap,
+          frameworkGap,
+          psychGap
+        ),
       });
 
       stageAnalysis[stage] = {
@@ -1983,7 +1991,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
 
   const getContentQualityDistribution = () => {
     // Use contentCostWaste.length for total unique URLs
-    const totalUniqueUrls = contentCostWaste.length || 1;
+    const totalUniqueUrls = contentCostWaste.length || 1; // Prevent division by zero
 
     // Get AOV and Total Cost from onboardingData, throw error if not available
     const averageOrderValue =
@@ -4543,6 +4551,205 @@ export const FinancialCalculationsProvider = ({ children }) => {
       },
     };
   };
+
+  /**
+   * Enhanced Keyword Efficiency Calculator
+   * Uses standard SEO measures for keyword-authority alignment
+   */
+  const getKeywordEfficiencyMetrics = (data = onboardingData) => {
+    if (!data) {
+      return {
+        avgKD: 30,
+        avgDA: 30,
+        blendedAuthority: 30,
+        efficiencyRatio: 1.0,
+        competitivenessIndex: 5.0,
+        opportunityScore: 50,
+        authorityDeficit: 0,
+        overreachRatio: 1.0,
+        riskLevel: "Medium",
+        performanceMetrics: {
+          avgPosition: 50,
+          totalKeywords: 0,
+          top10Keywords: 0,
+          top20Keywords: 0,
+          beyondPage2: 0,
+        },
+        topOverexertions: [],
+        recommendations: ["Connect data sources for analysis"],
+      };
+    }
+
+    const searchConsoleData = Array.isArray(data?.searchConsoleData)
+      ? data.searchConsoleData
+      : [];
+
+    const domainAuthority =
+      parseInt(data?.initialAnalysisState?.domainAuthority) || 30;
+    const pageAuthority =
+      parseInt(data?.initialAnalysisState?.pageAuthority) || 30;
+
+    // Calculate average position and KD estimation
+    const avgPosition =
+      searchConsoleData.length > 0
+        ? searchConsoleData.reduce(
+            (sum, item) => sum + (item.position || 50),
+            0
+          ) / searchConsoleData.length
+        : 50;
+
+    // Enhanced KD calculation based on multiple factors
+    const avgKD =
+      searchConsoleData.length > 0
+        ? Math.min(
+            90,
+            Math.max(
+              10,
+              searchConsoleData.reduce((sum, item) => {
+                // Better KD estimation using position, impressions, and CTR
+                const position = item.position || 50;
+                const impressions = item.impressions || 0;
+                const ctr = item.ctr || 0;
+
+                // Base KD from position (primary factor)
+                let estimatedKD = position * 0.8;
+
+                // Adjust for search volume (impressions indicate competitiveness)
+                if (impressions > 1000) estimatedKD += 5;
+                else if (impressions < 100) estimatedKD -= 5;
+
+                // Adjust for CTR (lower CTR often means higher difficulty)
+                if (ctr < 0.01) estimatedKD += 5;
+                else if (ctr > 0.05) estimatedKD -= 5;
+
+                return sum + Math.min(90, Math.max(10, estimatedKD));
+              }, 0) / searchConsoleData.length
+            )
+          )
+        : 30;
+
+    // Calculate Blended Authority (industry standard)
+    const blendedAuthority = domainAuthority * 0.6 + pageAuthority * 0.4;
+
+    // Calculate proper efficiency ratio
+    const efficiencyRatio = avgKD > 0 ? blendedAuthority / avgKD : 1.0;
+
+    // Calculate competitiveness index
+    const totalImpressions = searchConsoleData.reduce(
+      (sum, item) => sum + (item.impressions || 0),
+      0
+    );
+    const avgImpression =
+      totalImpressions / Math.max(searchConsoleData.length, 1);
+    const competitivenessIndex = Math.min(
+      10,
+      Math.max(1, (avgImpression / 1000) * (avgPosition / 10))
+    );
+
+    // Calculate opportunity score
+    const kdGap = Math.max(0, avgKD - blendedAuthority);
+    const positionPenalty = Math.max(0, avgPosition - 20) * 2;
+    const opportunityScore = Math.max(0, 100 - kdGap - positionPenalty);
+
+    // Calculate authority deficit
+    const authorityDeficit = Math.max(0, avgKD - domainAuthority);
+
+    // Calculate overreach ratio
+    const overreachRatio = domainAuthority > 0 ? avgKD / domainAuthority : 999;
+
+    // Determine risk level
+    let riskLevel = "Low";
+    if (kdGap > 30) riskLevel = "Critical";
+    else if (kdGap > 15) riskLevel = "High";
+    else if (kdGap > 5) riskLevel = "Medium";
+
+    // Calculate performance metrics
+    const performanceMetrics = {
+      avgPosition: parseFloat(avgPosition.toFixed(1)),
+      totalKeywords: searchConsoleData.length,
+      top10Keywords: searchConsoleData.filter(
+        (item) => (item.position || 100) <= 10
+      ).length,
+      top20Keywords: searchConsoleData.filter(
+        (item) => (item.position || 100) <= 20
+      ).length,
+      beyondPage2: searchConsoleData.filter(
+        (item) => (item.position || 100) > 20
+      ).length,
+    };
+
+    // Find top overexertions
+    const topOverexertions = searchConsoleData
+      .filter((item) => item.position > 30)
+      .sort((a, b) => (b.position || 0) - (a.position || 0))
+      .slice(0, 3)
+      .map((item) => {
+        const estimatedKD = Math.min(
+          90,
+          Math.max(
+            20,
+            (item.position || 50) * 0.8 +
+              Math.log10((item.impressions || 1) + 1) * 5
+          )
+        );
+        return {
+          url: item.keys?.[1] || item.url || "Unknown page",
+          kd: parseFloat(estimatedKD.toFixed(1)),
+          da: domainAuthority,
+          position: parseFloat((item.position || 0).toFixed(1)),
+          impressions: item.impressions || 0,
+          gap: parseFloat((estimatedKD - domainAuthority).toFixed(1)),
+        };
+      });
+
+    // Generate recommendations
+    const recommendations = [];
+    if (kdGap > 20) {
+      recommendations.push(
+        "Focus on building domain authority through high-quality backlinks"
+      );
+      recommendations.push(
+        `Target lower difficulty keywords (KD < ${Math.floor(
+          blendedAuthority + 5
+        )})`
+      );
+    } else if (kdGap > 10) {
+      recommendations.push(
+        "Mix of authority building and strategic keyword selection"
+      );
+      recommendations.push("Optimize existing content for better positions");
+    } else if (kdGap > 0) {
+      recommendations.push(
+        "Continue current keyword strategy with minor optimizations"
+      );
+    } else {
+      recommendations.push(
+        "Excellent keyword-authority alignment, consider higher KD targets"
+      );
+    }
+
+    if (avgPosition > 20) {
+      recommendations.push(
+        "Improve on-page SEO and content quality for better rankings"
+      );
+    }
+
+    return {
+      avgKD: parseFloat(avgKD.toFixed(1)),
+      avgDA: domainAuthority,
+      blendedAuthority: parseFloat(blendedAuthority.toFixed(1)),
+      efficiencyRatio: parseFloat(efficiencyRatio.toFixed(2)),
+      competitivenessIndex: parseFloat(competitivenessIndex.toFixed(1)),
+      opportunityScore: parseFloat(opportunityScore.toFixed(1)),
+      authorityDeficit: parseFloat(authorityDeficit.toFixed(1)),
+      overreachRatio: parseFloat(overreachRatio.toFixed(2)),
+      riskLevel,
+      performanceMetrics,
+      topOverexertions,
+      recommendations,
+    };
+  };
+
   return (
     <FinancialCalculationsContext.Provider
       value={{
@@ -4595,6 +4802,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         showGAUrlsOnly,
         setShowGAUrlsOnly,
         processGSCDataForCalculations,
+        getKeywordEfficiencyMetrics,
       }}
     >
       {children}
