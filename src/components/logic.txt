@@ -1,0 +1,87 @@
+### Cheat-Sheet:  “Site-Valuation Math” in Plain English
+
+
+#### 1.  Start with the raw facts we already have for each page
+
+```
+• Impressions   – how many times Google shows the page
+• Click-Through Rate (CTR)
+• Sessions      – visits recorded in GA
+• Estimated Revenue – dollars these sessions earned
+• Page Authority (PA) – link-strength of the page
+• External Links – backlinks pointing at the page
+• Avg  Position – average Google rank (1 = top)
+```
+
+*(Plus every keyword row behind the scenes, but that stays in kwRows for drill-downs.)*
+
+---
+
+#### 2.  Translate those facts into **SEO KPIs**
+
+| KPI                        | Friendly explanation                                                                                               | Formula essence                        |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| **KD-enh**                 | “How hard is the query set we’re chasing?” — blends rank, volume & poor CTR penalties.                             | 80 % rank + 10 % volume + 10 % bad-CTR |
+| **Blended Authority (BA)** | “How much ranking power do we have?” — combines domain clout and page clout.                                       | 60 % DA + 40 % PA                      |
+| **Efficiency Ratio (ER)**  | Authority ÷ Difficulty.  >1 = under-used muscle, <1 = overstretch.                                                 | BA ÷ KD-enh                            |
+| **Opportunity Score**      | 100 minus penalties for aiming too high (KD gap) or ranking too low (pos penalty). Max 100 means wide-open upside. | 100 – (KD\_gap + posPen)               |
+| **Risk Level**             | Traffic light from Low → Critical based only on KD\_gap size.                                                      | rule-table                             |
+
+---
+
+#### 3.  Build the **financial value model (SKV)**
+
+Think of a single page like a small bond that pays cash-flow (clicks × \$/visit).
+We apply bonuses and discounts to that cash-flow:
+
+1. **TrafficPotential** = Impressions × CTR
+2. **TopLineValue**     = TrafficPotential × **\$ / visit**
+3. **AnchorBoost**      = 1 + log₂(1 + backlinks)
+   *– extra links give a lift but with diminishing returns*
+4. **ContentDecay**     = e^( –λ × ageMonths )
+   *(λ is ln 2 / 18 → a half-life of 18 months; 1 if age unknown)*
+5. **QualityBoost**     = 60 % Engagement boost + 40 % CTR-gap boost
+6. **DA-Penalty**       = 1 + max(0, KD – DA)/100
+   *(if the query is harder than our domain can handle, slash the value)*
+
+Finally:
+
+```
+SKV =  (TopLineValue × AnchorBoost × ContentDecay × QualityBoost)
+       ----------------------------------------------------------
+                         DA-Penalty
+```
+
+Add every page’s SKV together → **GPV** (Gross Portfolio Value).
+
+---
+
+#### 4.  Interpret the outputs
+
+* **TopLineValue** ≈ today’s annualised revenue from organic visits.
+* **SKV**     ≈ present value of future revenue after boosts/penalties.
+* **Est Loss Mid** = \$\$\$ we’re missing because of link dilution + KD mismatch.
+* **Efficiency > 1.2 & OppScore > 80** → “quick‐win” page (push harder!).
+* **Risk = High/Critical** → we’re swinging above our weight; rethink keyword or raise authority.
+
+---
+
+#### 5.  Why numbers can dwarf the actual budget
+
+SKV and Est-Loss are *modeled upside* — what the traffic **could** earn over time —
+so they are allowed to be bigger than the content cost you already paid.
+
+---
+
+### TL;DR flow for each page
+
+```
+Raw GA + SEO data
+        ↓
+Difficulty (KD-enh)          Authority (BA)
+        ↓                        ↓
+      Gap → Risk / OppScore ← ratio (ER)
+        ↓                        ↓
+   Traffic × $  — bonuses & penalties  →  SKV  $$
+                           ↓
+                 sum all SKV → GPV banner

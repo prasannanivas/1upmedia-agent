@@ -4750,6 +4750,217 @@ export const FinancialCalculationsProvider = ({ children }) => {
     };
   };
 
+  /****************************************************************
+   * Enhanced getKeywordMetrics – keeps “union-of-3” filter,
+   * adds SKV / GPV, snapshot, kwRows.
+   ****************************************************************/
+  const config = {
+    /*KD-enh*/
+    KD_WEIGHT_POSITION: 0.8,
+    KD_WEIGHT_VOLUME: 0.1,
+    KD_WEIGHT_CTR: 0.1,
+    KD_MIN: 10,
+    KD_MAX: 90,
+
+    /*Authority*/
+    BA_WEIGHT_DA: 0.6,
+    BA_WEIGHT_PA: 0.4,
+
+    /*Opportunity & risk*/
+    RISK_CRITICAL_GAP: 30,
+    RISK_HIGH_GAP: 15,
+    RISK_MEDIUM_GAP: 5,
+
+    /*Financial*/
+    DECAY_HALF_LIFE_MONTHS: 18,
+    QUALITY_WEIGHT_ENG: 0.6,
+    QUALITY_WEIGHT_CTR_GAP: 0.4,
+  };
+
+  const ln2 = Math.log(2);
+  const decayLambda = ln2 / config.DECAY_HALF_LIFE_MONTHS;
+  const canon = (u) => (u ? u.replace(/\/+$/, "") : "");
+  const safeAdd = (a = 0, b = 0) => a + b;
+
+  /**
+   * @returns {{data:Object[], gpv:number, snapshot:string}}
+   */
+  function getKeywordMetrics() {
+    /* 1️⃣ merge-basics */
+    const domainAuthority =
+      parseInt(onboardingData?.initialAnalysisState?.domainAuthority) || 30;
+    const byUrl = new Map();
+    const urlSources = new Map();
+    const rec = (url, src) => {
+      const key = canon(url);
+      if (!byUrl.has(key)) {
+        byUrl.set(key, { url: key, kwRows: [] });
+        urlSources.set(key, new Set());
+      }
+      urlSources.get(key).add(src);
+      return byUrl.get(key);
+    };
+
+    const base_url =
+      onboardingData?.GSCAnalysisData?.contentCostWaste?.[0]?.url?.replace(
+        /^(https?:\/\/[^/]+).*$/,
+        "$1"
+      ) ||
+      onboardingData?.domainCostDetails?.websiteURL ||
+      "";
+
+    /* -- ingest GA rows -- */
+    urlAnalysis.forEach((row) => {
+      const full = row.url.startsWith("http") ? row.url : base_url + row.url;
+      Object.assign(rec(full, "urlAnalysis"), row);
+    });
+
+    /* -- ingest Link-Dilution rows -- */
+    linkDilution.forEach((row) => {
+      Object.assign(rec(row.url, "linkDilution"), {
+        pageAuthority: row.pageAuthority,
+        externalLinks: row.externalLinks,
+        internalLinks: row.internalLinks,
+        dilutionScore: row.dilutionScore,
+        dilutedClicks: row.dilutedClicks,
+        linkLossLow: row.estimatedLoss?.low ?? 0,
+        linkLossMid: row.estimatedLoss?.mid ?? 0,
+        linkLossHigh: row.estimatedLoss?.high ?? 0,
+      });
+    });
+
+    /* -- aggregate keyword-mismatch rows -- */
+    keywordMismatch.forEach((kw) => {
+      const r = rec(kw.url, "keywordMismatch");
+      r.kwRows.push(kw);
+      r.totalImpr = safeAdd(r.totalImpr, kw.impressions);
+      r.totalClicks = safeAdd(r.totalClicks, kw.actualClicks);
+      r.sumPos = safeAdd(r.sumPos, kw.position);
+      r.kwCount = safeAdd(r.kwCount, 1);
+      r.kwLossLow = safeAdd(r.kwLossLow, kw.estimatedLoss?.low || 0);
+      r.kwLossMid = safeAdd(r.kwLossMid, kw.estimatedLoss?.mid || 0);
+      r.kwLossHigh = safeAdd(r.kwLossHigh, kw.estimatedLoss?.high || 0);
+    });
+
+    /* keep only URLs present in all 3 datasets */
+    const completeKeys = Array.from(urlSources.entries())
+      .filter(
+        ([, src]) =>
+          src.has("urlAnalysis") &&
+          src.has("linkDilution") &&
+          src.has("keywordMismatch")
+      )
+      .map(([k]) => k);
+
+    /* 2️⃣ derive KPIs + FINANCIALS */
+    const snapshot = new Date().toISOString().slice(0, 10);
+    let gpv = 0;
+
+    const rows = completeKeys.map((key) => {
+      const r = byUrl.get(key);
+
+      /* make URL absolute */
+      if (r.url && !r.url.startsWith("http")) r.url = base_url + r.url;
+
+      const impr = r.totalImpr || 0;
+      const pos = r.kwCount ? r.sumPos / r.kwCount : 0;
+      const ctr = impr ? (r.totalClicks || 0) / impr : 0;
+
+      /* KD-enh */
+      let KD_enh =
+        config.KD_WEIGHT_POSITION * pos +
+        config.KD_WEIGHT_VOLUME * Math.log10(1 + impr) * 10 +
+        config.KD_WEIGHT_CTR * (1 - ctr);
+      KD_enh = Math.min(config.KD_MAX, Math.max(config.KD_MIN, KD_enh));
+
+      /* Authority */
+      const PA = r.pageAuthority || 0;
+      const BA =
+        config.BA_WEIGHT_DA * domainAuthority + config.BA_WEIGHT_PA * PA;
+      const ER = BA && KD_enh ? BA / KD_enh : 0;
+
+      /* Opportunity */
+      const CI = (impr / 1_000) * (pos / 10);
+      const KD_Gap = Math.max(0, KD_enh - BA);
+      const posPen = Math.max(0, pos - 20) * 2;
+      let OppScore = 100 - KD_Gap - posPen;
+      OppScore = Math.min(100, Math.max(0, OppScore));
+      const RiskLevel =
+        KD_Gap > config.RISK_CRITICAL_GAP
+          ? "Critical"
+          : KD_Gap > config.RISK_HIGH_GAP
+          ? "High"
+          : KD_Gap > config.RISK_MEDIUM_GAP
+          ? "Medium"
+          : "Low";
+
+      /* FINANCIAL SKV */
+      const anchorVal = r.externalLinks || 0;
+      const AnchorBoost = 1 + Math.log2(1 + anchorVal);
+      const ageMonths = r.ageMonths ?? 0;
+      const ContentDecay = ageMonths ? Math.exp(-decayLambda * ageMonths) : 1;
+      const rv =
+        r.sessions && r.estimatedRevenue ? r.estimatedRevenue / r.sessions : 1;
+      const TrafficPotential = impr * ctr;
+      const TopLineValue = TrafficPotential * rv;
+      const CTR_expected = pos ? 0.312 / (1 + 0.482 * (pos - 1) ** 1.2) : 0.312;
+      const CTR_gap = (ctr + 1e-6) / (CTR_expected + 1e-6);
+      const EngFac =
+        1 + 0.5 * (1 - (r.bounceRate ?? 0.5)) + 0.5 * (r.engagementRate ?? 0.5);
+      const QualityBoost =
+        config.QUALITY_WEIGHT_ENG * EngFac +
+        config.QUALITY_WEIGHT_CTR_GAP * CTR_gap;
+      const DA_Penalty = 1 + Math.max(0, KD_enh - domainAuthority) / 100;
+
+      const SKV =
+        (TopLineValue * AnchorBoost * ContentDecay * QualityBoost) / DA_Penalty;
+      gpv += SKV;
+
+      return {
+        snapshot,
+        url: r.url,
+
+        /* GA basics */
+        sessions: r.sessions,
+        pageViews: r.pageViews,
+        engagementRate: r.engagementRate,
+        bounceRate: r.bounceRate,
+        estimatedRevenue: r.estimatedRevenue,
+
+        /* Link dilution */
+        pageAuthority: PA,
+        externalLinks: r.externalLinks,
+        dilutionScore: r.dilutionScore,
+
+        /* Keyword aggregates */
+        impressions: impr,
+        clicks: r.totalClicks || 0,
+        avgPosition: pos || null,
+        CTR: ctr || null,
+
+        /* KPIs */
+        KD_enh,
+        BA,
+        EfficiencyRatio: ER,
+        CompetitivenessIndex: CI,
+        OpportunityScore: OppScore,
+        RiskLevel,
+
+        /* Financials */
+        TrafficPotential,
+        TopLineValue,
+        AnchorBoost,
+        ContentDecay,
+        SKV,
+
+        /* Loss */
+        estLossMid: (r.linkLossMid || 0) + (r.kwLossMid || 0),
+      };
+    });
+
+    return { data: rows, gpv, snapshot };
+  }
+
   return (
     <FinancialCalculationsContext.Provider
       value={{
@@ -4799,6 +5010,7 @@ export const FinancialCalculationsProvider = ({ children }) => {
         getContentWastePages,
         showSitemapOnlyData,
         setShowSitemapOnlyData,
+        getKeywordMetrics,
         showGAUrlsOnly,
         setShowGAUrlsOnly,
         processGSCDataForCalculations,
