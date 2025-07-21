@@ -9,8 +9,8 @@
  * - Implements same data validation pattern as ContentLedgerDashboard
  * - Shows "Finish Onboarding" button when insufficient data (no automatic redirect)
  */
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useOnboarding } from "../../context/OnboardingContext";
 import { useFinancialCalculations } from "../../context/FinancialCalculations";
 import {
@@ -32,6 +32,8 @@ import "./CommandCenterDashboard.css";
 
 const CommandCenterDashboard = () => {
   const { onboardingData, loading } = useOnboarding();
+  const [calculationsLoading, setCalculationsLoading] = useState(true); // Loading state for calculations
+  const [calcProgress, setCalcProgress] = useState(0); // Track calculation progress
   const {
     getRevenueLeak,
     getContentDecay,
@@ -46,6 +48,8 @@ const CommandCenterDashboard = () => {
     getROIRecoveryPotential,
   } = useFinancialCalculations();
   const navigate = useNavigate();
+  const location = useLocation();
+  const showInitialLoader = location.state?.showLoading;
   // Conversion rate state (1% to 4.5% range)
   const [conversionRate, setConversionRate] = useState(2.0); // Default 2%
 
@@ -69,6 +73,19 @@ const CommandCenterDashboard = () => {
       [planId]: !prev[planId],
     }));
   };
+
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Reset calculations loading state when onboardingData changes
+  useEffect(() => {
+    if (onboardingData) {
+      setCalculationsLoading(true);
+      setCalcProgress(0);
+    }
+  }, [onboardingData]);
   // Calculate command center metrics from onboarding data using FinancialCalculations context
   const commandCenterData = useMemo(() => {
     if (!onboardingData || loading) return { isBlind: true };
@@ -90,17 +107,41 @@ const CommandCenterDashboard = () => {
     }
 
     try {
+      // Start calculation process - set loading state
+      setCalculationsLoading(true);
+      setCalcProgress(10); // Started calculations
+
       // Use FinancialCalculations context functions for all metrics
       const revenueLeakData = getRevenueLeak({});
+      setCalcProgress(20); // 20% complete
+
       const contentDecayData = getContentDecay();
+      setCalcProgress(30); // 30% complete
+
       const keywordMismatchData = getKeywordMismatch();
+      setCalcProgress(40); // 40% complete
+
       const linkDilutionData = getLinkDilution({});
+      setCalcProgress(50); // 50% complete
+
       const psychMismatchData = getPsychMismatch({});
+      setCalcProgress(60); // 60% complete
+
       const funnelGapData = funnelGapIdentifier();
+      setCalcProgress(70); // 70% complete
+
       const contentQualityData = getContentQualityDistribution();
+      setCalcProgress(80); // 80% complete
+
       const creditScoreData = getMoodyCreditScore();
+      setCalcProgress(90); // 90% complete
+
       const cannibalizationLossData = getCannibalizationLoss();
-      const roiRecoveryData = getROIRecoveryPotential(); // Use searchConsoleData for basic metrics calculations
+      const roiRecoveryData = getROIRecoveryPotential();
+
+      // Calculations complete
+      setCalcProgress(100);
+      setTimeout(() => setCalculationsLoading(false), 100); // Small delay to ensure UI updates // Use searchConsoleData for basic metrics calculations
 
       console.log(
         "Command Center - Credit Score Data:",
@@ -338,11 +379,23 @@ const CommandCenterDashboard = () => {
     getROIRecoveryPotential,
   ]);
 
-  if (loading) {
+  if (loading || calculationsLoading) {
     return (
       <div className="command-center-loading">
         <RefreshCw className="loading-spinner" />
-        <p>Loading Command Center Dashboard...</p>{" "}
+        <p>
+          {loading
+            ? "Loading Command Center Dashboard..."
+            : `Calculating financial metrics... ${calcProgress}%`}
+        </p>
+        {!loading && calculationsLoading && (
+          <div className="calculation-progress-bar">
+            <div
+              className="calculation-progress-fill"
+              style={{ width: `${calcProgress}%` }}
+            ></div>
+          </div>
+        )}
       </div>
     );
   }

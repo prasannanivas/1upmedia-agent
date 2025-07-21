@@ -10,6 +10,7 @@ function DropdownMenu({
   icon,
   nestedDropdown,
   handleLinkClick,
+  loadingItems = {},
 }) {
   return (
     <li>
@@ -26,8 +27,21 @@ function DropdownMenu({
         >
           {links.map((link, index) => (
             <li className="submenu-item" key={index}>
-              <Link to={link.path} onClick={handleLinkClick}>
+              <Link
+                to={link.path}
+                state={{ fromNavBar: true, showLoading: true }}
+                className={`${loadingItems[link.path] ? "loading-item" : ""}`}
+                onClick={() =>
+                  !loadingItems[link.path] && handleLinkClick(link.path)
+                }
+                style={{
+                  pointerEvents: loadingItems[link.path] ? "none" : "auto",
+                }}
+              >
                 {link.label}
+                {loadingItems[link.path] && (
+                  <span className="loading-spinner-small" />
+                )}
               </Link>
             </li>
           ))}

@@ -168,6 +168,11 @@ const StepKeywords = () => {
     }
   };
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
     setSiteURL(onboardingData.domain || "");
     setLocation(onboardingData.location || "");

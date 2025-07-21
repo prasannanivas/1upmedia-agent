@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useNotification } from "../context/NotificationContext";
 import { motion, AnimatePresence } from "framer-motion";
+import "./SideNavBar.css";
 import {
   FiHome,
   FiFileText,
@@ -63,6 +64,7 @@ export const advancedConfigLinks = [
 
 function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
   const [dropdowns, setDropdowns] = useState({});
+  const [loadingItems, setLoadingItems] = useState({});
   const { unreadCount } = useNotification();
   const { logout } = useAuth();
   const location = useLocation();
@@ -102,7 +104,17 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
     }));
   };
 
-  const handleLinkClick = () => {
+  const handleLinkClick = (path) => {
+    // Mark this item as loading
+    setLoadingItems((prev) => ({ ...prev, [path]: true }));
+
+    // Set a timeout to reset loading state after a reasonable time (in case navigation fails)
+    setTimeout(() => {
+      setLoadingItems((prev) => ({ ...prev, [path]: false }));
+    }, 1000); // Reset after 1 second if page doesn't load
+
+    // Navigate immediately, let the destination page handle loading state
+    // Optionally close menu if needed
     //toggleMenu(); // Close the side menu
   };
 
@@ -138,11 +150,24 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
             >
               <Link
                 to={item.path}
-                className={`nav-link ${isActive(item.path) ? "active" : ""}`}
-                onClick={handleLinkClick}
+                state={{ fromNavBar: true, showLoading: true }}
+                className={`nav-link ${isActive(item.path) ? "active" : ""} ${
+                  loadingItems[item.path] ? "loading-item" : ""
+                }`}
+                onClick={() =>
+                  !loadingItems[item.path] && handleLinkClick(item.path)
+                }
+                style={{
+                  pointerEvents: loadingItems[item.path] ? "none" : "auto",
+                }}
               >
                 <item.icon className="nav-icon" />
-                <span>{item.label}</span>{" "}
+                <span>
+                  {item.label}
+                  {loadingItems[item.path] && (
+                    <span className="loading-spinner" />
+                  )}
+                </span>
                 {isActive(item.path) && (
                   <motion.div
                     className="active-indicator"
@@ -159,6 +184,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
             isOpen={dropdowns.agents}
             toggle={() => toggleDropdown("agents")}
             handleLinkClick={handleLinkClick}
+            loadingItems={loadingItems}
             links={agentLinks}
           />
 
@@ -168,6 +194,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
             isOpen={dropdowns.settings}
             toggle={() => toggleDropdown("settings")}
             handleLinkClick={handleLinkClick}
+            loadingItems={loadingItems}
             links={settingsLinks}
           />
           <DropdownMenu
@@ -176,6 +203,7 @@ function SideNavBar({ isMenuOpen, toggleMenu, navBarRef }) {
             isOpen={dropdowns.integrations}
             toggle={() => toggleDropdown("integrations")}
             handleLinkClick={handleLinkClick}
+            loadingItems={loadingItems}
             links={integrationLinks}
           />
 

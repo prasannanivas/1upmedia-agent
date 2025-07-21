@@ -251,7 +251,12 @@ const Dashboard = () => {
         },
       });
     }
-  });
+  }, [showSitemapOnlyData, showGAUrlsOnly, calculationParams]);
+
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Function to handle applying the new parameter settings
   const applySettings = (newParams) => {

@@ -51,6 +51,11 @@ const StepCreateAuthors = () => {
     setAuthorsList(onboardingData.authors);
   }, [email, onboardingData]);
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   console.log(onboardingData, authorsList);
   const handleSelectPersona = (persona) => {
     setSelectedPersona(persona);
