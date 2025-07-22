@@ -429,6 +429,8 @@ export const FinancialCalculationsProvider = ({ children }) => {
     let totalHoursRaw = 0;
     const uniqueGSCUrls = new Set(allGSCUrls);
 
+    setDecayLossDays("700Days"); // Ensure decayLossDays is set to 700 for calculations
+
     const urls =
       calculateTotalLoss().summary.totalRevenueLoss / uniqueGSCUrls.size;
     const hoursPerUrl = 3; // fallback
