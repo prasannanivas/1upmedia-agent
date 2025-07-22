@@ -251,7 +251,18 @@ const Dashboard = () => {
         },
       });
     }
-  }, [showSitemapOnlyData, showGAUrlsOnly, calculationParams]);
+  }, [
+    onboardingData,
+    calculationParams,
+    getRevenueLeak,
+    getContentDecay,
+    getKeywordMismatch,
+    getLinkDilution,
+    getPsychMismatch,
+    getCannibalizationLoss,
+    calculateTotalLoss,
+    categoriseIntoBuckets,
+  ]);
 
   // Scroll to top on component mount
   useEffect(() => {

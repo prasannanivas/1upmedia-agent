@@ -3079,6 +3079,10 @@ export const FinancialCalculationsProvider = ({ children }) => {
             ? Math.round((finalRec360 / totalSystemLoss) * 100)
             : 0,
         investmentRequired: Math.round(investmentRequired),
+        baseHourlyRate: Math.round(baseHourlyRate),
+        effectiveHours: Math.round(
+          investmentEst.effectiveHours || investmentRequired / baseHourlyRate
+        ),
         bestCaseROI: Math.round(roiScenarios["Optimistic (90% success)"].roi),
         paybackDays: roiScenarios["Realistic (75% success)"].paybackDays,
         timeframe: "30-360 days (staged)",

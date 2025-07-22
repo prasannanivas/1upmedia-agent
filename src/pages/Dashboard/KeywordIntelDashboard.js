@@ -2039,6 +2039,77 @@ const KeywordIntelDashboard = () => {
 
       {/* Main Dashboard Grid */}
       <div className="intel-grid">
+        {/* Row 2: Market Tape */}
+        <div className="market-tape-tile full-width">
+          <h3>• KW MARKET TAPE</h3>
+          <div className="market-metrics">
+            <div className="market-cap">
+              <span>
+                Portfolio KW Cap* $
+                {Math.round(calculateSummaryMetrics.portfolioGPV / 1000000, 2)}M
+                <Button
+                  size="small"
+                  onClick={() => setPortfolioExpanded(!portfolioExpanded)}
+                  sx={{ ml: 1, minWidth: "auto", p: "2px 8px" }}
+                >
+                  {portfolioExpanded ? "▲ Collapse" : "▼ Expand"}
+                </Button>
+              </span>
+              <span className="change-indicator">▲🔒% MoM</span>
+            </div>
+            <div className="portfolio-yield">
+              <span>
+                Portfolio Yield (🔒) {keywordIntelData.portfolio_yield}%
+              </span>
+            </div>
+
+            {keywordData && (
+              <div
+                className="portfolio-analysis-section"
+                style={{ marginTop: "20px" }}
+              >
+                {/* Always show summary ribbon with GPV metrics */}
+                {renderSummaryRibbon()}
+              </div>
+            )}
+          </div>
+          <div className="dcf-note">
+            Value derived from a discounted‑cash‑flow model on
+            keyword‑attributed cash flows, further adjusted for expected ranking
+            decay.
+          </div>
+        </div>
+        {/* New modern dashboard UI based on the "billa" data */}
+        <div className="new-dashboard-ui">
+          {portfolioExpanded && keywordData && (
+            <>
+              <Typography variant="h5" gutterBottom>
+                Content Portfolio Analysis
+              </Typography>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
+                Data snapshot:{" "}
+                {keywordData?.snapshot ||
+                  new Date().toISOString().split("T")[0]}
+              </Typography>
+
+              {/* Filters */}
+              {renderFilters()}
+
+              {/* Data Visualizations */}
+              {renderVisualizations()}
+
+              {/* Main Data Table */}
+              {renderDataTable()}
+            </>
+          )}
+
+          {/* Detail Modal */}
+          {renderDetailModal()}
+        </div>
         {/* Row 1: Authority & Guard-rail */}
         <div className="intel-row">
           {" "}
@@ -2113,78 +2184,6 @@ const KeywordIntelDashboard = () => {
               </div>
             </div>
           </div>
-        </div>
-        {/* Row 2: Market Tape */}
-        <div className="market-tape-tile full-width">
-          <h3>• KW MARKET TAPE</h3>
-          <div className="market-metrics">
-            <div className="market-cap">
-              <span>
-                Portfolio KW Cap* $
-                {Math.round(
-                  (keywordIntelData.portfolio_kw_cap / 1000000) * 10
-                ) / 10}
-                M
-                <Button
-                  size="small"
-                  onClick={() => setPortfolioExpanded(!portfolioExpanded)}
-                  sx={{ ml: 1, minWidth: "auto", p: "2px 8px" }}
-                >
-                  {portfolioExpanded ? "▲ Collapse" : "▼ Expand"}
-                </Button>
-              </span>
-              <span className="change-indicator">▲🔒% MoM</span>
-            </div>
-            <div className="portfolio-yield">
-              <span>
-                Portfolio Yield (🔒) {keywordIntelData.portfolio_yield}%
-              </span>
-            </div>
-
-            {keywordData && (
-              <div
-                className="portfolio-analysis-section"
-                style={{ marginTop: "20px" }}
-              >
-                {/* Always show summary ribbon with GPV metrics */}
-                {renderSummaryRibbon()}
-              </div>
-            )}
-          </div>
-          <div className="dcf-note">
-            *DCF on KW‑attributed cash‑flows, decay‑adjusted
-          </div>
-        </div>
-        {/* New modern dashboard UI based on the "billa" data */}
-        <div className="new-dashboard-ui">
-          {portfolioExpanded && keywordData && (
-            <>
-              <Typography variant="h5" gutterBottom>
-                Content Portfolio Analysis
-              </Typography>
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                gutterBottom
-              >
-                Data snapshot:{" "}
-                {keywordData?.snapshot ||
-                  new Date().toISOString().split("T")[0]}
-              </Typography>
-
-              {/* Filters */}
-              {renderFilters()}
-
-              {/* Data Visualizations */}
-              {renderVisualizations()}
-
-              {/* Main Data Table */}
-              {renderDataTable()}
-            </>
-          )}
-
-          {/* Detail Modal */}
-          {renderDetailModal()}
         </div>
         {/* Row 3: Revenue Momentum & Risk Board */}
         <div className="intel-row">

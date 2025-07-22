@@ -1787,6 +1787,7 @@
 
 .MuiBox-root .MuiGrid-container {
   align-items: flex-end !important;
+  justify-content: space-evenly !important;
 }
 
 /* Enhance button group in filters */

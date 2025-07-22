@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import { useFinancialCalculations } from "../context/FinancialCalculations";
 import { useDrop } from "react-dnd";
 import { DndProvider, useDrag } from "react-dnd";
+import DraggableWidget from "./DraggableWidget";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import {
   PieChart,
@@ -18,7 +19,40 @@ import {
   Line,
   CartesianGrid,
 } from "recharts";
+import "./CreateDashboard.enhanced.css";
 import "./CreateDashboard.css";
+
+// Icons for field types
+const getFieldIcon = (fieldId) => {
+  const iconMap = {
+    gaDataInsightsSummary: "📊",
+    gaDataTopPerformers: "🏆",
+    gaDataProblemAreas: "⚠️",
+    categoriseIntoBuckets: "🗂️",
+    getRiskMetric: "⚡",
+    getRevenueLeak: "💰",
+    getContentDecay: "📉",
+    getKeywordMismatch: "🔤",
+    getLinkDilution: "🔗",
+    getPsychMismatch: "🧠",
+    getCannibalizationLoss: "🔄",
+    calculateTotalLoss: "📈",
+    funnelGapIdentifier: "⏱️",
+    getContentQualityDistribution: "✅",
+    getMoodyCreditScore: "💯",
+    getROIRecoveryPotential: "💹",
+    getKeywordConflicts: "🔍",
+    getHighCTRLeak: "👆",
+    getMismatchRisk: "❌",
+    getLinkDilutionRisk: "🔗",
+    getCannibalRisk: "🚧",
+    getCrawlErrorPercentage: "🚫",
+    getTotalWastedSpend: "💸",
+    getContentWastePages: "♻️",
+  };
+
+  return iconMap[fieldId] || "📋";
+};
 
 // List of available widgets/fields (expanded to match FinancialCalculations context)
 const AVAILABLE_FIELDS = [
@@ -57,7 +91,7 @@ const AVAILABLE_FIELDS = [
 function FieldItem({ field }) {
   const [{ isDragging }, drag] = useDrag({
     type: "FIELD",
-    item: { id: field.id },
+    item: { id: field.id, label: field.label },
     collect: (monitor) => ({
       isDragging: monitor.isDragging(),
     }),
@@ -68,33 +102,64 @@ function FieldItem({ field }) {
       className={`field-item${isDragging ? " dragging" : ""}`}
       style={{ opacity: isDragging ? 0.5 : 1 }}
     >
-      {field.label}
+      <div className="field-icon">📊</div>
+      <div className="field-label">{field.label}</div>
     </div>
   );
 }
 
-function DashboardDropArea({ widgets, onDrop, onRemove }) {
+// Widget component implementation will be directly inside the DashboardDropArea for simplicity
+
+// Widget component implementation will be directly inside the DashboardDropArea
+// for simplicity and to avoid state management complexity
+
+function DashboardDropArea({
+  widgets,
+  onDrop,
+  onRemove,
+  onResize,
+  onReorder,
+  layout = "grid",
+  isEditMode = false,
+  layouts = {},
+}) {
+  // Create a ref to store widget refs
+  const widgetRefs = useRef(new Map());
+
+  // Handle dropping new fields from the sidebar
   const [{ isOver }, drop] = useDrop({
-    accept: "FIELD",
-    drop: (item) => onDrop(item.id),
+    accept: ["FIELD", "WIDGET"],
+    drop: (item, monitor) => {
+      if (item.type === "WIDGET") {
+        // Handle repositioning of existing widget - handled by individual widgets
+        return;
+      }
+      // Handle dropping a new field
+      onDrop(item.id);
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
     }),
   });
   const context = useFinancialCalculations();
 
-  // Chart color palette
+  // Chart color palette - enhanced professional color scheme
   const COLORS = [
-    "#1976d2",
-    "#64b5f6",
-    "#ffb300",
-    "#e57373",
-    "#43a047",
-    "#8e24aa",
-    "#f06292",
-    "#00897b",
-    "#fbc02d",
-    "#d84315",
+    "#2196F3", // Blue
+    "#FF9800", // Orange
+    "#4CAF50", // Green
+    "#F44336", // Red
+    "#9C27B0", // Purple
+    "#00BCD4", // Cyan
+    "#FFEB3B", // Yellow
+    "#795548", // Brown
+    "#607D8B", // Blue Grey
+    "#009688", // Teal
+    "#E91E63", // Pink
+    "#3F51B5", // Indigo
+    "#CDDC39", // Lime
+    "#FFC107", // Amber
+    "#673AB7", // Deep Purple
   ];
 
   // Render widget content based on field id
@@ -1088,41 +1153,217 @@ function DashboardDropArea({ widgets, onDrop, onRemove }) {
     return <pre className="widget-json">{JSON.stringify(result, null, 2)}</pre>;
   };
 
+  // We'll continue to use the existing renderWidgetContent function
+
+  // Enhanced handler for widget size changes via buttons or resizing
+  const handleSizeChange = (widgetId, change) => {
+    if (onResize) {
+      // If this is a size class change, set customSize to false
+      if (typeof change === "string") {
+        onResize(widgetId, {
+          size: change,
+          customSize: false,
+          // Reset any custom dimensions when selecting a preset size
+          width: null,
+          height: null,
+          columnSpan: null,
+        });
+      }
+      // If minimizing/maximizing
+      else if (change.minimized !== undefined) {
+        onResize(widgetId, { minimized: change.minimized });
+      }
+      // If this is custom dimensions from resize handle
+      else {
+        onResize(widgetId, change);
+      }
+    }
+  };
+
   return (
     <div
       ref={drop}
-      className={`dashboard-drop-area${isOver ? " over" : ""}`}
+      className={`dashboard-drop-area${isOver ? " over" : ""} ${layout}-layout`}
       style={{
         minHeight:
           widgets.length === 0 ? 300 : Math.max(400, widgets.length * 220),
-        transition: "min-height 0.3s cubic-bezier(.4,2,.6,1)",
-        display: "grid",
-        gridTemplateColumns:
-          widgets.length > 1 ? "repeat(auto-fit, minmax(340px, 1fr))" : "1fr",
-        gap: "32px",
-        alignItems: "stretch",
-        background: isOver ? "#e3f2fd" : undefined,
       }}
     >
       {widgets.length === 0 ? (
-        <div className="dashboard-placeholder">Drag fields here</div>
-      ) : (
-        widgets.map((widget, idx) => (
-          <div key={widget.id} className="dashboard-widget dynamic-widget">
-            <div className="widget-header">
-              <span className="widget-title">{widget.label}</span>
-              <button
-                className="remove-btn"
-                onClick={() => onRemove(widget.id)}
-              >
-                ×
-              </button>
+        <div className="dashboard-placeholder">
+          <div className="placeholder-content">
+            <div className="placeholder-icon">📊</div>
+            <div className="placeholder-text">
+              Drag widgets here to create your dashboard
             </div>
-            <div className="widget-content-area">
-              {renderWidgetContent(widget)}
+            <div className="placeholder-subtext">
+              Customize size, layout and appearance
             </div>
           </div>
-        ))
+        </div>
+      ) : (
+        widgets.map((widget, index) => {
+          const widgetSize = layouts[widget.id]?.size || "medium";
+          const isMinimized = layouts[widget.id]?.minimized || false;
+
+          // Get custom dimensions from layouts if available
+          const customWidth = layouts[widget.id]?.width;
+          const customHeight = layouts[widget.id]?.height;
+          const customColumnSpan = layouts[widget.id]?.columnSpan;
+          const isCustomSize = layouts[widget.id]?.customSize;
+
+          // Add a drag handle to each widget header
+          return (
+            <div
+              key={widget.id}
+              className={`dashboard-widget size-${widgetSize}${
+                isMinimized ? " minimized" : ""
+              }${isCustomSize ? " custom-size" : ""}`}
+              style={{
+                ...(isCustomSize
+                  ? {
+                      width: customWidth ? `${customWidth}px` : "100%",
+                      height: customHeight ? `${customHeight}px` : "auto",
+                      gridColumn: customColumnSpan
+                        ? `span ${Math.min(12, customColumnSpan)}`
+                        : undefined,
+                    }
+                  : {
+                      gridColumn: undefined, // Let CSS handle this for predefined sizes
+                      width: "100%",
+                    }),
+                gridRow: widgetSize === "xLarge" ? "span 2" : "span 1",
+              }}
+            >
+              <div className="widget-header">
+                <div className="widget-header-left">
+                  <div className="widget-icon">{getFieldIcon(widget.id)}</div>
+                  <span className="widget-title">{widget.label}</span>
+                </div>
+                <div className="widget-controls">
+                  {isEditMode && (
+                    <>
+                      <button
+                        className={`widget-button ${
+                          widgetSize === "small" ? "active" : ""
+                        }`}
+                        title="Small Size"
+                        onClick={() => handleSizeChange(widget.id, "small")}
+                      >
+                        S
+                      </button>
+                      <button
+                        className={`widget-button ${
+                          widgetSize === "medium" ? "active" : ""
+                        }`}
+                        title="Medium Size"
+                        onClick={() => handleSizeChange(widget.id, "medium")}
+                      >
+                        M
+                      </button>
+                      <button
+                        className={`widget-button ${
+                          widgetSize === "large" ? "active" : ""
+                        }`}
+                        title="Large Size"
+                        onClick={() => handleSizeChange(widget.id, "large")}
+                      >
+                        L
+                      </button>
+                      <button
+                        className={`widget-button ${
+                          widgetSize === "xLarge" ? "active" : ""
+                        }`}
+                        title="Extra Large Size"
+                        onClick={() => handleSizeChange(widget.id, "xLarge")}
+                      >
+                        XL
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="widget-button"
+                    title={isMinimized ? "Expand" : "Minimize"}
+                    onClick={() =>
+                      handleSizeChange(widget.id, { minimized: !isMinimized })
+                    }
+                  >
+                    {isMinimized ? "▼" : "▲"}
+                  </button>
+                  <button
+                    className="remove-btn"
+                    title="Remove widget"
+                    onClick={() => onRemove(widget.id)}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="widget-content-area">
+                {renderWidgetContent(widget)}
+              </div>
+              <div
+                className="resize-handle"
+                onMouseDown={(e) => {
+                  // Enhanced resize start logic
+                  const startX = e.clientX;
+                  const startY = e.clientY;
+                  const widgetElement = e.currentTarget.parentElement;
+                  const startWidth = widgetElement.offsetWidth;
+                  const startHeight = widgetElement.offsetHeight;
+                  const gridContainer = widgetElement.parentElement;
+                  const gridColumnWidth = gridContainer.offsetWidth / 12; // We have 12 columns
+
+                  const handleMouseMove = (moveEvent) => {
+                    const newWidth = Math.max(
+                      200,
+                      startWidth + (moveEvent.clientX - startX)
+                    );
+                    const newHeight = Math.max(
+                      150,
+                      startHeight + (moveEvent.clientY - startY)
+                    );
+
+                    // Calculate the closest grid column span
+                    const columnSpan = Math.max(
+                      1,
+                      Math.min(12, Math.round(newWidth / gridColumnWidth))
+                    );
+
+                    // Update the widget inline style
+                    widgetElement.style.width = `${newWidth}px`;
+                    widgetElement.style.height = `${newHeight}px`;
+
+                    // Add a data attribute for debugging
+                    widgetElement.dataset.gridColumns = columnSpan;
+                  };
+
+                  const handleMouseUp = () => {
+                    document.removeEventListener("mousemove", handleMouseMove);
+                    document.removeEventListener("mouseup", handleMouseUp);
+
+                    if (onResize) {
+                      // Send all dimension data to parent
+                      onResize(widget.id, {
+                        width: widgetElement.offsetWidth,
+                        height: widgetElement.offsetHeight,
+                        columnSpan: parseInt(
+                          widgetElement.dataset.gridColumns || "1",
+                          10
+                        ),
+                        customSize: true,
+                      });
+                    }
+                  };
+
+                  document.addEventListener("mousemove", handleMouseMove);
+                  document.addEventListener("mouseup", handleMouseUp);
+                  e.preventDefault(); // Prevent text selection during resize
+                }}
+              ></div>
+            </div>
+          );
+        })
       )}
     </div>
   );
@@ -1130,34 +1371,289 @@ function DashboardDropArea({ widgets, onDrop, onRemove }) {
 
 export default function CreateDashboard() {
   const [dashboardFields, setDashboardFields] = useState([]);
+  const [widgetSizes, setWidgetSizes] = useState({}); // Track sizes: normal, compact, expanded
+  const [layout, setLayout] = useState("grid"); // grid, masonry, columns
+  const [theme, setTheme] = useState("light"); // light, dark, corporate
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [layouts, setLayouts] = useState({});
 
+  // Handle dropping a new widget
   const handleDrop = (fieldId) => {
     if (!dashboardFields.find((f) => f.id === fieldId)) {
       const field = AVAILABLE_FIELDS.find((f) => f.id === fieldId);
-      if (field) setDashboardFields([...dashboardFields, field]);
+      if (field) {
+        setDashboardFields([...dashboardFields, field]);
+        // Initialize widget size
+        setWidgetSizes({
+          ...widgetSizes,
+          [field.id]: "normal",
+        });
+      }
     }
   };
 
+  // Handle removing a widget
   const handleRemove = (fieldId) => {
     setDashboardFields(dashboardFields.filter((f) => f.id !== fieldId));
+
+    // Remove layout information
+    const newLayouts = { ...layouts };
+    delete newLayouts[fieldId];
+    setLayouts(newLayouts);
+
+    // Remove size information
+    const newWidgetSizes = { ...widgetSizes };
+    delete newWidgetSizes[fieldId];
+    setWidgetSizes(newWidgetSizes);
   };
+
+  // Handle widget resizing will be implemented below
+
+  // Enhanced handleResize function to support full customization
+  const handleResize = (fieldId, sizeData) => {
+    // Keep track of changes for database storage later
+    const updatedLayoutData = { ...layouts[fieldId] };
+
+    // If string is passed, it's a size category (small, medium, large, xLarge)
+    if (typeof sizeData === "string") {
+      setWidgetSizes({
+        ...widgetSizes,
+        [fieldId]: sizeData,
+      });
+
+      // Reset custom dimensions when using preset sizes
+      updatedLayoutData.size = sizeData;
+      updatedLayoutData.minimized = false;
+      updatedLayoutData.customSize = false;
+      updatedLayoutData.width = null;
+      updatedLayoutData.height = null;
+      updatedLayoutData.columnSpan = null;
+    }
+    // If it's an object with minimized property, toggle minimized state
+    else if (sizeData.minimized !== undefined) {
+      updatedLayoutData.minimized = sizeData.minimized;
+    }
+    // If it has the customSize flag set to true, it's from manual resizing
+    else if (sizeData.customSize) {
+      // Store width, height, columnSpan and set customSize flag
+      updatedLayoutData.width = sizeData.width || updatedLayoutData.width;
+      updatedLayoutData.height = sizeData.height || updatedLayoutData.height;
+      updatedLayoutData.columnSpan =
+        sizeData.columnSpan || updatedLayoutData.columnSpan;
+      updatedLayoutData.customSize = true;
+
+      // Store the original size class in case we need to revert
+      if (!updatedLayoutData.originalSize) {
+        updatedLayoutData.originalSize = updatedLayoutData.size || "medium";
+      }
+    }
+    // Handle size class changes from size buttons
+    else if (sizeData.size) {
+      // Size class change from buttons - may include customSize: false to reset dimensions
+      setWidgetSizes({
+        ...widgetSizes,
+        [fieldId]: sizeData.size,
+      });
+
+      // Update size properties and handle customSize flag
+      updatedLayoutData.size = sizeData.size;
+
+      // If customSize is explicitly set to false, clear custom dimensions
+      if (sizeData.customSize === false) {
+        updatedLayoutData.customSize = false;
+        updatedLayoutData.width = null;
+        updatedLayoutData.height = null;
+        updatedLayoutData.columnSpan = null;
+      }
+    }
+    // Otherwise it's other dimensions or properties
+    else {
+      // Merge in any other properties
+      Object.assign(updatedLayoutData, sizeData);
+    }
+
+    // Update layouts with all collected changes
+    setLayouts({
+      ...layouts,
+      [fieldId]: updatedLayoutData,
+    });
+
+    // This data could be saved to database when needed
+    console.log(`Widget ${fieldId} layout updated:`, updatedLayoutData);
+  };
+
+  // Enhanced function to handle widget reordering with dragging
+  const handleReorder = (sourceId, targetId) => {
+    if (sourceId === targetId) return;
+
+    const sourceIndex = dashboardFields.findIndex((f) => f.id === sourceId);
+    const targetIndex = dashboardFields.findIndex((f) => f.id === targetId);
+
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const newDashboardFields = [...dashboardFields];
+    const [removed] = newDashboardFields.splice(sourceIndex, 1);
+    newDashboardFields.splice(targetIndex, 0, removed);
+
+    // Update the state with the new order
+    setDashboardFields(newDashboardFields);
+
+    // Also update layouts to maintain customizations
+    const newLayouts = { ...layouts };
+    Object.keys(newLayouts).forEach((id) => {
+      const widget = newDashboardFields.find((w) => w.id === id);
+      if (widget) {
+        newLayouts[id] = {
+          ...newLayouts[id],
+          order: newDashboardFields.indexOf(widget),
+        };
+      }
+    });
+
+    setLayouts(newLayouts);
+  };
+
+  // Function to move widget for DnD operations
+  const moveWidget = useCallback(
+    (dragIndex, hoverIndex) => {
+      if (dragIndex === hoverIndex) return;
+
+      const dragWidget = dashboardFields[dragIndex];
+      if (!dragWidget) return;
+
+      const newDashboardFields = [...dashboardFields];
+      newDashboardFields.splice(dragIndex, 1);
+      newDashboardFields.splice(hoverIndex, 0, dragWidget);
+
+      setDashboardFields(newDashboardFields);
+    },
+    [dashboardFields]
+  );
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="create-dashboard-container">
-        <div className="sidebar">
-          <h3>Available Fields</h3>
-          {AVAILABLE_FIELDS.map((field) => (
-            <FieldItem key={field.id} field={field} />
-          ))}
+      <div className={`create-dashboard-container theme-${theme}`}>
+        <div className="dashboard-toolbar">
+          <div className="dashboard-controls">
+            <button
+              className={`layout-btn ${layout === "grid" ? "active" : ""}`}
+              onClick={() => setLayout("grid")}
+              title="Grid Layout"
+            >
+              <span role="img" aria-label="Grid">
+                🗂️
+              </span>
+            </button>
+            <button
+              className={`layout-btn ${layout === "columns" ? "active" : ""}`}
+              onClick={() => setLayout("columns")}
+              title="Column Layout"
+            >
+              <span role="img" aria-label="Columns">
+                📊
+              </span>
+            </button>
+            <button
+              className={`layout-btn ${layout === "masonry" ? "active" : ""}`}
+              onClick={() => setLayout("masonry")}
+              title="Masonry Layout"
+            >
+              <span role="img" aria-label="Masonry">
+                🧱
+              </span>
+            </button>
+            <div className="separator"></div>
+            <button
+              className={`theme-btn ${theme === "light" ? "active" : ""}`}
+              onClick={() => setTheme("light")}
+              title="Light Theme"
+            >
+              <span role="img" aria-label="Light">
+                ☀️
+              </span>
+            </button>
+            <button
+              className={`theme-btn ${theme === "dark" ? "active" : ""}`}
+              onClick={() => setTheme("dark")}
+              title="Dark Theme"
+            >
+              <span role="img" aria-label="Dark">
+                🌙
+              </span>
+            </button>
+            <button
+              className={`theme-btn ${theme === "corporate" ? "active" : ""}`}
+              onClick={() => setTheme("corporate")}
+              title="Corporate Theme"
+            >
+              <span role="img" aria-label="Corporate">
+                👔
+              </span>
+            </button>
+            <div className="separator"></div>
+            <button
+              className={`edit-mode-btn ${isEditMode ? "active" : ""}`}
+              onClick={() => setIsEditMode(!isEditMode)}
+              title={isEditMode ? "Exit Edit Mode" : "Enter Edit Mode"}
+            >
+              <span role="img" aria-label="Edit">
+                {isEditMode ? "✅" : "✏️"}
+              </span>
+            </button>
+          </div>
+          <h3 className="dashboard-title">Professional Dashboard Creator</h3>
         </div>
-        <div className="dashboard-area awesome-dashboard">
-          <h3 className="dashboard-title">Your Custom Dashboard</h3>
-          <DashboardDropArea
-            widgets={dashboardFields}
-            onDrop={handleDrop}
-            onRemove={handleRemove}
-          />
+        <div className="main-content">
+          <div className="sidebar">
+            <h3>Available Widgets</h3>
+            <div className="field-categories">
+              <div className="field-category">
+                <h4>Analytics</h4>
+                {AVAILABLE_FIELDS.filter((field) =>
+                  field.id.includes("ga")
+                ).map((field) => (
+                  <FieldItem key={field.id} field={field} />
+                ))}
+              </div>
+              <div className="field-category">
+                <h4>Financial Metrics</h4>
+                {AVAILABLE_FIELDS.filter(
+                  (field) =>
+                    field.id.includes("Revenue") ||
+                    field.id.includes("ROI") ||
+                    field.id.includes("Spend")
+                ).map((field) => (
+                  <FieldItem key={field.id} field={field} />
+                ))}
+              </div>
+              <div className="field-category">
+                <h4>Content Analysis</h4>
+                {AVAILABLE_FIELDS.filter(
+                  (field) =>
+                    !field.id.includes("ga") &&
+                    !(
+                      field.id.includes("Revenue") ||
+                      field.id.includes("ROI") ||
+                      field.id.includes("Spend")
+                    )
+                ).map((field) => (
+                  <FieldItem key={field.id} field={field} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className={`dashboard-area ${layout}-layout theme-${theme}`}>
+            <DashboardDropArea
+              widgets={dashboardFields}
+              onDrop={handleDrop}
+              onRemove={handleRemove}
+              onResize={handleResize}
+              onReorder={handleReorder}
+              layout={layout}
+              isEditMode={isEditMode}
+              layouts={layouts}
+            />
+          </div>
         </div>
       </div>
     </DndProvider>

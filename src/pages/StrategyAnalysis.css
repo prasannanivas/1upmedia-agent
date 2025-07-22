@@ -327,7 +327,7 @@
 }
 
 .quick-wins h4::before {
-  content: '🔧';
+  content: '';
   display: inline-block;
   margin-right: 0.5rem;
 }
@@ -454,7 +454,7 @@
       rgba(255, 255, 255, 0.15) 75%,
       transparent 75%,
       transparent);
-  animation: progressAnimation 3s linear infinite, glowPulse 2s infinite;
+  /* animation: progressAnimation 3s linear infinite, glowPulse 2s infinite; */
   border-radius: 6px;
 }
 
@@ -482,7 +482,7 @@
 
 /* Different colored fills */
 .progress-fill.cannibalization {
-  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  background: linear-gradient(135deg, #dadada 0%, #f87171 100%);
 }
 
 .progress-fill.dilution {
@@ -825,19 +825,16 @@
 }
 
 .funnel-stage:nth-child(1) {
-  width: 100%;
   border-left: 4px solid #10b981;
 }
 
 .funnel-stage:nth-child(2) {
-  width: 96%;
-  margin-left: auto;
+
   border-left: 4px solid #3b82f6;
 }
 
 .funnel-stage:nth-child(3) {
-  width: 92%;
-  margin-left: auto;
+
   border-left: 4px solid #f59e0b;
 }
 
@@ -971,7 +968,6 @@
 
 .gauge-line {
   position: relative;
-  height: 10px;
   background: linear-gradient(to right,
       #ef4444 0%,
       #f59e0b 25%,
@@ -1628,7 +1624,6 @@
   .metric-row .progress-bar,
   .stage-bar,
   .journey-bar {
-    width: 100%;
     margin: 0.5rem 0;
   }
 

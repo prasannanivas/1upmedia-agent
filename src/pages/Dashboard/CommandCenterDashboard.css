@@ -415,10 +415,6 @@
   overflow: hidden;
 }
 
-.roi-recovery-section {
-  width: 90%;
-}
-
 .moody-credit-section:hover,
 .roi-recovery-section:hover {
   box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.12);
@@ -648,7 +644,7 @@
 
 .stat-label {
   font-size: 0.95rem;
-  color: #64748b;
+  color: #000307;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -660,7 +656,7 @@
   content: '';
   width: 6px;
   height: 6px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  background: linear-gradient(135deg, #000919, #01091e);
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
@@ -685,6 +681,7 @@
   align-items: center;
   gap: 0.25rem;
   position: relative;
+  left: -50px;
 }
 
 .stat-value:hover {

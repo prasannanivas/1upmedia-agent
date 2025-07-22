@@ -282,6 +282,8 @@ const CommandCenterDashboard = () => {
         roiRecoveryPotential:
           roiRecoveryData?.summary?.totalRecoveryPotential || 0,
         investmentRequired: roiRecoveryData?.summary?.investmentRequired || 0,
+        baseHourlyRate: roiRecoveryData?.summary?.baseHourlyRate || 50,
+        effectiveHours: roiRecoveryData?.summary?.effectiveHours || 0,
         recoveryTimeframe,
         recoveryTrend,
         // Full recovery breakdown for 30/60/90/180/360 day display
@@ -543,6 +545,26 @@ const CommandCenterDashboard = () => {
               </div>
               <div className="summary-stat">
                 <span className="stat-label">Investment Required:</span>
+                <div className="stat-item">
+                  <span className="stat-label-highlight">
+                    Base Hourly Rate:
+                  </span>
+                  <span className="stat-value-highlight">
+                    $
+                    {Math.round(
+                      commandCenterData?.baseHourlyRate || 0
+                    ).toLocaleString()}
+                  </span>
+                </div>
+                <div className="stat-item">
+                  <span className="stat-label-highlight">Effective Hours:</span>
+                  <span className="stat-value-highlight">
+                    {Math.round(
+                      commandCenterData?.effectiveHours || 0
+                    ).toLocaleString()}{" "}
+                    hours
+                  </span>
+                </div>
                 <span className="stat-value">
                   $
                   {Math.round(

@@ -3,7 +3,6 @@
   display: inline-flex;
   align-items: center;
   margin-left: 6px;
-  z-index: 1000000;
   isolation: isolate;
   /* Creates a new stacking context */
 }
