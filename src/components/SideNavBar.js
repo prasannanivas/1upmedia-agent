@@ -24,6 +24,7 @@ import {
   FiShield,
   FiTarget,
 } from "react-icons/fi";
+import { FaTrello } from "react-icons/fa";
 
 export const agentLinks = [
   { path: "/agents/ideation", label: "Keyword Strategy", icon: FiKey },
@@ -43,6 +44,7 @@ export const boardLinks = [
 
 export const integrationLinks = [
   { path: "/integrations/setup", label: "Wordpress", icon: FiFileText },
+  { path: "/integrations/trello", label: "Trello", icon: FaTrello },
   //{ path: "/integrations/active", label: "Active Integrations", icon: FiFileText },
 ];
 

@@ -159,6 +159,24 @@ export const AuthProvider = ({ children }) => {
       });
       return; // Exit early for WordPress
     }
+    if (platform === "trello") {
+      // Directly store Trello credentials without opening a window
+      storeSocialMediaToken({
+        email: authState.email,
+        social_media: {
+          social_media_name: platform,
+          access_token: credentials.accessToken,
+          access_token_secret: credentials.accessTokenSecret,
+          account_name: "trello", // Assuming board is the account name
+          dynamic_fields: {
+            accessTokenSecret: credentials.accessTokenSecret,
+            board: credentials.board,
+            workspace: credentials.workspace, // Assuming workspace is part of the credentials
+          },
+        },
+      });
+      return; // Exit early for Trello
+    }
 
     let authUrl = "";
     let eventType = "";
@@ -385,6 +403,25 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const handleTrelloAuth = (credentials) => {
+    console.log("Trello credentials:", credentials);
+    if (
+      !credentials.accessToken ||
+      !credentials.accessTokenSecret ||
+      !credentials.board ||
+      !credentials.workspace
+    ) {
+      console.error("Trello access token is required");
+      return;
+    }
+    handleAuthorize("trello", null, {
+      accessToken: credentials.accessToken,
+      accessTokenSecret: credentials.accessTokenSecret,
+      board: credentials.board,
+      workspace: credentials.workspace,
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -398,6 +435,7 @@ export const AuthProvider = ({ children }) => {
         handleRemoveAccount,
         handleWordPressAuth,
         handleAuthorize,
+        handleTrelloAuth,
       }}
     >
       {children}

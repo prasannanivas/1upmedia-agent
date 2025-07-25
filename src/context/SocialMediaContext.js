@@ -14,6 +14,7 @@ export const SocialMediaProvider = ({ children }) => {
   const [wordpressProfiles, setWordpressProfiles] = useState([]);
   const [webflowProfiles, setWebflowProfiles] = useState([]);
   const [linkedinProfiles, setLinkedinProfiles] = useState([]);
+  const [trelloProfile, setTrelloProfile] = useState(null); // Assuming trelloProfile is a single profile
   const [shopifyProfiles, setShopifyProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
@@ -30,6 +31,7 @@ export const SocialMediaProvider = ({ children }) => {
     setWebflowProfiles([]);
     setLinkedinProfiles([]);
     setShopifyProfiles([]);
+    setTrelloProfile(null); // Reset Trello profile
   };
   const fetchSocialMediaProfiles = async (email) => {
     setLoadingPages(true); // Show loading indicator
@@ -79,6 +81,8 @@ export const SocialMediaProvider = ({ children }) => {
           setWebflowProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "shopify") {
           setShopifyProfiles((prev) => [...prev, profile]);
+        } else if (profile.social_media_name === "trello") {
+          setTrelloProfile(profile); // Assuming trelloProfile is a single profile
         }
       });
 
@@ -105,7 +109,7 @@ export const SocialMediaProvider = ({ children }) => {
   const storeSocialMediaToken = async (data) => {
     try {
       const response = await fetch(
-        "https://ai.1upmedia.com:443/aiagent/store-social-media",
+        "http://localhost:3000/aiagent/store-social-media",
         {
           method: "POST",
           headers: {
@@ -137,6 +141,7 @@ export const SocialMediaProvider = ({ children }) => {
         setSocialMediaProfiles,
         fetchSocialMediaProfiles,
         facebookPages,
+        trelloProfile,
         instagramProfiles,
         redditProfiles,
         twitterProfiles,
