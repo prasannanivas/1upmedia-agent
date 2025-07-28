@@ -35,6 +35,7 @@ import {
   IconButton,
   LinearProgress,
   Grid,
+  CircularProgress,
 } from "@mui/material";
 import {
   ScatterChart,
@@ -1202,7 +1203,7 @@ const KeywordIntelDashboard = () => {
 
       return true;
     });
-  }, [keywordData, filters]);
+  }, [keywordData, filters, loading]);
 
   // Handle row click for modal display
   const handleRowClick = (row) => {
@@ -1300,7 +1301,7 @@ const KeywordIntelDashboard = () => {
                   Portfolio GPV
                 </Typography>
                 <Typography variant="h6" component="div" fontWeight="bold">
-                  {formatMoney(metrics.portfolioGPV)}
+                  {formatMoney(metrics?.portfolioGPV)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   What the site is worth right now
@@ -1913,6 +1914,14 @@ const KeywordIntelDashboard = () => {
     }, 2000);
   };
 
+  if (loading) {
+    return (
+      <div className="keyword-intel-dashboard">
+        <CircularProgress />
+      </div>
+    );
+  }
+
   // Show insufficient data state
   if (keywordIntelData.isBlind) {
     return (
@@ -2046,7 +2055,8 @@ const KeywordIntelDashboard = () => {
             <div className="market-cap">
               <span>
                 Portfolio KW Cap* $
-                {Math.round(calculateSummaryMetrics.portfolioGPV / 1000000, 2)}M
+                {Math.round(calculateSummaryMetrics?.portfolioGPV / 1000000, 2)}
+                M
                 <Button
                   size="small"
                   onClick={() => setPortfolioExpanded(!portfolioExpanded)}
