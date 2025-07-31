@@ -20,6 +20,7 @@ export const AuthProvider = ({ children }) => {
       email: email || null,
     };
   });
+
   const [loading, setLoading] = useState(true); // Add a loading state
   const [redirectPath, setRedirectPath] = useState(null); // To store redirect path
 
@@ -158,6 +159,25 @@ export const AuthProvider = ({ children }) => {
         },
       });
       return; // Exit early for WordPress
+    }
+    if (platform === "jira") {
+      // Directly store Jira credentials without opening a window
+      storeSocialMediaToken({
+        email: authState.email,
+        social_media: {
+          social_media_name: platform,
+          access_token: credentials.accessToken,
+          refresh_token: credentials.refreshToken,
+          account_name: credentials.name || credentials.email || "jira",
+          dynamic_fields: {
+            cloudId: credentials.cloudId,
+            board: credentials.board,
+            name: credentials.name,
+            email: credentials.email,
+          },
+        },
+      });
+      return; // Exit early for Jira
     }
     if (platform === "trello") {
       // Directly store Trello credentials without opening a window
@@ -422,6 +442,33 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const handleJiraAuth = (credentials) => {
+    console.log("Jira credentials:", credentials);
+    if (
+      !credentials.accessToken ||
+      !credentials.cloudId ||
+      !credentials.board
+    ) {
+      console.error("Jira access token, cloudId, and board are required");
+      return;
+    }
+    storeSocialMediaToken({
+      email: authState.email,
+      social_media: {
+        social_media_name: "jira",
+        access_token: credentials.accessToken,
+        refresh_token: credentials.refreshToken,
+        account_name: credentials.name || credentials.email || "jira",
+        dynamic_fields: {
+          cloudId: credentials.cloudId,
+          board: credentials.board,
+          name: credentials.name,
+          email: credentials.email,
+        },
+      },
+    });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -436,6 +483,7 @@ export const AuthProvider = ({ children }) => {
         handleWordPressAuth,
         handleAuthorize,
         handleTrelloAuth,
+        handleJiraAuth,
       }}
     >
       {children}

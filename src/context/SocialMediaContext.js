@@ -14,7 +14,8 @@ export const SocialMediaProvider = ({ children }) => {
   const [wordpressProfiles, setWordpressProfiles] = useState([]);
   const [webflowProfiles, setWebflowProfiles] = useState([]);
   const [linkedinProfiles, setLinkedinProfiles] = useState([]);
-  const [trelloProfile, setTrelloProfile] = useState(null); // Assuming trelloProfile is a single profile
+  const [trelloProfile, setTrelloProfile] = useState(null); // Trello profile
+  const [jiraProfile, setJiraProfile] = useState(null); // Jira profile
   const [shopifyProfiles, setShopifyProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
   const { PositiveToast, NegativeToast } = useToast();
@@ -83,6 +84,8 @@ export const SocialMediaProvider = ({ children }) => {
           setShopifyProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "trello") {
           setTrelloProfile(profile); // Assuming trelloProfile is a single profile
+        } else if (profile.social_media_name === "jira") {
+          setJiraProfile(profile); // Jira profile
         }
       });
 
@@ -109,7 +112,7 @@ export const SocialMediaProvider = ({ children }) => {
   const storeSocialMediaToken = async (data) => {
     try {
       const response = await fetch(
-        "http://localhost:3000/aiagent/store-social-media",
+        "https://ai.1upmedia.com:443/aiagent/store-social-media",
         {
           method: "POST",
           headers: {
@@ -134,6 +137,84 @@ export const SocialMediaProvider = ({ children }) => {
     }
   };
 
+  // Create Trello cards from a list of items
+  const createTrelloCards = async ({
+    listId,
+    items,
+    trelloAuth = trelloProfile,
+  }) => {
+    console.log("Creating Trello cards with items:", items, trelloAuth);
+    if (!listId || !Array.isArray(items) || items.length === 0) {
+      NegativeToast("Missing listId or items for Trello card creation");
+      return;
+    }
+    if (
+      !trelloAuth?.access_token ||
+      !trelloAuth?.dynamic_fields?.accessTokenSecret ||
+      !trelloAuth?.dynamic_fields?.board?.id
+    ) {
+      console.error(
+        "Missing Trello authentication tokens",
+        trelloAuth?.access_token,
+        trelloAuth?.dynamic_fields?.accessTokenSecret,
+        trelloAuth?.dynamic_fields?.board?.id
+      );
+      return;
+    }
+
+    // Fetch all cards in the board first
+    let existingCardNames = [];
+    try {
+      const cardsRes = await fetch(
+        `https://ai.1upmedia.com:443/trello/cards?boardId=${
+          trelloAuth.dynamic_fields.board.id
+        }&accessToken=${encodeURIComponent(
+          trelloAuth.access_token
+        )}&accessTokenSecret=${encodeURIComponent(
+          trelloAuth.dynamic_fields.accessTokenSecret
+        )}`
+      );
+      const cardsData = await cardsRes.json();
+      if (cardsData.success && Array.isArray(cardsData.cards)) {
+        existingCardNames = cardsData.cards.map((card) => card.name);
+      }
+    } catch (err) {
+      console.error("Error fetching existing cards:", err.message);
+      NegativeToast("Error fetching existing cards: " + err.message);
+      // Continue, but will not filter out existing cards
+    }
+
+    try {
+      for (const item of items) {
+        const cardName = item.name || String(item);
+        if (existingCardNames.includes(cardName)) {
+          console.log(`Card '${cardName}' already exists, skipping.`);
+          continue;
+        }
+        const res = await fetch("https://ai.1upmedia.com:443/trello/cards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accessToken: trelloAuth.access_token,
+            accessTokenSecret: trelloAuth.dynamic_fields.accessTokenSecret,
+            boardId: trelloAuth?.dynamic_fields?.board?.id,
+
+            name: cardName,
+            desc: item.desc || "",
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          PositiveToast(`Card created: ${data.card.name}`);
+        } else {
+          NegativeToast(`Card creation failed: ${data.error}`);
+        }
+      }
+    } catch (err) {
+      NegativeToast("Error creating Trello cards: " + err.message);
+    }
+  };
+
   return (
     <SocialMediaContext.Provider
       value={{
@@ -142,6 +223,7 @@ export const SocialMediaProvider = ({ children }) => {
         fetchSocialMediaProfiles,
         facebookPages,
         trelloProfile,
+        jiraProfile,
         instagramProfiles,
         redditProfiles,
         twitterProfiles,
@@ -156,6 +238,7 @@ export const SocialMediaProvider = ({ children }) => {
         setLoadingPages,
         setFacebookPages,
         setInstagramProfiles,
+        createTrelloCards,
       }}
     >
       {children}

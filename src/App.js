@@ -31,6 +31,7 @@ import { ToastProvider } from "./context/ToastProvider";
 import CustomBoards from "./pages/CustomBoards";
 import SetupWizard from "./pages/SetupWordPress";
 import SetupTrello from "./pages/SetupTrello";
+import SetupJira from "./pages/SetupJira";
 import ActiveIntegrations from "./pages/ActiveIntegrations";
 import UserManagement from "./pages/UserManagement";
 import Security from "./pages/Security";
@@ -161,6 +162,7 @@ const AppWrapper = () => {
           <Route path="/boards/custom" element={<CustomBoards />} />
           <Route path="/integrations/setup" element={<SetupWizard />} />
           <Route path="/integrations/trello" element={<SetupTrello />} />
+          <Route path="/integrations/jira" element={<SetupJira />} />
           <Route path="/integrations/active" element={<ActiveIntegrations />} />
           <Route
             path="/settings/user-management"

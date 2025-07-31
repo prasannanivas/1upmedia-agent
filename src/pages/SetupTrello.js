@@ -5,16 +5,17 @@ import { useSocialMedia } from "../context/SocialMediaContext";
 const BACKEND = "https://ai.1upmedia.com:443/trello";
 
 function SetupTrello() {
-  const [auth, setAuth] = useState({
-    accessToken: "",
-    accessTokenSecret: "",
-    username: "",
-  });
-
   const { loadingPages: loading, trelloProfile } = useSocialMedia();
 
   console.log("Loading:", loading);
   console.log("Trello Profile:", trelloProfile);
+  const [auth, setAuth] = useState({
+    accessToken: trelloProfile?.access_token || "",
+    accessTokenSecret: trelloProfile?.dynamic_fields?.accessTokenSecret || "",
+    username:
+      trelloProfile?.username || trelloProfile?.dynamic_fields?.username || "",
+    boardId: trelloProfile?.dynamic_fields?.board?.id || "",
+  });
 
   useEffect(() => {
     if (trelloProfile) {
@@ -26,10 +27,15 @@ function SetupTrello() {
         trelloProfile.accessTokenSecret;
       const username =
         trelloProfile.username || trelloProfile.dynamic_fields?.username || "";
-      setAuth({ accessToken, accessTokenSecret, username });
+      const boardId =
+        trelloProfile.dynamic_fields?.board?.id || trelloProfile.boardId || "";
+      setAuth({ accessToken, accessTokenSecret, username, boardId });
+
+      console.log("Auth set:", { accessToken, accessTokenSecret, username });
 
       // Fill boards, lists, selectedBoardId from trelloProfile
       const board = trelloProfile.dynamic_fields?.board;
+
       const workspace = trelloProfile.dynamic_fields?.workspace;
       if (board) {
         setBoards([board]);
@@ -73,7 +79,9 @@ function SetupTrello() {
         const accessToken = event.data.accessToken;
         const accessTokenSecret = event.data.accessTokenSecret;
         const username = event.data.username;
-        setAuth({ accessToken, accessTokenSecret, username });
+        const boardId = event.data.board?.id || "";
+
+        setAuth({ accessToken, accessTokenSecret, username, boardId });
         setResult("Authenticated as: " + username);
 
         // 1. Check for 1UPMedia workspace
@@ -284,8 +292,8 @@ function SetupTrello() {
           data.lists.map(async (list) => {
             try {
               const cardsRes = await fetch(
-                `${BACKEND}/cards?listId=${
-                  list.id
+                `${BACKEND}/cards?boardId=${
+                  auth.boardId || boardId
                 }&accessToken=${encodeURIComponent(
                   auth.accessToken
                 )}&accessTokenSecret=${encodeURIComponent(
@@ -524,5 +532,8 @@ function SetupTrello() {
     </div>
   );
 }
+
+// Helper inside SetupTrello: add a card by name if not exists
+// Usage: await addCardIfNotExists(cardName)
 
 export default SetupTrello;

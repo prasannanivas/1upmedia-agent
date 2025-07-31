@@ -38,9 +38,11 @@ import {
   Workflow,
 } from "lucide-react";
 import "./StrategyAnalysis.css";
+import { useSocialMedia } from "../context/SocialMediaContext";
 
 const StrategyAnalysis = () => {
   const { onboardingData, loading } = useOnboarding();
+  const { createTrelloCards } = useSocialMedia();
   const {
     getRevenueLeak,
     getCannibalizationLoss,
@@ -615,6 +617,20 @@ const StrategyAnalysis = () => {
   }
 
   const { panels } = strategyData;
+
+  const allRecommendations = [
+    ...panels.siteStrength.recommendations,
+    ...panels.equityLeaks.recommendations,
+    ...panels.playbookCompliance.recommendations,
+    ...panels.journeyCoverage.recommendations,
+    ...panels.funnelMix.recommendations,
+    ...panels.hutaChain.recommendations,
+  ];
+
+  createTrelloCards({
+    listId: "strategy-recommendations",
+    items: allRecommendations,
+  });
 
   return (
     <div className="strategy-lab">

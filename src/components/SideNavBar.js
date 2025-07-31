@@ -45,6 +45,7 @@ export const boardLinks = [
 export const integrationLinks = [
   { path: "/integrations/setup", label: "Wordpress", icon: FiFileText },
   { path: "/integrations/trello", label: "Trello", icon: FaTrello },
+  { path: "/integrations/jira", label: "Jira", icon: FiFileText },
   //{ path: "/integrations/active", label: "Active Integrations", icon: FiFileText },
 ];
 
