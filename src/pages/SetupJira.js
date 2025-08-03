@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSocialMedia } from "../context/SocialMediaContext";
 import { useAuth } from "../context/AuthContext";
 
-const BACKEND = "http://localhost:3000/jira";
+const BACKEND = "https://ai.1upmedia.com:443/jira";
 
 function SetupJira() {
   const [auth, setAuth] = useState({

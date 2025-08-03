@@ -32,6 +32,7 @@ import CustomBoards from "./pages/CustomBoards";
 import SetupWizard from "./pages/SetupWordPress";
 import SetupTrello from "./pages/SetupTrello";
 import SetupJira from "./pages/SetupJira";
+import SetupSlack from "./pages/SetupSlack";
 import ActiveIntegrations from "./pages/ActiveIntegrations";
 import UserManagement from "./pages/UserManagement";
 import Security from "./pages/Security";
@@ -163,6 +164,7 @@ const AppWrapper = () => {
           <Route path="/integrations/setup" element={<SetupWizard />} />
           <Route path="/integrations/trello" element={<SetupTrello />} />
           <Route path="/integrations/jira" element={<SetupJira />} />
+          <Route path="/integrations/slack" element={<SetupSlack />} />
           <Route path="/integrations/active" element={<ActiveIntegrations />} />
           <Route
             path="/settings/user-management"

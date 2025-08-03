@@ -42,7 +42,7 @@ import { useSocialMedia } from "../context/SocialMediaContext";
 
 const StrategyAnalysis = () => {
   const { onboardingData, loading } = useOnboarding();
-  const { createTrelloCards } = useSocialMedia();
+  const { createTrelloCards, createSlackTasks } = useSocialMedia();
   const {
     getRevenueLeak,
     getCannibalizationLoss,
@@ -629,6 +629,10 @@ const StrategyAnalysis = () => {
 
   createTrelloCards({
     listId: "strategy-recommendations",
+    items: allRecommendations,
+  });
+
+  createSlackTasks({
     items: allRecommendations,
   });
 

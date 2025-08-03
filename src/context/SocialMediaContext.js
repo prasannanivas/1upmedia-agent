@@ -15,6 +15,7 @@ export const SocialMediaProvider = ({ children }) => {
   const [webflowProfiles, setWebflowProfiles] = useState([]);
   const [linkedinProfiles, setLinkedinProfiles] = useState([]);
   const [trelloProfile, setTrelloProfile] = useState(null); // Trello profile
+  const [slackProfile, setSlackProfile] = useState(null); // Slack profile
   const [jiraProfile, setJiraProfile] = useState(null); // Jira profile
   const [shopifyProfiles, setShopifyProfiles] = useState([]);
   const [loadingPages, setLoadingPages] = useState(false);
@@ -33,6 +34,7 @@ export const SocialMediaProvider = ({ children }) => {
     setLinkedinProfiles([]);
     setShopifyProfiles([]);
     setTrelloProfile(null); // Reset Trello profile
+    setSlackProfile(null); // Reset Slack profile
   };
   const fetchSocialMediaProfiles = async (email) => {
     setLoadingPages(true); // Show loading indicator
@@ -84,6 +86,8 @@ export const SocialMediaProvider = ({ children }) => {
           setShopifyProfiles((prev) => [...prev, profile]);
         } else if (profile.social_media_name === "trello") {
           setTrelloProfile(profile); // Assuming trelloProfile is a single profile
+        } else if (profile.social_media_name === "slack") {
+          setSlackProfile(profile); // Slack profile
         } else if (profile.social_media_name === "jira") {
           setJiraProfile(profile); // Jira profile
         }
@@ -137,14 +141,50 @@ export const SocialMediaProvider = ({ children }) => {
     }
   };
 
+  // Create Slack tasks from a list of items
+  const createSlackTasks = async ({ items, slackAuth = slackProfile }) => {
+    console.log("Creating Slack tasks with items:", items, slackAuth);
+    if (!Array.isArray(items) || items.length === 0) {
+      NegativeToast("Missing items for Slack task creation");
+      return;
+    }
+    if (!slackAuth?.access_token || !slackAuth?.dynamic_fields?.channelId) {
+      console.error(
+        "Missing Slack authentication tokens or channel ID",
+        slackAuth?.access_token,
+        slackAuth?.dynamic_fields?.channelId
+      );
+      return;
+    }
+
+    try {
+      for (const item of items) {
+        const taskText = item.text || String(item);
+        const res = await fetch("https://ai.1upmedia.com:443/slack/task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            accessToken: slackAuth.access_token,
+            channelId: slackAuth.dynamic_fields.channelId,
+            text: taskText,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          PositiveToast(`Task created: ${data.task}`);
+        } else {
+          NegativeToast(`Task creation failed: ${data.error}`);
+        }
+      }
+    } catch (err) {
+      NegativeToast("Error creating Slack tasks: " + err.message);
+    }
+  };
+
   // Create Trello cards from a list of items
-  const createTrelloCards = async ({
-    listId,
-    items,
-    trelloAuth = trelloProfile,
-  }) => {
+  const createTrelloCards = async ({ items, trelloAuth = trelloProfile }) => {
     console.log("Creating Trello cards with items:", items, trelloAuth);
-    if (!listId || !Array.isArray(items) || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       NegativeToast("Missing listId or items for Trello card creation");
       return;
     }
@@ -223,6 +263,7 @@ export const SocialMediaProvider = ({ children }) => {
         fetchSocialMediaProfiles,
         facebookPages,
         trelloProfile,
+        slackProfile,
         jiraProfile,
         instagramProfiles,
         redditProfiles,
@@ -239,6 +280,7 @@ export const SocialMediaProvider = ({ children }) => {
         setFacebookPages,
         setInstagramProfiles,
         createTrelloCards,
+        createSlackTasks,
       }}
     >
       {children}

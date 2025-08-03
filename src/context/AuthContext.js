@@ -197,6 +197,23 @@ export const AuthProvider = ({ children }) => {
       });
       return; // Exit early for Trello
     }
+    if (platform === "slack") {
+      // Directly store Slack credentials without opening a window
+      storeSocialMediaToken({
+        email: authState.email,
+        social_media: {
+          social_media_name: platform,
+          access_token: credentials.accessToken,
+          account_name: "slack",
+          dynamic_fields: {
+            team: credentials.team,
+            user: credentials.user,
+            channelId: credentials.channelId,
+          },
+        },
+      });
+      return; // Exit early for Slack
+    }
 
     let authUrl = "";
     let eventType = "";
@@ -469,6 +486,31 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const handleSlackAuth = (credentials) => {
+    console.log("Slack credentials:", credentials);
+    if (
+      !credentials.accessToken ||
+      !credentials.team ||
+      !credentials.channelId
+    ) {
+      console.error("Slack access token, team, and channelId are required");
+      return;
+    }
+
+    // Store credentials using handleAuthorize
+    handleAuthorize("slack", null, {
+      accessToken: credentials.accessToken,
+      team: credentials.team,
+      user: credentials.user,
+      channelId: credentials.channelId,
+    });
+
+    // Return user info for convenience
+    return {
+      email: authState.email,
+    };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -484,6 +526,7 @@ export const AuthProvider = ({ children }) => {
         handleAuthorize,
         handleTrelloAuth,
         handleJiraAuth,
+        handleSlackAuth,
       }}
     >
       {children}
