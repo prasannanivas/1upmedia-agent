@@ -42,7 +42,8 @@ import { useSocialMedia } from "../context/SocialMediaContext";
 
 const StrategyAnalysis = () => {
   const { onboardingData, loading } = useOnboarding();
-  const { createTrelloCards, createSlackTasks } = useSocialMedia();
+  const { createTrelloCards, createSlackTasks, createJiraTasks } =
+    useSocialMedia();
   const {
     getRevenueLeak,
     getCannibalizationLoss,
@@ -634,6 +635,12 @@ const StrategyAnalysis = () => {
 
   createSlackTasks({
     items: allRecommendations,
+  });
+
+  createJiraTasks({
+    items: allRecommendations,
+    projectKey: "STRAT",
+    issueType: "Task",
   });
 
   return (

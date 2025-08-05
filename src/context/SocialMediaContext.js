@@ -127,17 +127,17 @@ export const SocialMediaProvider = ({ children }) => {
       );
 
       console.log("Social media details stored successfully");
-      PositiveToast("Social media details stored successfully");
+      //   PositiveToast("Social media details stored successfully");
 
       if (!response.ok) {
-        NegativeToast("Failed to store social media details");
+        // NegativeToast("Failed to store social media details");
         throw new Error("Failed to store social media details");
       }
 
       await fetchSocialMediaProfiles(data.email); // Refresh state
     } catch (error) {
       console.error("Error storing social media details:", error.message);
-      NegativeToast("Error storing social media details:", error.message);
+      //  NegativeToast("Error storing social media details:", error.message);
     }
   };
 
@@ -145,7 +145,7 @@ export const SocialMediaProvider = ({ children }) => {
   const createSlackTasks = async ({ items, slackAuth = slackProfile }) => {
     console.log("Creating Slack tasks with items:", items, slackAuth);
     if (!Array.isArray(items) || items.length === 0) {
-      NegativeToast("Missing items for Slack task creation");
+      //  NegativeToast("Missing items for Slack task creation");
       return;
     }
     if (!slackAuth?.access_token || !slackAuth?.dynamic_fields?.channelId) {
@@ -158,26 +158,29 @@ export const SocialMediaProvider = ({ children }) => {
     }
 
     try {
-      for (const item of items) {
-        const taskText = item.text || String(item);
-        const res = await fetch("https://ai.1upmedia.com:443/slack/task", {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/slack/bulk-tasks",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
+            tasks: items,
             accessToken: slackAuth.access_token,
             channelId: slackAuth.dynamic_fields.channelId,
-            text: taskText,
           }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          PositiveToast(`Task created: ${data.task}`);
-        } else {
-          NegativeToast(`Task creation failed: ${data.error}`);
         }
+      );
+      const data = await response.json();
+      if (data.success) {
+        // PositiveToast("Slack tasks created successfully");
+      } else {
+        // NegativeToast("Failed to create Slack tasks: " + data.error);
+        console.error("Failed to create Slack tasks:", data.error);
       }
     } catch (err) {
-      NegativeToast("Error creating Slack tasks: " + err.message);
+      //  NegativeToast("Error creating Slack tasks: " + err.message);
     }
   };
 
@@ -185,7 +188,7 @@ export const SocialMediaProvider = ({ children }) => {
   const createTrelloCards = async ({ items, trelloAuth = trelloProfile }) => {
     console.log("Creating Trello cards with items:", items, trelloAuth);
     if (!Array.isArray(items) || items.length === 0) {
-      NegativeToast("Missing listId or items for Trello card creation");
+      //   NegativeToast("Missing listId or items for Trello card creation");
       return;
     }
     if (
@@ -203,55 +206,129 @@ export const SocialMediaProvider = ({ children }) => {
     }
 
     // Fetch all cards in the board first
-    let existingCardNames = [];
-    try {
-      const cardsRes = await fetch(
-        `https://ai.1upmedia.com:443/trello/cards?boardId=${
-          trelloAuth.dynamic_fields.board.id
-        }&accessToken=${encodeURIComponent(
-          trelloAuth.access_token
-        )}&accessTokenSecret=${encodeURIComponent(
-          trelloAuth.dynamic_fields.accessTokenSecret
-        )}`
-      );
-      const cardsData = await cardsRes.json();
-      if (cardsData.success && Array.isArray(cardsData.cards)) {
-        existingCardNames = cardsData.cards.map((card) => card.name);
-      }
-    } catch (err) {
-      console.error("Error fetching existing cards:", err.message);
-      NegativeToast("Error fetching existing cards: " + err.message);
-      // Continue, but will not filter out existing cards
-    }
+    // let existingCardNames = [];
+    // try {
+    //   const cardsRes = await fetch(
+    //     `https://ai.1upmedia.com:443/trello/cards?boardId=${
+    //       trelloAuth.dynamic_fields.board.id
+    //     }&accessToken=${encodeURIComponent(
+    //       trelloAuth.access_token
+    //     )}&accessTokenSecret=${encodeURIComponent(
+    //       trelloAuth.dynamic_fields.accessTokenSecret
+    //     )}`
+    //   );
+    //   const cardsData = await cardsRes.json();
+    //   if (cardsData.success && Array.isArray(cardsData.cards)) {
+    //     existingCardNames = cardsData.cards.map((card) => card.name);
+    //   }
+    // } catch (err) {
+    //   console.error("Error fetching existing cards:", err.message);
+    //   //  NegativeToast("Error fetching existing cards: " + err.message);
+    //   // Continue, but will not filter out existing cards
+    // }
+
+    // try {
+    //   for (const item of items) {
+    //     const cardName = item.name || String(item);
+    //     if (existingCardNames.includes(cardName)) {
+    //       console.log(`Card '${cardName}' already exists, skipping.`);
+    //       continue;
+    //     }
+    //     const res = await fetch("https://ai.1upmedia.com:443/trello/cards", {
+    //       method: "POST",
+    //       headers: { "Content-Type": "application/json" },
+    //       body: JSON.stringify({
+    //         accessToken: trelloAuth.access_token,
+    //         accessTokenSecret: trelloAuth.dynamic_fields.accessTokenSecret,
+    //         boardId: trelloAuth?.dynamic_fields?.board?.id,
+
+    //         name: cardName,
+    //         desc: item.desc || "",
+    //       }),
+    //     });
+    //     const data = await res.json();
+    //     if (data.success) {
+    //       //    PositiveToast(`Card created: ${data.card.name}`);
+    //     } else {
+    //       //  NegativeToast(`Card creation failed: ${data.error}`);
+    //       console.error(`Card creation failed: ${data.error}`);
+    //     }
+    //   }
+    // } catch (err) {
+    //   console.error("Error creating Trello cards:", err.message);
+    //   // NegativeToast("Error creating Trello cards: " + err.message);
+    // }
 
     try {
-      for (const item of items) {
-        const cardName = item.name || String(item);
-        if (existingCardNames.includes(cardName)) {
-          console.log(`Card '${cardName}' already exists, skipping.`);
-          continue;
-        }
-        const res = await fetch("https://ai.1upmedia.com:443/trello/cards", {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/trello/bulk-cards",
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
+            cards: items,
             accessToken: trelloAuth.access_token,
             accessTokenSecret: trelloAuth.dynamic_fields.accessTokenSecret,
             boardId: trelloAuth?.dynamic_fields?.board?.id,
-
-            name: cardName,
-            desc: item.desc || "",
           }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          PositiveToast(`Card created: ${data.card.name}`);
-        } else {
-          NegativeToast(`Card creation failed: ${data.error}`);
         }
+      );
+      const data = await response.json();
+      if (data.success) {
+        // PositiveToast("Trello cards created successfully");
+      } else {
+        // NegativeToast("Failed to create Trello cards: " + data.error);
+        console.error("Failed to create Trello cards:", data.error);
       }
     } catch (err) {
-      NegativeToast("Error creating Trello cards: " + err.message);
+      // NegativeToast("Error creating Trello cards: " + err.message);
+      console.error("Error creating Trello cards:", err.message);
+    }
+  };
+
+  const createJiraTasks = async ({ items, jiraAuth = jiraProfile }) => {
+    console.log("Creating Jira tasks with items:", items, jiraAuth);
+    if (!Array.isArray(items) || items.length === 0) {
+      // NegativeToast("Missing listId or items for Jira task creation");
+      return;
+    }
+    if (!jiraAuth?.access_token || !jiraAuth?.dynamic_fields?.board?.id) {
+      console.error(
+        "Missing Jira authentication tokens",
+        jiraAuth?.access_token,
+        jiraAuth?.dynamic_fields?.board?.id
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://ai.1upmedia.com:443/jira/bulk-cards",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cards: items,
+            accessToken: jiraAuth.access_token,
+            boardId: jiraAuth?.dynamic_fields?.board?.id,
+            cloud_id: jiraAuth?.dynamic_fields?.cloudId,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        // PositiveToast("Jira tasks created successfully");
+      } else {
+        // NegativeToast("Failed to create Jira tasks: " + data.error);
+        console.error("Failed to create Jira tasks:", data.error);
+      }
+    } catch (err) {
+      // NegativeToast("Error creating Jira tasks: " + err.message);
+      console.error("Error creating Jira tasks:", err.message);
     }
   };
 
@@ -281,6 +358,7 @@ export const SocialMediaProvider = ({ children }) => {
         setInstagramProfiles,
         createTrelloCards,
         createSlackTasks,
+        createJiraTasks,
       }}
     >
       {children}
